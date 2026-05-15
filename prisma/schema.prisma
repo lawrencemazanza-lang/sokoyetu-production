@@ -1,0 +1,175 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  name         String
+  email        String   @unique
+  phone        String?
+  passwordHash String
+  role         String   @default("buyer")
+  createdAt    DateTime @default(now())
+
+  products     Product[]
+  cartItems    CartItem[]
+  orders       Order[]
+  reviews      Review[]
+  wishlists    Wishlist[]
+}
+
+model Product {
+  id             Int      @id @default(autoincrement())
+  name           String
+  description    String
+  category       String
+  price          Int
+  oldPrice       Int?
+  stock          Int      @default(0)
+  imageUrl       String?
+  sellerId       Int?
+  importedByAdmin Boolean @default(false)
+  createdAt      DateTime @default(now())
+
+  seller         User?    @relation(fields: [sellerId], references: [id])
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  reviews        Review[]
+  wishlists      Wishlist[]
+}
+
+model CartItem {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  quantity  Int      @default(1)
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Order {
+  id              Int      @id @default(autoincrement())
+  userId          Int
+  totalAmount     Int
+  deliveryFee     Int      @default(0)
+  paymentMethod   String   @default("MPESA")
+  paymentStatus   String   @default("PENDING")
+  orderStatus     String   @default("PENDING_PAYMENT")
+  deliveryAddress String?
+  phone           String?
+  createdAt       DateTime @default(now())
+
+  user            User     @relation(fields: [userId], references: [id])
+  items           OrderItem[]
+  payment         Payment?
+  tracking        DeliveryTracking[]
+}
+
+model OrderItem {
+  id        Int     @id @default(autoincrement())
+  orderId   Int
+  productId Int
+  quantity  Int
+  price     Int
+
+  order     Order   @relation(fields: [orderId], references: [id])
+  product   Product @relation(fields: [productId], references: [id])
+}
+
+model Payment {
+  id              Int      @id @default(autoincrement())
+  orderId          Int      @unique
+  provider         String   @default("MPESA")
+  phone            String
+  amount           Int
+  checkoutRequestId String?
+  mpesaReceipt     String?
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+
+  order            Order    @relation(fields: [orderId], references: [id])
+}
+
+model DeliveryTracking {
+  id        Int      @id @default(autoincrement())
+  orderId   Int
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  order     Order    @relation(fields: [orderId], references: [id])
+}
+
+model Review {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+}
+
+model Wishlist {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  productId Int
+  createdAt DateTime @default(now())
+
+  user      User     @relation(fields: [userId], references: [id])
+  product   Product  @relation(fields: [productId], references: [id])
+
+  @@unique([userId, productId])
+}
+
+model Wholesaler {
+  id          Int      @id @default(autoincrement())
+  name        String
+  location    String
+  phone       String?
+  email       String?
+  category    String
+  score       Int      @default(80)
+  createdAt   DateTime @default(now())
+
+  products    WholesalerProduct[]
+}
+
+model WholesalerProduct {
+  id             Int      @id @default(autoincrement())
+  wholesalerId    Int
+  name           String
+  category       String
+  wholesalePrice Int
+  marketPrice    Int
+  stock          Int      @default(0)
+  imageUrl       String?
+  notes          String?
+
+  wholesaler     Wholesaler @relation(fields: [wholesalerId], references: [id])
+}
+
+model LiveSession {
+  id          Int       @id @default(autoincrement())
+  sellerId    Int
+  sellerName  String
+  sellerEmail String
+  title       String
+  offerText   String?
+  productId   Int?
+  productName String?
+  roomName    String    @unique
+  status      String    @default("LIVE")
+  createdAt   DateTime  @default(now())
+  endedAt     DateTime?
+}

@@ -1,0 +1,57 @@
+{
+  "name": "sokoyetu-elite-jumia-inspired",
+  "version": "4.0.0",
+  "private": true,
+  "description": "SokoYetu modern Kenyan marketplace prototype with Jumia-style homepage organization, role-based dashboards, live deals, live sellers and AI commerce tools.",
+  "scripts": {
+    "dev": "node server.js",
+    "start": "node server.js",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio",
+    "health": "node scripts/check-health.js",
+    "mpesa:check": "node scripts/check-mpesa-config.js",
+    "mpesa:token": "node scripts/test-mpesa-token.js",
+    "mpesa:stk": "node scripts/test-mpesa-stk.js",
+    "mpesa:latest": "node scripts/check-latest-mpesa-payment.js",
+    "mpesa:mock-callback": "node scripts/mock-mpesa-success-callback.js",
+    "mpesa:poll": "node scripts/poll-latest-mpesa-payment.js",
+    "images:check": "node scripts/check-image-storage-config.js",
+    "livekit:check": "node scripts/check-livekit-config.js",
+    "security:check": "node scripts/check-security-config.js",
+    "build": "npx prisma generate",
+    "db:migrate:deploy": "npx prisma migrate deploy",
+    "deploy:render:build": "npm install && npx prisma generate && npx prisma migrate deploy",
+    "deploy:check": "node scripts/check-deployment-readiness.js"
+  },
+  "keywords": [
+    "sokoyetu",
+    "marketplace",
+    "ecommerce",
+    "kenya",
+    "mpesa",
+    "ai",
+    "live-shopping"
+  ],
+  "dependencies": {
+    "@prisma/adapter-better-sqlite3": "^7.8.0",
+    "@prisma/adapter-pg": "^7.8.0",
+    "@prisma/client": "^7.8.0",
+    "bcryptjs": "^3.0.3",
+    "cloudinary": "^2.10.0",
+    "cookie-parser": "^1.4.7",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^4.22.2",
+    "express-rate-limit": "^8.5.2",
+    "helmet": "^8.1.0",
+    "jsonwebtoken": "^9.0.3",
+    "livekit-server-sdk": "^2.15.3",
+    "multer": "^2.1.1",
+    "pg": "^8.20.0",
+    "prisma": "^7.8.0"
+  },
+  "engines": {
+    "node": ">=20 <25"
+  }
+}
