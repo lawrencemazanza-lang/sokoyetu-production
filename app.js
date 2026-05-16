@@ -492,7 +492,7 @@ function renderFooter() {
         </div>
         <div><h3>Quick Links</h3><a>Home</a><a>All Products</a><a>Track Order</a><a>Live Sellers</a><a>Become a Seller</a></div>
         <div><h3>Categories</h3><a>Electronics</a><a>Fashion</a><a>Home & Garden</a><a>Beauty & Health</a><a>Groceries</a><a>Sports</a></div>
-        <div><h3>Contact Us</h3><p>Phone: 0714565555<br>Email: lawrencemazanza@gmail.com<br>Location: Nairobi, Kenya</p><p><b>M-PESA Accepted</b><br>Pay easily with Lipa na M-PESA.</p></div>
+        <div><h3>Contact Us</h3><p>Email: support@mysokoyetu.co.ke<br>Location: Nairobi, Kenya</p><p><b>M-PESA Accepted</b><br>Pay easily with Lipa na M-PESA.</p></div>
       </div>
       <div class="footer-bottom"><span>© 2026 SokoYetu. All rights reserved.</span><span>Privacy Policy · Terms of Service · Returns Policy</span></div>
     </footer>
