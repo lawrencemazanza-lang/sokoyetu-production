@@ -4748,747 +4748,90 @@ setInterval(updateCountdown, 1000);
 })();
 
 
+
 // ================================
-// SokoYetu Stage 20B: Deployed Cart Product ID Fix
-// Fixes deployed front-end cases where Add to Cart sends no productId.
-// It maps rendered product cards/buttons back to /api/products IDs and overrides cart clicks safely.
+// SokoYetu Stage 20P: Hard Reset Checkout JavaScript
+// Lightweight recovery after cart/checkout modal conflicts.
+// Sends checkout/cart navigation to checkout.html without heavy observers or modal sync.
 // ================================
-(function initSokoYetuCartProductIdFix() {
-  const CART_FIX_MARKER = "sokoyetu-stage20b-cart-fix-active";
+(function initStage20PHardResetCheckoutJavaScript() {
+  if (window.__sokoyetuStage20PInstalled) return;
+  window.__sokoyetuStage20PInstalled = true;
 
-  if (window[CART_FIX_MARKER]) return;
-  window[CART_FIX_MARKER] = true;
-
-  let productCache = [];
-
-  function normalizeText(value) {
-    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
-  }
-
-  function isAddToCartElement(element) {
-    if (!element) return false;
-
-    const text = normalizeText(element.textContent);
-    const aria = normalizeText(element.getAttribute("aria-label"));
-    const title = normalizeText(element.getAttribute("title"));
-    const className = normalizeText(element.className);
-    const id = normalizeText(element.id);
-
-    return (
-      text.includes("add to cart") ||
-      text.includes("add cart") ||
-      text === "cart" ||
-      aria.includes("add to cart") ||
-      title.includes("add to cart") ||
-      className.includes("add-to-cart") ||
-      className.includes("cart-btn") ||
-      id.includes("addtocart") ||
-      id.includes("add-to-cart")
-    );
-  }
-
-  function readProductIdFromElement(element) {
-    if (!element) return null;
-
-    const candidates = [
-      element.dataset?.productId,
-      element.dataset?.id,
-      element.getAttribute?.("data-product-id"),
-      element.getAttribute?.("data-id"),
-      element.getAttribute?.("product-id"),
-      element.getAttribute?.("productid"),
-    ];
-
-    const closest = element.closest?.("[data-product-id], [data-id], [product-id], [productid]");
-    if (closest) {
-      candidates.push(
-        closest.dataset?.productId,
-        closest.dataset?.id,
-        closest.getAttribute("data-product-id"),
-        closest.getAttribute("data-id"),
-        closest.getAttribute("product-id"),
-        closest.getAttribute("productid")
-      );
-    }
-
-    const onclick = element.getAttribute?.("onclick") || "";
-    const onclickMatch = onclick.match(/addToCart\s*\(\s*['"]?(\d+)['"]?/i);
-    if (onclickMatch) candidates.push(onclickMatch[1]);
-
-    for (const candidate of candidates) {
-      const id = Number(candidate);
-      if (Number.isInteger(id) && id > 0) {
-        return id;
-      }
-    }
-
-    return null;
-  }
-
-  function findProductIdByCardText(element) {
-    const card =
-      element.closest?.(".product-card, .card, article, li, [class*='product'], [class*='item']") ||
-      element.parentElement;
-
-    if (!card) return null;
-
-    const cardText = normalizeText(card.textContent);
-
-    const match = productCache.find((product) => {
-      const name = normalizeText(product.name);
-      return name && cardText.includes(name);
-    });
-
-    if (match && match.id) {
-      card.dataset.productId = String(match.id);
-      element.dataset.productId = String(match.id);
-      return Number(match.id);
-    }
-
-    return null;
-  }
-
-  async function loadProductsForCartFix() {
-    try {
-      const response = await fetch("/api/products", { credentials: "include" });
-      if (!response.ok) return;
-
-      const data = await response.json();
-      const products = Array.isArray(data) ? data : data.products;
-
-      if (Array.isArray(products)) {
-        productCache = products.filter((product) => product && product.id && product.name);
-        attachProductIdsToVisibleCards();
-      }
-    } catch (error) {
-      console.warn("SokoYetu cart fix could not load products:", error);
-    }
-  }
-
-  function attachProductIdsToVisibleCards() {
-    if (!productCache.length) return;
-
-    const possibleCards = Array.from(
-      document.querySelectorAll(".product-card, .card, article, li, [class*='product'], [class*='item']")
-    );
-
-    possibleCards.forEach((card) => {
-      if (card.dataset.productId) return;
-
-      const cardText = normalizeText(card.textContent);
-
-      const match = productCache.find((product) => {
-        const name = normalizeText(product.name);
-        return name && cardText.includes(name);
-      });
-
-      if (match) {
-        card.dataset.productId = String(match.id);
-
-        card.querySelectorAll("button, a").forEach((button) => {
-          if (isAddToCartElement(button)) {
-            button.dataset.productId = String(match.id);
-          }
-        });
-      }
-    });
-  }
-
-  async function addProductToCart(productId, quantity = 1) {
-    const numericProductId = Number(productId);
-
-    if (!Number.isInteger(numericProductId) || numericProductId <= 0) {
-      throw new Error("Product ID is required.");
-    }
-
-    const response = await fetch("/api/cart", {
-      method: "POST",
-      credentials: "include",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        productId: numericProductId,
-        quantity: Number(quantity) || 1,
-      }),
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.message || "Could not add product to cart.");
-    }
-
-    return data;
-  }
-
-  window.addToCart = async function patchedAddToCart(productId, quantity = 1) {
-    try {
-      const data = await addProductToCart(productId, quantity);
-
-      if (typeof showToast === "function") {
-        showToast(data.message || "Product added to cart.");
-      } else if (typeof notify === "function") {
-        notify(data.message || "Product added to cart.");
-      } else {
-        alert(data.message || "Product added to cart.");
-      }
-
-      if (typeof loadCart === "function") {
-        try { await loadCart(); } catch {}
-      }
-
-      return data;
-    } catch (error) {
-      alert(error.message || "Could not add product to cart.");
-      throw error;
-    }
-  };
-
-  document.addEventListener("click", async (event) => {
-    const clicked = event.target.closest?.("button, a");
-    if (!clicked || !isAddToCartElement(clicked)) return;
-
-    attachProductIdsToVisibleCards();
-
-    let productId = readProductIdFromElement(clicked);
-    if (!productId) {
-      productId = findProductIdByCardText(clicked);
-    }
-
-    if (!productId) {
-      if (normalizeText(clicked.textContent).includes("view cart") || normalizeText(clicked.textContent).includes("checkout")) {
-        return;
-      }
-
+  function goToCheckout(event) {
+    if (event) {
       event.preventDefault();
       event.stopPropagation();
-      event.stopImmediatePropagation();
+    }
+    window.location.href = "/checkout.html";
+  }
 
-      alert("Product ID is required. Refresh the page and try again.");
-      console.warn("SokoYetu cart fix could not find product ID for clicked element:", clicked);
-      return;
+  function ensureCheckoutButton() {
+    if (!document.body) return;
+
+    // Remove old modal elements if they exist.
+    var oldBackdrop = document.getElementById("syCustomerCartBackdrop");
+    if (oldBackdrop) oldBackdrop.remove();
+
+    var oldLauncher = document.getElementById("syCustomerCartLauncher");
+    if (oldLauncher) oldLauncher.remove();
+
+    if (!document.getElementById("syStage20PCheckoutStyle")) {
+      var style = document.createElement("style");
+      style.id = "syStage20PCheckoutStyle";
+      style.textContent =
+        "#syStage20PCheckoutBtn{position:fixed;right:18px;bottom:22px;z-index:19000;border:none;border-radius:999px;background:linear-gradient(135deg,#16a34a,#064e3b);color:#fff;font-weight:900;padding:13px 17px;box-shadow:0 18px 45px rgba(15,23,42,.28);cursor:pointer}" +
+        "#syCustomerCartBackdrop,.sy-customer-cart-backdrop,#syCustomerCartLauncher{display:none!important;visibility:hidden!important;pointer-events:none!important}" +
+        "@media(max-width:720px){#syStage20PCheckoutBtn{right:10px;bottom:14px;padding:11px 13px;font-size:13px}}";
+      document.head.appendChild(style);
     }
 
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation();
-
-    try {
-      await window.addToCart(productId, 1);
-    } catch {}
-  }, true);
-
-  const observer = new MutationObserver(() => {
-    attachProductIdsToVisibleCards();
-  });
-
-  document.addEventListener("DOMContentLoaded", () => {
-    loadProductsForCartFix();
-    observer.observe(document.body, { childList: true, subtree: true });
-    setTimeout(loadProductsForCartFix, 1500);
-    setTimeout(attachProductIdsToVisibleCards, 3000);
-  });
-
-  if (document.readyState !== "loading") {
-    loadProductsForCartFix();
-    observer.observe(document.body, { childList: true, subtree: true });
-  }
-})();
-
-
-// ================================
-// SokoYetu Stage 20E Fixed: Remove Old M-PESA Demo Modal After Real STK
-// Prevents the old "M-PESA checkout" modal from appearing after real Daraja STK Push.
-// ================================
-(function initStage20EFixedRemoveOldMpesaDemoModal() {
-  var recentRealStkCheckout = false;
-
-  if (window.__sokoyetuStage20EFixedInstalled) return;
-  window.__sokoyetuStage20EFixedInstalled = true;
-
-  var originalFetch = window.fetch ? window.fetch.bind(window) : null;
-
-  if (originalFetch) {
-    window.fetch = async function stage20EFixedFetch(input, init) {
-      var url = typeof input === "string" ? input : input && input.url;
-      var response = await originalFetch(input, init);
-
-      try {
-        if (url && String(url).includes("/api/payments/mpesa/stk-push") && response.ok) {
-          recentRealStkCheckout = true;
-          window.__sokoyetuRecentRealStkCheckout = true;
-
-          setTimeout(function () {
-            recentRealStkCheckout = false;
-            window.__sokoyetuRecentRealStkCheckout = false;
-          }, 120000);
-        }
-      } catch (error) {}
-
-      return response;
-    };
-  }
-
-  function isOldMpesaDemoModal(id) {
-    return id === "mpesaModal" || id === "checkoutModal" || id === "paymentModal";
-  }
-
-  function wrapOpenModalIfAvailable() {
-    if (typeof window.openModal === "function" && !window.openModal.__stage20EFixedWrapped) {
-      var originalOpenModal = window.openModal;
-
-      window.openModal = function stage20EFixedOpenModal(id) {
-        if ((recentRealStkCheckout || window.__sokoyetuRecentRealStkCheckout) && isOldMpesaDemoModal(id)) {
-          console.log("Stage 20E fixed blocked old M-PESA demo modal after real STK Push:", id);
-          return;
-        }
-
-        return originalOpenModal.apply(this, arguments);
-      };
-
-      window.openModal.__stage20EFixedWrapped = true;
-      return true;
-    }
-
-    return false;
-  }
-
-  var attempts = 0;
-  var timer = setInterval(function () {
-    attempts += 1;
-    if (wrapOpenModalIfAvailable() || attempts > 40) {
-      clearInterval(timer);
-    }
-  }, 250);
-
-  document.addEventListener("DOMContentLoaded", function () {
-    wrapOpenModalIfAvailable();
-  });
-})();
-
-
-// ================================
-// SokoYetu Stage 20F: Render Cart Sync Fix
-// Fixes deployed cases where Add to Cart succeeds but cart/checkout still says empty.
-// It reloads the database cart from /api/cart before cart, checkout and M-PESA checkout views open.
-// ================================
-(function initStage20FRenderCartSyncFix() {
-  if (window.__sokoyetuStage20FCartSyncInstalled) return;
-  window.__sokoyetuStage20FCartSyncInstalled = true;
-
-  function getItemQuantity(item) {
-    return Number(item.quantity || item.qty || item.count || 1) || 1;
-  }
-
-  function getItemProduct(item) {
-    return item.product || item.Product || item;
-  }
-
-  function normalizeCartItems(data) {
-    const raw =
-      (Array.isArray(data) && data) ||
-      data.cart ||
-      data.items ||
-      data.cartItems ||
-      data.data ||
-      [];
-
-    if (!Array.isArray(raw)) return [];
-
-    return raw.map((item) => {
-      const product = getItemProduct(item);
-      const productId = Number(item.productId || product.id || item.id);
-      const quantity = getItemQuantity(item);
-      const price = Number(product.price || item.price || 0);
-
-      return {
-        id: productId,
-        productId,
-        cartItemId: item.id,
-        name: product.name || item.name || "Product",
-        price,
-        oldPrice: product.oldPrice || item.oldPrice || null,
-        imageUrl: product.imageUrl || item.imageUrl || "",
-        category: product.category || item.category || "",
-        quantity,
-        qty: quantity,
-        stock: product.stock || item.stock || 0,
-        product,
-      };
-    }).filter((item) => item.productId && item.productId > 0);
-  }
-
-  async function fetchServerCart() {
-    const response = await fetch("/api/cart", {
-      credentials: "include",
-      headers: { "Accept": "application/json" },
-    });
-
-    const data = await response.json().catch(() => ({}));
-
-    if (!response.ok) {
-      throw new Error(data.message || "Could not load cart.");
-    }
-
-    return normalizeCartItems(data);
-  }
-
-  async function syncCartFromDatabase() {
-    try {
-      const items = await fetchServerCart();
-
-      if (window.state) {
-        window.state.cart = items;
-      }
-
-      if (typeof state !== "undefined" && state) {
-        state.cart = items;
-      }
-
-      if (typeof save === "function") {
-        try { save(); } catch {}
-      }
-
-      // Stage 20G: do not call renderApp during cart sync because it can close the active cart/checkout modal.
-
-      window.__sokoyetuLatestServerCart = items;
-      return items;
-    } catch (error) {
-      console.warn("Stage 20F could not sync cart from database:", error);
-      return [];
+    var button = document.getElementById("syStage20PCheckoutBtn");
+    if (!button) {
+      button = document.createElement("button");
+      button.id = "syStage20PCheckoutBtn";
+      button.type = "button";
+      button.textContent = "✅ Secure Checkout";
+      button.addEventListener("click", goToCheckout);
+      document.body.appendChild(button);
     }
   }
 
-  function isCartOrCheckoutModal(id) {
-    const value = String(id || "").toLowerCase();
-    return value.includes("cart") || value.includes("checkout") || value.includes("mpesa") || value.includes("payment");
-  }
-
-  function isCartOrCheckoutClick(element) {
+  function isCheckoutClick(element) {
     if (!element) return false;
-    const text = String(element.textContent || "").toLowerCase();
-    const id = String(element.id || "").toLowerCase();
-    const className = String(element.className || "").toLowerCase();
-    const aria = String(element.getAttribute && element.getAttribute("aria-label") || "").toLowerCase();
 
-    return (
-      text.includes("cart") ||
-      text.includes("checkout") ||
-      text.includes("view basket") ||
-      id.includes("cart") ||
-      id.includes("checkout") ||
-      className.includes("cart") ||
-      className.includes("checkout") ||
-      aria.includes("cart") ||
-      aria.includes("checkout")
-    );
-  }
-
-  async function refreshVisibleCartIfEmpty() {
-    const items = window.__sokoyetuLatestServerCart || [];
-    if (!items.length) return;
-
-    const bodyText = document.body ? document.body.innerText.toLowerCase() : "";
-
-    if (!bodyText.includes("cart is empty") && !bodyText.includes("subtotal")) return;
-
-    // Let the app's own renderer update first.
-      // Stage 20G: do not call renderApp during cart sync because it can close the active cart/checkout modal.
-  }
-
-  // Expose a manual repair command in browser console.
-  window.sokoyetuSyncCartFromDatabase = syncCartFromDatabase;
-
-  // If app.js already has loadCartFromDatabase, override the global copy for click handlers that call window/global.
-  window.loadCartFromDatabase = syncCartFromDatabase;
-
-  const waitForOpenModal = setInterval(() => {
-    if (typeof window.openModal === "function" && !window.openModal.__stage20FWrapped) {
-      const originalOpenModal = window.openModal;
-
-      window.openModal = async function stage20FOpenModal(id) {
-        if (isCartOrCheckoutModal(id)) {
-          await syncCartFromDatabase();
-        }
-
-        const result = originalOpenModal.apply(this, arguments);
-
-        if (isCartOrCheckoutModal(id)) {
-          setTimeout(refreshVisibleCartIfEmpty, 250);
-          setTimeout(refreshVisibleCartIfEmpty, 900);
-        }
-
-        return result;
-      };
-
-      window.openModal.__stage20FWrapped = true;
-      clearInterval(waitForOpenModal);
-    }
-  }, 250);
-
-  setTimeout(() => clearInterval(waitForOpenModal), 10000);
-
-  document.addEventListener("click", async (event) => {
-    const clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
-    if (!clicked || !isCartOrCheckoutClick(clicked)) return;
-
-    await syncCartFromDatabase();
-    setTimeout(refreshVisibleCartIfEmpty, 350);
-    setTimeout(refreshVisibleCartIfEmpty, 1000);
-  }, true);
-
-  document.addEventListener("DOMContentLoaded", () => {
-    setTimeout(syncCartFromDatabase, 1000);
-    setTimeout(syncCartFromDatabase, 3000);
-  });
-
-  window.addEventListener("focus", () => {
-    syncCartFromDatabase();
-  });
-})();
-
-
-// ================================
-// SokoYetu Stage 20G: Cart Modal Stability Fix
-// Fixes blinking cart/checkout modals caused by full UI re-render during cart sync.
-// Keeps cart state fresh without closing the currently open modal.
-// ================================
-(function initStage20GCartModalStabilityFix() {
-  if (window.__sokoyetuStage20GCartModalStabilityInstalled) return;
-  window.__sokoyetuStage20GCartModalStabilityInstalled = true;
-
-  var syncingCart = false;
-  var lastCartItems = [];
-
-  function getItemQuantity(item) {
-    return Number(item.quantity || item.qty || item.count || 1) || 1;
-  }
-
-  function getItemProduct(item) {
-    return item.product || item.Product || item;
-  }
-
-  function normalizeCartItems(data) {
-    var raw =
-      (Array.isArray(data) && data) ||
-      data.cart ||
-      data.items ||
-      data.cartItems ||
-      data.data ||
-      [];
-
-    if (!Array.isArray(raw)) return [];
-
-    return raw.map(function (item) {
-      var product = getItemProduct(item);
-      var productId = Number(item.productId || product.id || item.id);
-      var quantity = getItemQuantity(item);
-      var price = Number(product.price || item.price || 0);
-
-      return {
-        id: productId,
-        productId: productId,
-        cartItemId: item.id,
-        name: product.name || item.name || "Product",
-        price: price,
-        oldPrice: product.oldPrice || item.oldPrice || null,
-        imageUrl: product.imageUrl || item.imageUrl || "",
-        category: product.category || item.category || "",
-        quantity: quantity,
-        qty: quantity,
-        stock: product.stock || item.stock || 0,
-        product: product
-      };
-    }).filter(function (item) {
-      return item.productId && item.productId > 0;
-    });
-  }
-
-  function money(value) {
-    if (typeof formatMoney === "function") {
-      try { return formatMoney(value); } catch {}
-    }
-    return "KES " + Number(value || 0).toLocaleString("en-KE");
-  }
-
-  async function syncCartQuietly() {
-    if (syncingCart) return lastCartItems;
-    syncingCart = true;
-
-    try {
-      var response = await fetch("/api/cart", {
-        credentials: "include",
-        headers: { "Accept": "application/json" }
-      });
-
-      var data = await response.json().catch(function () { return {}; });
-
-      if (!response.ok) {
-        throw new Error(data.message || "Could not load cart.");
-      }
-
-      var items = normalizeCartItems(data);
-      lastCartItems = items;
-      window.__sokoyetuLatestServerCart = items;
-
-      if (window.state) window.state.cart = items;
-
-      try {
-        if (typeof state !== "undefined" && state) {
-          state.cart = items;
-        }
-      } catch {}
-
-      if (typeof save === "function") {
-        try { save(); } catch {}
-      }
-
-      updateCartBadge(items);
-      updateOpenCartSummary(items);
-
-      return items;
-    } catch (error) {
-      console.warn("Stage 20G could not sync cart quietly:", error);
-      return lastCartItems;
-    } finally {
-      syncingCart = false;
-    }
-  }
-
-  function updateCartBadge(items) {
-    var count = items.reduce(function (sum, item) {
-      return sum + Number(item.quantity || item.qty || 1);
-    }, 0);
-
-    var selectors = [
-      "#cartCount",
-      ".cart-count",
-      "[data-cart-count]",
-      "#cartBadge",
-      ".cart-badge"
-    ];
-
-    selectors.forEach(function (selector) {
-      document.querySelectorAll(selector).forEach(function (node) {
-        node.textContent = String(count);
-        node.style.display = count > 0 ? "" : node.style.display;
-      });
-    });
-  }
-
-  function updateOpenCartSummary(items) {
-    // Only patch obvious empty-cart text, without rebuilding the whole application.
-    var bodyText = document.body ? document.body.innerText.toLowerCase() : "";
-    if (!bodyText.includes("cart is empty") && !bodyText.includes("subtotal")) return;
-
-    var total = items.reduce(function (sum, item) {
-      return sum + Number(item.price || 0) * Number(item.quantity || item.qty || 1);
-    }, 0);
-
-    if (!items.length) return;
-
-    var emptyNodes = Array.from(document.querySelectorAll("p, div, span, section")).filter(function (node) {
-      var text = String(node.textContent || "").toLowerCase().trim();
-      return text === "cart is empty" || text === "your cart is empty" || text.includes("cart is empty");
-    });
-
-    emptyNodes.forEach(function (node) {
-      node.innerHTML =
-        "<div style='border:1px solid #fee2e2;border-radius:14px;padding:12px;background:#fff7ed;'>" +
-        "<b>Cart loaded.</b><br>" +
-        items.length + " item(s) in cart. Subtotal: " + money(total) +
-        "<br><span style='font-size:12px;color:#64748b;'>If the checkout screen did not refresh, close and reopen Cart once.</span>" +
-        "</div>";
-    });
-  }
-
-  function isAddToCartClick(element) {
-    if (!element) return false;
-    var text = String(element.textContent || "").toLowerCase();
+    var text = String(element.textContent || "").toLowerCase().trim();
     var id = String(element.id || "").toLowerCase();
     var className = String(element.className || "").toLowerCase();
 
-    return (
-      text.includes("add to cart") ||
-      id.includes("add-to-cart") ||
-      id.includes("addtocart") ||
-      className.includes("add-to-cart") ||
-      className.includes("cart-btn")
-    );
-  }
-
-  function isCartOrCheckoutClick(element) {
-    if (!element) return false;
-    var text = String(element.textContent || "").toLowerCase();
-    var id = String(element.id || "").toLowerCase();
-    var className = String(element.className || "").toLowerCase();
+    if (text.includes("add to cart")) return false;
+    if (text.includes("send m-pesa")) return false;
+    if (text.includes("stk push")) return false;
 
     return (
+      id === "systage20pcheckoutbtn" ||
       text === "cart" ||
+      text.includes("cart / checkout") ||
+      text.includes("secure checkout") ||
       text.includes("view cart") ||
-      text.includes("checkout") ||
-      id.includes("cart") ||
-      id.includes("checkout") ||
-      className.includes("cart") ||
+      text === "checkout" ||
       className.includes("checkout")
     );
   }
 
-  // On Add to Cart, wait briefly and sync quietly. Do not call renderApp here.
   document.addEventListener("click", function (event) {
     var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
-    if (!clicked) return;
+    if (!clicked || !isCheckoutClick(clicked)) return;
 
-    if (isAddToCartClick(clicked)) {
-      setTimeout(syncCartQuietly, 500);
-      setTimeout(syncCartQuietly, 1400);
-    }
-
-    if (isCartOrCheckoutClick(clicked)) {
-      setTimeout(syncCartQuietly, 100);
-      setTimeout(syncCartQuietly, 800);
-    }
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    window.location.href = "/checkout.html";
   }, true);
 
-  // Wrap openModal but do not re-render the app. This prevents blink-close behavior.
-  var attempts = 0;
-  var timer = setInterval(function () {
-    attempts += 1;
+  document.addEventListener("DOMContentLoaded", ensureCheckoutButton);
 
-    if (typeof window.openModal === "function" && !window.openModal.__stage20GWrapped) {
-      var originalOpenModal = window.openModal;
-
-      window.openModal = function stage20GOpenModal(id) {
-        var result = originalOpenModal.apply(this, arguments);
-
-        var modalName = String(id || "").toLowerCase();
-        if (modalName.includes("cart") || modalName.includes("checkout") || modalName.includes("mpesa") || modalName.includes("payment")) {
-          setTimeout(syncCartQuietly, 150);
-          setTimeout(syncCartQuietly, 900);
-        }
-
-        return result;
-      };
-
-      window.openModal.__stage20GWrapped = true;
-      clearInterval(timer);
-    }
-
-    if (attempts > 40) clearInterval(timer);
-  }, 250);
-
-  window.sokoyetuSyncCartQuietly = syncCartQuietly;
-
-  document.addEventListener("DOMContentLoaded", function () {
-    setTimeout(syncCartQuietly, 1000);
-  });
-
-  window.addEventListener("focus", function () {
-    setTimeout(syncCartQuietly, 250);
-  });
+  if (document.readyState !== "loading") {
+    ensureCheckoutButton();
+  }
 })();
-
-
-// SokoYetu Stage 20H: Removed customer-facing M-PESA demo copy
-// Customer checkout text now describes the real Daraja STK Push flow instead of demo-only wording.
