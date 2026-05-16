@@ -506,7 +506,7 @@ function renderModals() {
     <div id="smartModal" class="modal-backdrop">${modalShell("Smart buyer tools", renderSmartModal())}</div>
     <div id="cartModal" class="modal-backdrop">${modalShell("Your cart", renderCartModal(), "small")}</div>
     <div id="helpModal" class="modal-backdrop">${modalShell("Help centre", renderHelpModal(), "small")}</div>
-    <div id="mpesaModal" class="modal-backdrop">${modalShell("M-PESA checkout demo", renderMpesaModal(), "small")}</div>
+    <div id="mpesaModal" class="modal-backdrop">${modalShell("M-PESA checkout", renderMpesaModal(), "small")}</div>
     <div id="sellerModal" class="modal-backdrop">${modalShell("Seller Studio", renderSellerModal())}</div>
     <div id="adminModal" class="modal-backdrop">${modalShell("Admin-only AI Centre", renderAdminModal())}</div>
     <div id="wishlistModal" class="modal-backdrop">${modalShell("Wishlist and price alerts", renderWishlistModal(), "small")}</div>
@@ -553,7 +553,7 @@ function renderMpesaModal(){
   const total = subtotal + delivery;
 
   return `
-    <p style="color:#6b7280">Checkout now creates a real database order and prepares a pending M-PESA payment record. Live STK Push will be added in the Daraja step.</p>
+    <p style="color:#6b7280">Complete your order by entering a valid M-PESA phone number and delivery address. In Daraja mode, the system sends a real STK Push prompt to the customer phone.</p>
     <div class="field"><label>M-PESA phone number</label><input id="mpesaPhone" value="${state.user?.phone || ''}" placeholder="0714565555"></div>
     <div class="field"><label>Delivery address</label><textarea id="deliveryAddress" rows="3" placeholder="Example: Nairobi CBD, Moi Avenue, Building name"></textarea></div>
     <div class="cart-summary">
@@ -4999,7 +4999,7 @@ setInterval(updateCountdown, 1000);
 
 // ================================
 // SokoYetu Stage 20E Fixed: Remove Old M-PESA Demo Modal After Real STK
-// Prevents the old "M-PESA checkout demo" modal from appearing after real Daraja STK Push.
+// Prevents the old "M-PESA checkout" modal from appearing after real Daraja STK Push.
 // ================================
 (function initStage20EFixedRemoveOldMpesaDemoModal() {
   var recentRealStkCheckout = false;
@@ -5488,3 +5488,7 @@ setInterval(updateCountdown, 1000);
     setTimeout(syncCartQuietly, 250);
   });
 })();
+
+
+// SokoYetu Stage 20H: Removed customer-facing M-PESA demo copy
+// Customer checkout text now describes the real Daraja STK Push flow instead of demo-only wording.
