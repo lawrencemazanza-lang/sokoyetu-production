@@ -26,7 +26,8 @@
     "seed:production": "node scripts/seed-production-data.js",
     "products:count": "node scripts/count-products.js",
     "stage21:check": "node scripts/check-stage21-golive.js",
-    "golive:check": "node scripts/check-stage21-golive.js"
+    "golive:check": "node scripts/check-stage21-golive.js",
+    "stage26a:check": "node scripts/check-stage26a-orders.js"
   },
   "keywords": [
     "sokoyetu",
