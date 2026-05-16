@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://sokoyetu-production-1.onrender.com/sitemap.xml

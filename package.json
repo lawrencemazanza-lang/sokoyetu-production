@@ -24,7 +24,9 @@
     "deploy:render:build": "npm install && npx prisma generate && npx prisma migrate deploy",
     "deploy:check": "node scripts/check-deployment-readiness.js",
     "seed:production": "node scripts/seed-production-data.js",
-    "products:count": "node scripts/count-products.js"
+    "products:count": "node scripts/count-products.js",
+    "stage21:check": "node scripts/check-stage21-golive.js",
+    "golive:check": "node scripts/check-stage21-golive.js"
   },
   "keywords": [
     "sokoyetu",
