@@ -643,6 +643,7 @@ async function removeFromCart(id){
     toast(error.message);
   }
 }
+// SokoYetu Stage 20D: Checkout Real STK Push Fix
 async function createOrderFromCart(){
   if (!state.user || state.user.role !== "buyer") {
     toast("Please sign in as a buyer first.");
@@ -650,16 +651,16 @@ async function createOrderFromCart(){
     return;
   }
 
-  const phone = document.getElementById("mpesaPhone")?.value.trim();
-  const deliveryAddress = document.getElementById("deliveryAddress")?.value.trim();
+  const phone = document.getElementById("mpesaPhone")?.value?.trim();
+  const deliveryAddress = document.getElementById("deliveryAddress")?.value?.trim();
 
-  if (!deliveryAddress) {
-    toast("Delivery address is required.");
+  if (!phone) {
+    toast("M-PESA phone number is required.");
     return;
   }
 
-  if (!phone) {
-    toast("Phone number is required for M-PESA payment.");
+  if (!deliveryAddress) {
+    toast("Delivery address is required.");
     return;
   }
 
@@ -667,16 +668,24 @@ async function createOrderFromCart(){
     const data = await apiRequest("/api/orders", {
       method: "POST",
       body: JSON.stringify({
-        phone: phone,
-        deliveryAddress: deliveryAddress,
+        phone,
+        deliveryAddress,
       }),
     });
 
-    const mpesaData = await startMpesaPayment(data.order.id, phone);
+    const order = data.order || data;
+    const orderId = order.id;
+
+    if (!orderId) {
+      throw new Error("Order was created, but the order ID was not returned.");
+    }
+
+    const mpesaData = await startMpesaPayment(orderId, phone);
 
     state.cart = [];
     save();
 
+    const total = order.totalAmount ?? order.total ?? order.amount ?? 0;
     const orderResult = document.getElementById("orderResult");
 
     if (orderResult) {
@@ -684,43 +693,57 @@ async function createOrderFromCart(){
       orderResult.innerHTML = `
         <div class="summary-line">
           <span>Order created</span>
-          <b>#${data.order.id}</b>
+          <b>#${orderId}</b>
         </div>
 
         <div class="summary-line">
           <span>Total</span>
-          <b>${formatMoney(data.order.totalAmount)}</b>
+          <b>${typeof formatMoney === "function" ? formatMoney(total) : total}</b>
         </div>
 
         <div class="summary-line">
           <span>M-PESA status</span>
-          <b>${mpesaData.mode === "demo" ? "Demo STK Prepared" : "STK Sent"}</b>
+          <b>${mpesaData.mode === "demo" ? "Demo STK Prepared" : "STK Push Sent"}</b>
         </div>
 
         <p class="seller">
           ${mpesaData.mode === "demo"
-            ? "Demo M-PESA request prepared successfully. In live mode, the customer will receive an STK Push prompt."
-            : "M-PESA request sent. Check your phone and enter your M-PESA PIN."
+            ? "Demo M-PESA request prepared successfully. In Daraja mode, the customer receives a real STK Push prompt."
+            : "M-PESA STK Push sent. Check the phone, enter the M-PESA PIN, then wait for confirmation."
           }
         </p>
+
+        ${mpesaData.checkoutRequestId ? `
+          <p class="seller"><b>Checkout Request ID:</b> ${mpesaData.checkoutRequestId}</p>
+        ` : ""}
       `;
     }
 
     toast(
       mpesaData.mode === "demo"
         ? "Demo M-PESA request prepared successfully."
-        : "M-PESA request sent to phone."
+        : "M-PESA STK Push sent to phone."
     );
 
     setTimeout(async () => {
-      await loadCartFromDatabase();
-      renderApp();
-      openModal("mpesaModal");
-    }, 1600);
+      try {
+        if (typeof loadCartFromDatabase === "function") {
+          await loadCartFromDatabase();
+        }
+
+        if (typeof renderApp === "function") {
+          renderApp();
+        }
+
+/* Stage 20E fixed: old M-PESA demo modal suppressed after real STK Push */
+      } catch {}
+    }, 1200);
   } catch (error) {
-    toast(error.message);
+    toast(error.message || "Checkout could not start M-PESA payment.");
   }
 }
+
+
 
 function toggleWishlist(id){ if(state.wishlist.includes(id)) state.wishlist=state.wishlist.filter(x=>x!==id); else state.wishlist.push(id); save(); toast('Wishlist updated'); }
 function setRole(role){
@@ -4971,4 +4994,75 @@ setInterval(updateCountdown, 1000);
     loadProductsForCartFix();
     observer.observe(document.body, { childList: true, subtree: true });
   }
+})();
+
+
+// ================================
+// SokoYetu Stage 20E Fixed: Remove Old M-PESA Demo Modal After Real STK
+// Prevents the old "M-PESA checkout demo" modal from appearing after real Daraja STK Push.
+// ================================
+(function initStage20EFixedRemoveOldMpesaDemoModal() {
+  var recentRealStkCheckout = false;
+
+  if (window.__sokoyetuStage20EFixedInstalled) return;
+  window.__sokoyetuStage20EFixedInstalled = true;
+
+  var originalFetch = window.fetch ? window.fetch.bind(window) : null;
+
+  if (originalFetch) {
+    window.fetch = async function stage20EFixedFetch(input, init) {
+      var url = typeof input === "string" ? input : input && input.url;
+      var response = await originalFetch(input, init);
+
+      try {
+        if (url && String(url).includes("/api/payments/mpesa/stk-push") && response.ok) {
+          recentRealStkCheckout = true;
+          window.__sokoyetuRecentRealStkCheckout = true;
+
+          setTimeout(function () {
+            recentRealStkCheckout = false;
+            window.__sokoyetuRecentRealStkCheckout = false;
+          }, 120000);
+        }
+      } catch (error) {}
+
+      return response;
+    };
+  }
+
+  function isOldMpesaDemoModal(id) {
+    return id === "mpesaModal" || id === "checkoutModal" || id === "paymentModal";
+  }
+
+  function wrapOpenModalIfAvailable() {
+    if (typeof window.openModal === "function" && !window.openModal.__stage20EFixedWrapped) {
+      var originalOpenModal = window.openModal;
+
+      window.openModal = function stage20EFixedOpenModal(id) {
+        if ((recentRealStkCheckout || window.__sokoyetuRecentRealStkCheckout) && isOldMpesaDemoModal(id)) {
+          console.log("Stage 20E fixed blocked old M-PESA demo modal after real STK Push:", id);
+          return;
+        }
+
+        return originalOpenModal.apply(this, arguments);
+      };
+
+      window.openModal.__stage20EFixedWrapped = true;
+      return true;
+    }
+
+    return false;
+  }
+
+  var attempts = 0;
+  var timer = setInterval(function () {
+    attempts += 1;
+    if (wrapOpenModalIfAvailable() || attempts > 40) {
+      clearInterval(timer);
+    }
+  }, 250);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    wrapOpenModalIfAvailable();
+  });
 })();
