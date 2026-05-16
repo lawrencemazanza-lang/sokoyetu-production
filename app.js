@@ -4723,3 +4723,252 @@ setInterval(updateCountdown, 1000);
   window.addEventListener("focus", runStage18Cleanup);
   window.sokoyetuStage18Cleanup = runStage18Cleanup;
 })();
+
+
+// ================================
+// SokoYetu Stage 20B: Deployed Cart Product ID Fix
+// Fixes deployed front-end cases where Add to Cart sends no productId.
+// It maps rendered product cards/buttons back to /api/products IDs and overrides cart clicks safely.
+// ================================
+(function initSokoYetuCartProductIdFix() {
+  const CART_FIX_MARKER = "sokoyetu-stage20b-cart-fix-active";
+
+  if (window[CART_FIX_MARKER]) return;
+  window[CART_FIX_MARKER] = true;
+
+  let productCache = [];
+
+  function normalizeText(value) {
+    return String(value || "").toLowerCase().replace(/\s+/g, " ").trim();
+  }
+
+  function isAddToCartElement(element) {
+    if (!element) return false;
+
+    const text = normalizeText(element.textContent);
+    const aria = normalizeText(element.getAttribute("aria-label"));
+    const title = normalizeText(element.getAttribute("title"));
+    const className = normalizeText(element.className);
+    const id = normalizeText(element.id);
+
+    return (
+      text.includes("add to cart") ||
+      text.includes("add cart") ||
+      text === "cart" ||
+      aria.includes("add to cart") ||
+      title.includes("add to cart") ||
+      className.includes("add-to-cart") ||
+      className.includes("cart-btn") ||
+      id.includes("addtocart") ||
+      id.includes("add-to-cart")
+    );
+  }
+
+  function readProductIdFromElement(element) {
+    if (!element) return null;
+
+    const candidates = [
+      element.dataset?.productId,
+      element.dataset?.id,
+      element.getAttribute?.("data-product-id"),
+      element.getAttribute?.("data-id"),
+      element.getAttribute?.("product-id"),
+      element.getAttribute?.("productid"),
+    ];
+
+    const closest = element.closest?.("[data-product-id], [data-id], [product-id], [productid]");
+    if (closest) {
+      candidates.push(
+        closest.dataset?.productId,
+        closest.dataset?.id,
+        closest.getAttribute("data-product-id"),
+        closest.getAttribute("data-id"),
+        closest.getAttribute("product-id"),
+        closest.getAttribute("productid")
+      );
+    }
+
+    const onclick = element.getAttribute?.("onclick") || "";
+    const onclickMatch = onclick.match(/addToCart\s*\(\s*['"]?(\d+)['"]?/i);
+    if (onclickMatch) candidates.push(onclickMatch[1]);
+
+    for (const candidate of candidates) {
+      const id = Number(candidate);
+      if (Number.isInteger(id) && id > 0) {
+        return id;
+      }
+    }
+
+    return null;
+  }
+
+  function findProductIdByCardText(element) {
+    const card =
+      element.closest?.(".product-card, .card, article, li, [class*='product'], [class*='item']") ||
+      element.parentElement;
+
+    if (!card) return null;
+
+    const cardText = normalizeText(card.textContent);
+
+    const match = productCache.find((product) => {
+      const name = normalizeText(product.name);
+      return name && cardText.includes(name);
+    });
+
+    if (match && match.id) {
+      card.dataset.productId = String(match.id);
+      element.dataset.productId = String(match.id);
+      return Number(match.id);
+    }
+
+    return null;
+  }
+
+  async function loadProductsForCartFix() {
+    try {
+      const response = await fetch("/api/products", { credentials: "include" });
+      if (!response.ok) return;
+
+      const data = await response.json();
+      const products = Array.isArray(data) ? data : data.products;
+
+      if (Array.isArray(products)) {
+        productCache = products.filter((product) => product && product.id && product.name);
+        attachProductIdsToVisibleCards();
+      }
+    } catch (error) {
+      console.warn("SokoYetu cart fix could not load products:", error);
+    }
+  }
+
+  function attachProductIdsToVisibleCards() {
+    if (!productCache.length) return;
+
+    const possibleCards = Array.from(
+      document.querySelectorAll(".product-card, .card, article, li, [class*='product'], [class*='item']")
+    );
+
+    possibleCards.forEach((card) => {
+      if (card.dataset.productId) return;
+
+      const cardText = normalizeText(card.textContent);
+
+      const match = productCache.find((product) => {
+        const name = normalizeText(product.name);
+        return name && cardText.includes(name);
+      });
+
+      if (match) {
+        card.dataset.productId = String(match.id);
+
+        card.querySelectorAll("button, a").forEach((button) => {
+          if (isAddToCartElement(button)) {
+            button.dataset.productId = String(match.id);
+          }
+        });
+      }
+    });
+  }
+
+  async function addProductToCart(productId, quantity = 1) {
+    const numericProductId = Number(productId);
+
+    if (!Number.isInteger(numericProductId) || numericProductId <= 0) {
+      throw new Error("Product ID is required.");
+    }
+
+    const response = await fetch("/api/cart", {
+      method: "POST",
+      credentials: "include",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        productId: numericProductId,
+        quantity: Number(quantity) || 1,
+      }),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || "Could not add product to cart.");
+    }
+
+    return data;
+  }
+
+  window.addToCart = async function patchedAddToCart(productId, quantity = 1) {
+    try {
+      const data = await addProductToCart(productId, quantity);
+
+      if (typeof showToast === "function") {
+        showToast(data.message || "Product added to cart.");
+      } else if (typeof notify === "function") {
+        notify(data.message || "Product added to cart.");
+      } else {
+        alert(data.message || "Product added to cart.");
+      }
+
+      if (typeof loadCart === "function") {
+        try { await loadCart(); } catch {}
+      }
+
+      return data;
+    } catch (error) {
+      alert(error.message || "Could not add product to cart.");
+      throw error;
+    }
+  };
+
+  document.addEventListener("click", async (event) => {
+    const clicked = event.target.closest?.("button, a");
+    if (!clicked || !isAddToCartElement(clicked)) return;
+
+    attachProductIdsToVisibleCards();
+
+    let productId = readProductIdFromElement(clicked);
+    if (!productId) {
+      productId = findProductIdByCardText(clicked);
+    }
+
+    if (!productId) {
+      if (normalizeText(clicked.textContent).includes("view cart") || normalizeText(clicked.textContent).includes("checkout")) {
+        return;
+      }
+
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+
+      alert("Product ID is required. Refresh the page and try again.");
+      console.warn("SokoYetu cart fix could not find product ID for clicked element:", clicked);
+      return;
+    }
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    try {
+      await window.addToCart(productId, 1);
+    } catch {}
+  }, true);
+
+  const observer = new MutationObserver(() => {
+    attachProductIdsToVisibleCards();
+  });
+
+  document.addEventListener("DOMContentLoaded", () => {
+    loadProductsForCartFix();
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(loadProductsForCartFix, 1500);
+    setTimeout(attachProductIdsToVisibleCards, 3000);
+  });
+
+  if (document.readyState !== "loading") {
+    loadProductsForCartFix();
+    observer.observe(document.body, { childList: true, subtree: true });
+  }
+})();
