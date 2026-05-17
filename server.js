@@ -3029,6 +3029,178 @@ app.post("/api/orders/support-request", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 28C: Admin Support Queue API
+// Protected by ADMIN_ORDER_TOKEN. Uses existing DeliveryTracking model.
+// ================================
+function requireAdminSupportQueueToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/support-queue", async (req, res) => {
+  try {
+    if (!requireAdminSupportQueueToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const supportStatuses = [
+      "CUSTOMER_SUPPORT_REQUESTED",
+      "REFUND_REQUESTED",
+      "SUPPORT_CONTACTED_CUSTOMER",
+      "SUPPORT_CONTACTED_SELLER",
+      "SUPPORT_RESOLVED",
+      "REFUND_UNDER_REVIEW",
+      "ORDER_CANCELLED_BY_SUPPORT",
+    ];
+
+    const where = filter
+      ? { status: filter }
+      : { status: { in: supportStatuses } };
+
+    if (q) {
+      const numericId = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numericId) && numericId > 0 ? [{ orderId: numericId }] : []),
+        { note: { contains: q, mode: "insensitive" } },
+        { order: { phone: { contains: q, mode: "insensitive" } } },
+        { order: { deliveryAddress: { contains: q, mode: "insensitive" } } },
+        { order: { user: { email: { contains: q, mode: "insensitive" } } } },
+      ];
+    }
+
+    const requests = await prisma.deliveryTracking.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        order: {
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true, role: true } },
+            payment: true,
+            items: {
+              include: {
+                product: { select: { id: true, name: true, category: true, price: true, imageUrl: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return res.json({
+      message: "Admin support queue loaded.",
+      count: requests.length,
+      requests,
+    });
+  } catch (error) {
+    console.error("Admin support queue load error:", error);
+    return res.status(500).json({
+      message: "Could not load support queue.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/support-queue/:trackingId/action", async (req, res) => {
+  try {
+    if (!requireAdminSupportQueueToken(req, res)) return;
+
+    const trackingId = Number(req.params.trackingId);
+    const action = String(req.body?.action || "").trim();
+    const note = String(req.body?.note || "").trim();
+
+    const allowedActions = new Set([
+      "CONTACT_CUSTOMER",
+      "CONTACT_SELLER",
+      "MARK_RESOLVED",
+      "KEEP_REFUND_REVIEW",
+      "MARK_REFUND_REQUESTED",
+      "CANCEL_ORDER",
+    ]);
+
+    if (!trackingId || trackingId <= 0) {
+      return res.status(400).json({ message: "Valid support tracking ID is required." });
+    }
+
+    if (!allowedActions.has(action)) {
+      return res.status(400).json({ message: "Invalid support action." });
+    }
+
+    if (!note || note.length < 5) {
+      return res.status(400).json({ message: "Admin response note is required." });
+    }
+
+    const current = await prisma.deliveryTracking.findUnique({
+      where: { id: trackingId },
+      include: { order: true },
+    });
+
+    if (!current) {
+      return res.status(404).json({ message: "Support entry was not found." });
+    }
+
+    let trackingStatus = "CUSTOMER_SUPPORT_REQUESTED";
+    let orderStatusUpdate = null;
+
+    if (action === "CONTACT_CUSTOMER") trackingStatus = "SUPPORT_CONTACTED_CUSTOMER";
+    if (action === "CONTACT_SELLER") trackingStatus = "SUPPORT_CONTACTED_SELLER";
+    if (action === "MARK_RESOLVED") trackingStatus = "SUPPORT_RESOLVED";
+    if (action === "KEEP_REFUND_REVIEW") trackingStatus = "REFUND_UNDER_REVIEW";
+    if (action === "MARK_REFUND_REQUESTED") {
+      trackingStatus = "REFUND_REQUESTED";
+      orderStatusUpdate = "REFUND_REQUESTED";
+    }
+    if (action === "CANCEL_ORDER") {
+      trackingStatus = "ORDER_CANCELLED_BY_SUPPORT";
+      orderStatusUpdate = "CANCELLED";
+    }
+
+    if (orderStatusUpdate) {
+      await prisma.order.update({
+        where: { id: current.orderId },
+        data: { orderStatus: orderStatusUpdate },
+      });
+    }
+
+    const created = await prisma.deliveryTracking.create({
+      data: {
+        orderId: current.orderId,
+        status: trackingStatus,
+        note: `Admin action: ${action} | ${note}`,
+      },
+    });
+
+    return res.json({
+      message: "Support action saved.",
+      action,
+      tracking: created,
+      orderStatus: orderStatusUpdate || current.order.orderStatus,
+    });
+  } catch (error) {
+    console.error("Admin support action error:", error);
+    return res.status(500).json({
+      message: "Could not save support action.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
