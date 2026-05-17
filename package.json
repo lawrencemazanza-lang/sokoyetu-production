@@ -32,7 +32,8 @@
     "stage27a:check": "node scripts/check-stage27a-sellers.js",
     "stage27b:check": "node scripts/check-stage27b-seller-dashboard.js",
     "stage27c:check": "node scripts/check-stage27c-seller-verification.js",
-    "stage27c:prisma": "npx prisma generate && npx prisma db push"
+    "stage27c:prisma": "npx prisma generate && npx prisma db push",
+    "stage28a:check": "node scripts/check-stage28a-tracking.js"
   },
   "keywords": [
     "sokoyetu",

@@ -2827,6 +2827,102 @@ app.post("/api/admin/sellers/:id/persistent-verification", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 28A: Customer Order Tracking API
+// Public lookup protected by order ID + matching phone number.
+// Does not change checkout or payment flow.
+// ================================
+function normalizeKenyanPhoneForTracking(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("254")) return digits;
+  if (digits.startsWith("0") && digits.length === 10) return "254" + digits.slice(1);
+  if (digits.startsWith("7") && digits.length === 9) return "254" + digits;
+  if (digits.startsWith("1") && digits.length === 9) return "254" + digits;
+  return digits;
+}
+
+app.post("/api/orders/track", async (req, res) => {
+  try {
+    const orderId = Number(req.body?.orderId);
+    const phone = normalizeKenyanPhoneForTracking(req.body?.phone);
+
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ message: "A valid order ID is required." });
+    }
+
+    if (!phone) {
+      return res.status(400).json({ message: "A valid checkout phone number is required." });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { id: true, name: true, category: true, imageUrl: true },
+            },
+          },
+        },
+        payment: true,
+        tracking: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        },
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order was not found." });
+    }
+
+    const orderPhone = normalizeKenyanPhoneForTracking(order.phone);
+    const paymentPhone = normalizeKenyanPhoneForTracking(order.payment?.phone);
+
+    if (phone !== orderPhone && phone !== paymentPhone) {
+      return res.status(403).json({ message: "The phone number does not match this order." });
+    }
+
+    return res.json({
+      message: "Order tracking loaded.",
+      order: {
+        id: order.id,
+        totalAmount: order.totalAmount,
+        deliveryFee: order.deliveryFee,
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        orderStatus: order.orderStatus,
+        deliveryAddress: order.deliveryAddress,
+        createdAt: order.createdAt,
+        mpesaReceipt: order.payment?.mpesaReceipt || null,
+        checkoutRequestId: order.payment?.checkoutRequestId || null,
+        items: order.items.map((item) => ({
+          productId: item.productId,
+          name: item.product?.name || `Product #${item.productId}`,
+          category: item.product?.category || null,
+          imageUrl: item.product?.imageUrl || null,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        tracking: order.tracking.map((event) => ({
+          status: event.status,
+          note: event.note,
+          createdAt: event.createdAt,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Customer order tracking error:", error);
+    return res.status(500).json({
+      message: "Could not load order tracking.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
