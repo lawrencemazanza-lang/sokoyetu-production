@@ -22,11 +22,13 @@
         '<a class="sy-brand" href="/"><span class="sy-logo">SY</span><span>SokoYetu</span></a>' +
         '<div class="sy-links">' +
           link("/", "Home") +
+          link("/how-it-works.html", "How It Works") +
           link("/categories.html", "Categories") +
           link("/seller-stores.html", "Seller Stores") +
           link("/trust-center.html", "Trust Center") +
           link("/help-center.html", "Help Center") +
           link("/track-order.html", "Track Order") +
+          link("/delivery-info.html", "Delivery") +
           link("/support-request.html", "Support", "sy-dark") +
           link("/checkout.html", "Checkout", "sy-primary") +
         '</div>' +
