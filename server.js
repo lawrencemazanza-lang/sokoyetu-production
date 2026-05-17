@@ -3201,6 +3201,123 @@ app.post("/api/admin/support-queue/:trackingId/action", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 29A: Admin System Health API
+// Protected by ADMIN_ORDER_TOKEN. Does not expose secret values.
+// ================================
+function requireAdminSystemHealthToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/system-health", async (req, res) => {
+  try {
+    if (!requireAdminSystemHealthToken(req, res)) return;
+
+    const warnings = [];
+    let databaseConnected = true;
+
+    let users = 0;
+    let sellers = 0;
+    let products = 0;
+    let orders = 0;
+    let payments = 0;
+    let supportNotes = 0;
+    let recentOrders = [];
+
+    try {
+      users = await prisma.user.count();
+      sellers = await prisma.user.count({ where: { role: "seller" } });
+      products = await prisma.product.count();
+      orders = await prisma.order.count();
+      payments = await prisma.payment.count();
+      supportNotes = await prisma.deliveryTracking.count({
+        where: {
+          status: {
+            in: [
+              "CUSTOMER_SUPPORT_REQUESTED",
+              "REFUND_REQUESTED",
+              "SUPPORT_CONTACTED_CUSTOMER",
+              "SUPPORT_CONTACTED_SELLER",
+              "SUPPORT_RESOLVED",
+              "REFUND_UNDER_REVIEW",
+              "ORDER_CANCELLED_BY_SUPPORT",
+            ],
+          },
+        },
+      });
+
+      recentOrders = await prisma.order.findMany({
+        orderBy: { id: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          totalAmount: true,
+          paymentStatus: true,
+          orderStatus: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      databaseConnected = false;
+      warnings.push("Database query failed: " + error.message);
+    }
+
+    if (!process.env.PUBLIC_SITE_URL) warnings.push("PUBLIC_SITE_URL is not set.");
+    if (!process.env.SUPPORT_EMAIL) warnings.push("SUPPORT_EMAIL is not set.");
+    if (!process.env.BUSINESS_NAME) warnings.push("BUSINESS_NAME is not set.");
+    if (process.env.ADMIN_REGISTRATION_ENABLED === "true") warnings.push("ADMIN_REGISTRATION_ENABLED is true. Public admin registration should be locked.");
+    if (process.env.MPESA_ENV === "sandbox") warnings.push("M-PESA is still in sandbox mode. This is safe for testing but not for real customer payments.");
+    if (!process.env.MPESA_CALLBACK_URL) warnings.push("MPESA_CALLBACK_URL is not set.");
+    if (process.env.UPLOAD_MODE && process.env.UPLOAD_MODE !== "cloudinary") warnings.push("UPLOAD_MODE is not cloudinary.");
+
+    return res.json({
+      message: "System health loaded.",
+      generatedAt: new Date().toISOString(),
+      config: {
+        databaseConnected,
+        publicSiteUrl: process.env.PUBLIC_SITE_URL || null,
+        supportEmail: process.env.SUPPORT_EMAIL || null,
+        businessName: process.env.BUSINESS_NAME || null,
+        mpesaMode: process.env.MPESA_MODE || null,
+        mpesaEnv: process.env.MPESA_ENV || null,
+        uploadMode: process.env.UPLOAD_MODE || null,
+        adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || null,
+      },
+      metrics: {
+        users,
+        sellers,
+        products,
+        orders,
+        payments,
+        supportNotes,
+      },
+      recentOrders,
+      warnings,
+    });
+  } catch (error) {
+    console.error("System health error:", error);
+    return res.status(500).json({
+      message: "Could not load system health.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
