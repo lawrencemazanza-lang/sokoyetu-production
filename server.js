@@ -4207,6 +4207,163 @@ app.get("/api/admin/mpesa-production-readiness", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 33B: M-PESA Environment Mapping and Guard API
+// Read-only. M-PESA production guard only; does not alter payment logic.
+// ================================
+function requireMpesaEnvGuardToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage33bRedact(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 8) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+function stage33bUnique(values) {
+  return Array.from(new Set(values.filter(Boolean))).sort();
+}
+
+function stage33bFindEnvKeys(text) {
+  const keys = [];
+  const dotPattern = /process\.env\.([A-Z0-9_]+)/g;
+  const bracketPattern = /process\.env\[["']([A-Z0-9_]+)["']\]/g;
+  let match;
+
+  while ((match = dotPattern.exec(text))) keys.push(match[1]);
+  while ((match = bracketPattern.exec(text))) keys.push(match[1]);
+
+  return stage33bUnique(keys);
+}
+
+function stage33bConfiguredKeys(keys) {
+  return keys.filter((key) => Object.prototype.hasOwnProperty.call(process.env, key));
+}
+
+app.get("/api/admin/mpesa-env-guard", async (req, res) => {
+  try {
+    if (!requireMpesaEnvGuardToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const serverText = fs.readFileSync(pathModule.join(__dirname, "server.js"), "utf8");
+
+    const allKeys = stage33bFindEnvKeys(serverText);
+    const mpesaKeys = allKeys.filter((key) => key.includes("MPESA") || key.includes("DARAJA") || key.includes("SAFARICOM"));
+
+    const groups = [
+      {
+        group: "environment",
+        keys: ["MPESA_ENV", "MPESA_MODE", "MPESA_BASE_URL"],
+      },
+      {
+        group: "consumer key",
+        keys: ["MPESA_CONSUMER_KEY", "MPESA_DARAJA_CONSUMER_KEY", "DARAJA_CONSUMER_KEY", "SAFARICOM_CONSUMER_KEY"],
+      },
+      {
+        group: "consumer secret",
+        keys: ["MPESA_CONSUMER_SECRET", "MPESA_DARAJA_CONSUMER_SECRET", "DARAJA_CONSUMER_SECRET", "SAFARICOM_CONSUMER_SECRET"],
+      },
+      {
+        group: "business shortcode / PayBill / Till",
+        keys: ["MPESA_SHORTCODE", "MPESA_BUSINESS_SHORTCODE", "MPESA_PAYBILL", "MPESA_TILL", "BUSINESS_SHORTCODE"],
+      },
+      {
+        group: "passkey",
+        keys: ["MPESA_PASSKEY", "MPESA_LIPA_NA_MPESA_PASSKEY", "LIPA_NA_MPESA_PASSKEY"],
+      },
+      {
+        group: "callback URL",
+        keys: ["MPESA_CALLBACK_URL", "MPESA_STK_CALLBACK_URL", "CALLBACK_URL"],
+      },
+      {
+        group: "production confirmation guard",
+        keys: ["MPESA_PRODUCTION_CONFIRMED", "MPESA_LIVE_CONFIRMED"],
+      },
+    ].map((item) => {
+      const referencedKeys = item.keys.filter((key) => mpesaKeys.includes(key));
+      const configuredKeys = stage33bConfiguredKeys(item.keys);
+      const required = item.group !== "production confirmation guard";
+      return {
+        group: item.group,
+        referencedKeys,
+        configuredKeys,
+        ok: required ? configuredKeys.length > 0 : true,
+      };
+    });
+
+    const blockers = [];
+    const warnings = [];
+
+    const mpesaEnv = String(process.env.MPESA_ENV || "").toLowerCase();
+    const mpesaMode = String(process.env.MPESA_MODE || "").toLowerCase();
+    const productionRequested = ["production", "live"].includes(mpesaEnv) || ["production", "live"].includes(mpesaMode);
+    const productionConfirmed = String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true";
+
+    if (productionRequested && !productionConfirmed) {
+      blockers.push("M-PESA production/live appears requested, but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+    }
+
+    const missingRequired = groups.filter((g) => g.group !== "production confirmation guard" && !g.ok);
+    for (const group of missingRequired) {
+      warnings.push("No configured environment variable found for " + group.group + ".");
+    }
+
+    const callback = process.env.MPESA_CALLBACK_URL || process.env.MPESA_STK_CALLBACK_URL || process.env.CALLBACK_URL || "";
+    if (callback && !/^https:\/\//i.test(callback)) {
+      blockers.push("Production callback URL must use HTTPS.");
+    }
+
+    if (callback && !/mysokoyetu\.co\.ke/i.test(callback)) {
+      warnings.push("Callback URL does not appear to use mysokoyetu.co.ke. Confirm it points to the Render production domain.");
+    }
+
+    const referencedMpesaKeys = mpesaKeys.map((key) => {
+      const value = process.env[key];
+      return {
+        key,
+        configured: Boolean(value),
+        value: value ? stage33bRedact(value) : "",
+      };
+    });
+
+    return res.json({
+      message: "M-PESA environment guard loaded.",
+      guardStatus: blockers.length ? "BLOCKED" : "PASSIVE_GUARD_OK",
+      productionRequested,
+      productionConfirmed,
+      referencedMpesaKeys,
+      groups,
+      blockers,
+      warnings,
+      note: "M-PESA production guard is read-only and does not switch payment mode.",
+    });
+  } catch (error) {
+    console.error("M-PESA production guard error:", error);
+    return res.status(500).json({
+      message: "Could not load M-PESA environment guard.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);

@@ -54,7 +54,9 @@
     "stage32c:check": "node scripts/check-stage32c-public-qa.js",
     "stage32d:check": "node scripts/check-stage32d-accessibility.js",
     "stage32e:check": "node scripts/check-stage32e-error-pages.js",
-    "stage33a:check": "node scripts/check-stage33a-mpesa-readiness.js"
+    "stage33a:check": "node scripts/check-stage33a-mpesa-readiness.js",
+    "stage33b:check": "node scripts/check-stage33b-mpesa-env-guard.js",
+    "mpesa:env-map": "node scripts/mpesa-env-map.js"
   },
   "keywords": [
     "sokoyetu",
