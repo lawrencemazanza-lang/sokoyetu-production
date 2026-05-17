@@ -4030,6 +4030,183 @@ app.use((err, req, res, next) => {
   return res.status(500).sendFile(require("path").join(__dirname, "500.html"));
 });
 
+
+
+// ================================
+// SokoYetu Stage 33A: Production M-PESA Readiness API
+// Read-only. Does not switch M-PESA environment or alter checkout logic.
+// ================================
+function requireMpesaReadinessToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function readFirstEnv(keys) {
+  for (const key of keys) {
+    if (process.env[key]) return { key, value: process.env[key] };
+  }
+  return { key: keys[0], value: "" };
+}
+
+function redactMpesaValue(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 8) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+app.get("/api/admin/mpesa-production-readiness", async (req, res) => {
+  try {
+    if (!requireMpesaReadinessToken(req, res)) return;
+
+    const blockers = [];
+    const warnings = [];
+
+    const envMap = {
+      mpesaEnv: readFirstEnv(["MPESA_ENV"]),
+      mpesaMode: readFirstEnv(["MPESA_MODE"]),
+      consumerKey: readFirstEnv(["MPESA_CONSUMER_KEY", "MPESA_DARAJA_CONSUMER_KEY"]),
+      consumerSecret: readFirstEnv(["MPESA_CONSUMER_SECRET", "MPESA_DARAJA_CONSUMER_SECRET"]),
+      shortcode: readFirstEnv(["MPESA_SHORTCODE", "MPESA_BUSINESS_SHORTCODE", "MPESA_PAYBILL", "MPESA_TILL"]),
+      passkey: readFirstEnv(["MPESA_PASSKEY", "MPESA_LIPA_NA_MPESA_PASSKEY"]),
+      callbackUrl: readFirstEnv(["MPESA_CALLBACK_URL"]),
+    };
+
+    const checks = [
+      {
+        label: "M-PESA environment",
+        ok: Boolean(envMap.mpesaEnv.value),
+        value: envMap.mpesaEnv.value || "",
+        note: "Expected sandbox/test until production Daraja credentials are approved.",
+      },
+      {
+        label: "M-PESA mode",
+        ok: Boolean(envMap.mpesaMode.value),
+        value: envMap.mpesaMode.value || "",
+        note: "Check whether your code expects sandbox/live/production naming.",
+      },
+      {
+        label: "Consumer key",
+        ok: Boolean(envMap.consumerKey.value),
+        value: envMap.consumerKey.value ? redactMpesaValue(envMap.consumerKey.value) : "",
+        note: "Must be the production consumer key before live switch.",
+      },
+      {
+        label: "Consumer secret",
+        ok: Boolean(envMap.consumerSecret.value),
+        value: envMap.consumerSecret.value ? redactMpesaValue(envMap.consumerSecret.value) : "",
+        note: "Must be the production consumer secret before live switch.",
+      },
+      {
+        label: "Business shortcode / PayBill / Till",
+        ok: Boolean(envMap.shortcode.value),
+        value: envMap.shortcode.value || "",
+        note: "Must be the live business shortcode connected to the business account.",
+      },
+      {
+        label: "Lipa na M-PESA passkey",
+        ok: Boolean(envMap.passkey.value),
+        value: envMap.passkey.value ? redactMpesaValue(envMap.passkey.value) : "",
+        note: "Must match the live shortcode.",
+      },
+      {
+        label: "Callback URL",
+        ok: Boolean(envMap.callbackUrl.value),
+        value: envMap.callbackUrl.value || "",
+        note: "Should be HTTPS and should point to the Render production domain.",
+      },
+    ];
+
+    for (const check of checks) {
+      if (!check.ok) blockers.push(check.label + " is missing.");
+    }
+
+    const mpesaEnv = String(envMap.mpesaEnv.value || "").toLowerCase();
+    const mpesaMode = String(envMap.mpesaMode.value || "").toLowerCase();
+    const callbackUrl = String(envMap.callbackUrl.value || "");
+
+    if (mpesaEnv && mpesaEnv !== "production" && mpesaEnv !== "live") {
+      warnings.push("M-PESA environment is not production/live. This is expected until Safaricom production credentials are issued.");
+    }
+
+    if (mpesaMode && mpesaMode !== "production" && mpesaMode !== "live") {
+      warnings.push("M-PESA mode is not production/live. Keep this until ready to switch.");
+    }
+
+    if (callbackUrl && !/^https:\/\//i.test(callbackUrl)) {
+      blockers.push("Callback URL must use HTTPS for production.");
+    }
+
+    if (callbackUrl && !/mysokoyetu\.co\.ke/i.test(callbackUrl)) {
+      warnings.push("Callback URL does not appear to use mysokoyetu.co.ke. Confirm it points to the Render production domain.");
+    }
+
+    if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
+      blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before real payments.");
+    }
+
+    let recentPayments = [];
+    try {
+      recentPayments = await prisma.payment.findMany({
+        orderBy: { id: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          orderId: true,
+          amount: true,
+          status: true,
+          mpesaReceipt: true,
+          checkoutRequestId: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      warnings.push("Could not load recent payment records: " + error.message);
+    }
+
+    return res.json({
+      message: "Production M-PESA readiness loaded.",
+      generatedAt: new Date().toISOString(),
+      readiness: blockers.length ? "NOT_READY" : "MANUAL_APPROVAL_REQUIRED",
+      environment: {
+        mpesaEnv: envMap.mpesaEnv.value || null,
+        mpesaMode: envMap.mpesaMode.value || null,
+        callbackUrl: envMap.callbackUrl.value || null,
+      },
+      checks,
+      blockers,
+      warnings,
+      recentPayments,
+      switchPlan: [
+        "Do not switch until Safaricom production Daraja app approval is confirmed.",
+        "Add production credentials only in Render environment variables.",
+        "Confirm production callback URL uses HTTPS and your live domain.",
+        "Deploy and run one very small real payment test.",
+        "Confirm order, payment status and M-PESA receipt in admin orders.",
+        "Monitor Render logs and support queue for callback issues.",
+      ],
+    });
+  } catch (error) {
+    console.error("M-PESA readiness error:", error);
+    return res.status(500).json({
+      message: "Could not load M-PESA production readiness.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);

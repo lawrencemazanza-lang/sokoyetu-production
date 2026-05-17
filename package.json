@@ -53,7 +53,8 @@
     "stage32b:check": "node scripts/check-stage32b-brand-assets.js",
     "stage32c:check": "node scripts/check-stage32c-public-qa.js",
     "stage32d:check": "node scripts/check-stage32d-accessibility.js",
-    "stage32e:check": "node scripts/check-stage32e-error-pages.js"
+    "stage32e:check": "node scripts/check-stage32e-error-pages.js",
+    "stage33a:check": "node scripts/check-stage33a-mpesa-readiness.js"
   },
   "keywords": [
     "sokoyetu",
