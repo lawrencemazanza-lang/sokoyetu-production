@@ -15,6 +15,224 @@ require("dotenv").config();
 
 const app = express();
 
+// ================================
+// SokoYetu Stage 35A Repair: Early Core Readiness Audit API
+// Registered early so /api/admin/core-readiness/audit is not swallowed by static/index fallback.
+// Read-only. Does not change orders, products, payments, sellers, support tickets or schema.
+// ================================
+function stage35aEarlyRequireToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage35aEarlyMask(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 10) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+function stage35aEarlyFileChecks(rootDir) {
+  const files = [
+    ["index.html", true, "Homepage must open."],
+    ["categories.html", true, "Product browsing must work."],
+    ["product-detail.html", true, "Product detail flow must work."],
+    ["checkout.html", true, "Checkout page must exist."],
+    ["track-order.html", true, "Buyer order tracking must exist."],
+    ["admin-orders.html", true, "Admin order monitoring must exist."],
+    ["admin-control.html", true, "Central admin control must exist."],
+    ["admin-mpesa-readiness.html", true, "M-PESA readiness must be reviewable."],
+    ["admin-mpesa-reconciliation.html", true, "Payment/order reconciliation must exist."],
+    ["admin-mpesa-evidence.html", false, "Evidence export is useful."],
+    ["404.html", false, "Friendly fallback should exist."],
+    ["500.html", false, "Friendly error page should exist."],
+    ["robots.txt", false, "Admin/noindex controls should exist."],
+    ["sitemap.xml", false, "Public sitemap should exist."]
+  ];
+  return files.map(([file, critical, note]) => ({
+    file, critical, note,
+    exists: require("fs").existsSync(require("path").join(rootDir, file))
+  }));
+}
+
+function stage35aEarlyRouteChecks(serverText) {
+  const checks = [
+    ["/api/health", true, "API health check must exist."],
+    ["/api/products", true, "Public product API must exist."],
+    ["/api/admin", true, "Protected admin route patterns should exist."],
+    ["ADMIN_ORDER_TOKEN", true, "Admin token protection should be present."],
+    ["mpesa", true, "M-PESA code or readiness references should exist."],
+    ["checkout", true, "Checkout route/page references should exist."],
+    ["SokoYetu Stage 32E: Friendly Error Pages", false, "Final friendly fallback should exist."],
+    ["SokoYetu Stage 33C: M-PESA Payment Reconciliation API", false, "Payment reconciliation endpoint should exist if Stage 33C was applied."],
+    ["SokoYetu Stage 33D: M-PESA Evidence Export API", false, "Evidence export endpoint should exist if Stage 33D was applied."]
+  ];
+  const lower = serverText.toLowerCase();
+  return checks.map(([pattern, critical, note]) => ({
+    pattern, critical, note,
+    found: pattern === "mpesa" || pattern === "checkout" ? lower.includes(pattern) : serverText.includes(pattern)
+  }));
+}
+
+function stage35aEarlyRouteOrder(serverText) {
+  const fallbackIndex = serverText.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
+  const earlyIndex = serverText.indexOf("SokoYetu Stage 35A Repair: Early Core Readiness Audit API");
+  const routePattern = /app\.(get|post|put|patch|delete|use)\s*\(\s*["']([^"']+)/g;
+  const routesAfterFallback = [];
+  let match;
+  if (fallbackIndex !== -1) {
+    while ((match = routePattern.exec(serverText))) {
+      if (match.index > fallbackIndex) routesAfterFallback.push(match[1].toUpperCase() + " " + match[2]);
+    }
+  }
+  return {
+    fallbackFound: fallbackIndex !== -1,
+    stage35aBeforeFallback: fallbackIndex === -1 || (earlyIndex !== -1 && earlyIndex < fallbackIndex),
+    routesAfterFallback
+  };
+}
+
+function stage35aEarlySecretScan(rootDir) {
+  const files = ["index.html", "app.js", "public-nav.js", "checkout.html", "categories.html", "product-detail.html"];
+  const risky = ["MPESA_CONSUMER_SECRET", "MPESA_PASSKEY", "DATABASE_URL", "ADMIN_ORDER_TOKEN=", "sokoyetu_admin_orders_2026_change_this_secret"];
+  const results = [];
+  for (const file of files) {
+    const filePath = require("path").join(rootDir, file);
+    if (!require("fs").existsSync(filePath)) continue;
+    const text = require("fs").readFileSync(filePath, "utf8");
+    results.push({ file, matches: risky.filter((item) => text.includes(item)) });
+  }
+  return results;
+}
+
+async function stage35aEarlyCount(modelName) {
+  try {
+    let client = null;
+    try { if (typeof prisma !== "undefined") client = prisma; } catch (_) {}
+    if (!client && global.prisma) client = global.prisma;
+    if (!client || !client[modelName] || typeof client[modelName].count !== "function") {
+      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
+    }
+    const count = await client[modelName].count();
+    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
+  } catch (error) {
+    return { model: modelName, available: false, count: null, note: error.message };
+  }
+}
+
+async function stage35aEarlyDatabaseCounts() {
+  const models = ["user", "seller", "product", "order", "payment", "supportTicket", "supportRequest"];
+  const out = [];
+  for (const model of models) out.push(await stage35aEarlyCount(model));
+  return out;
+}
+
+app.get("/api/admin/core-readiness/audit", async (req, res) => {
+  try {
+    if (!stage35aEarlyRequireToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const rootDir = __dirname;
+    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
+
+    const blockers = [];
+    const warnings = [];
+
+    const environment = {
+      databaseUrlSet: Boolean(process.env.DATABASE_URL),
+      databaseUrl: process.env.DATABASE_URL ? stage35aEarlyMask(process.env.DATABASE_URL) : "",
+      adminOrderTokenSet: Boolean(process.env.ADMIN_ORDER_TOKEN),
+      adminOrderToken: process.env.ADMIN_ORDER_TOKEN ? stage35aEarlyMask(process.env.ADMIN_ORDER_TOKEN) : "",
+      publicSiteUrlSet: Boolean(process.env.PUBLIC_SITE_URL),
+      publicSiteUrl: process.env.PUBLIC_SITE_URL || "",
+      nodeEnv: process.env.NODE_ENV || "",
+      adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || "",
+      mpesaMode: process.env.MPESA_ENV || process.env.MPESA_MODE || "",
+      mpesaProductionConfirmed: String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true"
+    };
+
+    if (!environment.databaseUrlSet) blockers.push("DATABASE_URL is missing.");
+    if (!environment.adminOrderTokenSet) blockers.push("ADMIN_ORDER_TOKEN is missing.");
+    if (environment.adminRegistrationEnabled === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before launch.");
+    if (environment.nodeEnv && environment.nodeEnv !== "production") warnings.push("NODE_ENV is not production locally; Render should use production.");
+    if (!environment.publicSiteUrlSet) warnings.push("PUBLIC_SITE_URL is not set.");
+    if (environment.publicSiteUrl && !/mysokoyetu\.co\.ke/i.test(environment.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use mysokoyetu.co.ke.");
+
+    const mpesaMode = String(environment.mpesaMode || "").toLowerCase();
+    if ((mpesaMode === "production" || mpesaMode === "live") && !environment.mpesaProductionConfirmed) {
+      blockers.push("M-PESA production/live mode appears requested but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+    }
+
+    const fileChecks = stage35aEarlyFileChecks(rootDir);
+    fileChecks.forEach((x) => {
+      if (!x.exists && x.critical) blockers.push("Critical file missing: " + x.file);
+      else if (!x.exists) warnings.push("Optional/readiness file missing: " + x.file);
+    });
+
+    const routeChecks = stage35aEarlyRouteChecks(serverText);
+    routeChecks.forEach((x) => {
+      if (!x.found && x.critical) blockers.push("Critical route/code pattern missing: " + x.pattern);
+      else if (!x.found) warnings.push("Optional route/code pattern missing: " + x.pattern);
+    });
+
+    const routeOrder = stage35aEarlyRouteOrder(serverText);
+    if (routeOrder.routesAfterFallback && routeOrder.routesAfterFallback.length) {
+      blockers.push("Routes appear after final 404 fallback and may be unreachable: " + routeOrder.routesAfterFallback.join(", "));
+    }
+
+    const databaseCounts = await stage35aEarlyDatabaseCounts();
+    const productCount = databaseCounts.find((x) => x.model === "product");
+    const orderCount = databaseCounts.find((x) => x.model === "order");
+    const paymentCount = databaseCounts.find((x) => x.model === "payment");
+
+    if (productCount && productCount.available && productCount.count === 0) blockers.push("Product table has zero products.");
+    if (productCount && !productCount.available) warnings.push("Could not verify Product model count.");
+    if (orderCount && !orderCount.available) warnings.push("Could not verify Order model count.");
+    if (paymentCount && !paymentCount.available) warnings.push("Could not verify Payment model count.");
+
+    const secretScan = stage35aEarlySecretScan(rootDir);
+    secretScan.forEach((x) => {
+      if (x.matches.length) blockers.push("Potential secret exposure in public file " + x.file + ": " + x.matches.join(", "));
+    });
+
+    const launchDecision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "CONTROLLED_TESTING_OK";
+
+    return res.json({
+      message: "Core readiness audit completed.",
+      generatedAt: new Date().toISOString(),
+      launchDecision,
+      blockers,
+      warnings,
+      environment,
+      fileChecks,
+      routeChecks,
+      databaseCounts,
+      routeOrder,
+      secretScan,
+      repair: "Stage 35A early API order repair active",
+      note: "Read-only audit. No application data or settings were changed."
+    });
+  } catch (error) {
+    console.error("Core readiness audit error:", error);
+    return res.status(500).json({ message: "Could not run core readiness audit.", details: error.message });
+  }
+});
+
+
+
 /* ================================
    SokoYetu Stage 19: Security Hardening
    Adds HTTP security headers, safer cookies, rate limits, request limits and role-abuse protection.
@@ -4002,271 +4220,6 @@ app.post("/api/admin/products/:id/update", async (req, res) => {
 // SokoYetu Stage 35A: Core Production Readiness Audit API
 // Read-only hard audit. Core readiness audit does not change orders, products, payments or schema.
 // ================================
-function requireStage35aCoreReadinessToken(req, res) {
-  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
-  const providedToken = req.headers["x-admin-order-token"];
-
-  if (!configuredToken) {
-    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
-    return false;
-  }
-
-  if (!providedToken || providedToken !== configuredToken) {
-    res.status(403).json({ message: "Invalid admin order token." });
-    return false;
-  }
-
-  return true;
-}
-
-function stage35aMask(value) {
-  const text = String(value || "");
-  if (!text) return "";
-  if (text.length <= 10) return text.slice(0, 2) + "...hidden";
-  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
-}
-
-function stage35aRouteOrder(serverText) {
-  const fallbackIndex = serverText.indexOf("SokoYetu Stage 32E: Friendly Error Pages");
-  const stage35aIndex = serverText.indexOf("SokoYetu Stage 35A: Core Production Readiness Audit API");
-  const routePattern = /app\.(get|post|put|patch|delete|use)\s*\(\s*["']([^"']+)/g;
-  const routesAfterFallback = [];
-
-  if (fallbackIndex !== -1) {
-    let match;
-    while ((match = routePattern.exec(serverText))) {
-      if (match.index > fallbackIndex) routesAfterFallback.push(match[1].toUpperCase() + " " + match[2]);
-    }
-  }
-
-  return {
-    fallbackFound: fallbackIndex !== -1,
-    stage35aBeforeFallback: fallbackIndex === -1 || (stage35aIndex !== -1 && stage35aIndex < fallbackIndex),
-    routesAfterFallback,
-  };
-}
-
-async function stage35aSafeCount(modelName) {
-  try {
-    if (!global.prisma && typeof prisma === "undefined") {
-      return { model: modelName, available: false, count: null, note: "Prisma client variable not available." };
-    }
-
-    const client = typeof prisma !== "undefined" ? prisma : global.prisma;
-    const model = client && client[modelName];
-
-    if (!model || typeof model.count !== "function") {
-      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
-    }
-
-    const count = await model.count();
-    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
-  } catch (error) {
-    return { model: modelName, available: false, count: null, note: error.message };
-  }
-}
-
-async function stage35aDatabaseCounts() {
-  const models = ["user", "seller", "product", "order", "payment", "supportTicket", "supportRequest"];
-  const results = [];
-  for (const model of models) results.push(await stage35aSafeCount(model));
-  return results;
-}
-
-function stage35aFileChecks(rootDir) {
-  const files = [
-    { file: "index.html", critical: true, note: "Homepage must open." },
-    { file: "categories.html", critical: true, note: "Public product browsing must work." },
-    { file: "product-detail.html", critical: true, note: "Product detail flow must work." },
-    { file: "checkout.html", critical: true, note: "Checkout page must exist." },
-    { file: "track-order.html", critical: true, note: "Buyer order tracking must exist." },
-    { file: "admin-orders.html", critical: true, note: "Admin order monitoring must exist." },
-    { file: "admin-control.html", critical: true, note: "Central admin control must exist." },
-    { file: "admin-mpesa-readiness.html", critical: true, note: "M-PESA readiness must be reviewable." },
-    { file: "admin-mpesa-reconciliation.html", critical: true, note: "Payment/order reconciliation must exist." },
-    { file: "admin-mpesa-evidence.html", critical: false, note: "Evidence export is useful for launch audit." },
-    { file: "404.html", critical: false, note: "Friendly fallback should exist." },
-    { file: "500.html", critical: false, note: "Friendly server error page should exist." },
-    { file: "robots.txt", critical: false, note: "Admin/noindex controls should exist." },
-    { file: "sitemap.xml", critical: false, note: "Public SEO sitemap should exist." },
-  ];
-
-  return files.map((item) => ({
-    ...item,
-    exists: require("fs").existsSync(require("path").join(rootDir, item.file)),
-  }));
-}
-
-function stage35aRouteChecks(serverText) {
-  const routes = [
-    { pattern: "/api/health", critical: true, note: "API health check must exist." },
-    { pattern: "/api/products", critical: true, note: "Public product API must exist." },
-    { pattern: "/api/admin", critical: true, note: "Protected admin routes should exist." },
-    { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should be present." },
-    { pattern: "mpesa", critical: true, note: "M-PESA code or readiness references should exist." },
-    { pattern: "checkout", critical: true, note: "Checkout route/page references should exist." },
-    { pattern: "SokoYetu Stage 32E: Friendly Error Pages", critical: false, note: "Final friendly fallback should exist." },
-    { pattern: "SokoYetu Stage 33C: M-PESA Payment Reconciliation API", critical: false, note: "Payment reconciliation endpoint should exist if Stage 33C was applied." },
-    { pattern: "SokoYetu Stage 33D: M-PESA Evidence Export API", critical: false, note: "Evidence export endpoint should exist if Stage 33D was applied." },
-  ];
-
-  const lower = serverText.toLowerCase();
-
-  return routes.map((route) => ({
-    ...route,
-    found: route.pattern === "mpesa" || route.pattern === "checkout"
-      ? lower.includes(route.pattern.toLowerCase())
-      : serverText.includes(route.pattern),
-  }));
-}
-
-function stage35aSecretScan(rootDir) {
-  const files = ["index.html", "app.js", "public-nav.js", "checkout.html", "categories.html", "product-detail.html"];
-  const risky = ["MPESA_CONSUMER_SECRET", "MPESA_PASSKEY", "DATABASE_URL", "ADMIN_ORDER_TOKEN=", "sokoyetu_admin_orders_2026_change_this_secret"];
-  const results = [];
-
-  for (const file of files) {
-    const filePath = require("path").join(rootDir, file);
-    if (!require("fs").existsSync(filePath)) continue;
-    const text = require("fs").readFileSync(filePath, "utf8");
-    const matches = risky.filter((item) => text.includes(item));
-    results.push({ file, matches });
-  }
-
-  return results;
-}
-
-app.get("/api/admin/core-readiness/audit", async (req, res) => {
-  try {
-    if (!requireStage35aCoreReadinessToken(req, res)) return;
-
-    const fs = require("fs");
-    const pathModule = require("path");
-    const rootDir = __dirname;
-    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
-
-    const blockers = [];
-    const warnings = [];
-
-    const env = {
-      databaseUrlSet: Boolean(process.env.DATABASE_URL),
-      databaseUrl: process.env.DATABASE_URL ? stage35aMask(process.env.DATABASE_URL) : "",
-      adminOrderTokenSet: Boolean(process.env.ADMIN_ORDER_TOKEN),
-      adminOrderToken: process.env.ADMIN_ORDER_TOKEN ? stage35aMask(process.env.ADMIN_ORDER_TOKEN) : "",
-      publicSiteUrlSet: Boolean(process.env.PUBLIC_SITE_URL),
-      publicSiteUrl: process.env.PUBLIC_SITE_URL || "",
-      nodeEnv: process.env.NODE_ENV || "",
-      adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || "",
-      mpesaMode: process.env.MPESA_ENV || process.env.MPESA_MODE || "",
-      mpesaProductionConfirmed: String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true",
-    };
-
-    if (!env.databaseUrlSet) blockers.push("DATABASE_URL is missing.");
-    if (!env.adminOrderTokenSet) blockers.push("ADMIN_ORDER_TOKEN is missing.");
-    if (env.adminRegistrationEnabled === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before launch.");
-    if (env.nodeEnv && env.nodeEnv !== "production") warnings.push("NODE_ENV is not production. This can be acceptable locally but should be production on Render.");
-    if (!env.publicSiteUrlSet) warnings.push("PUBLIC_SITE_URL is not set.");
-    if (env.publicSiteUrl && !/mysokoyetu\.co\.ke/i.test(env.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use mysokoyetu.co.ke.");
-
-    const mpesaMode = String(env.mpesaMode || "").toLowerCase();
-    if ((mpesaMode === "production" || mpesaMode === "live") && !env.mpesaProductionConfirmed) {
-      blockers.push("M-PESA production/live mode appears requested but MPESA_PRODUCTION_CONFIRMED=true is not set.");
-    }
-
-    const fileChecks = stage35aFileChecks(rootDir);
-    for (const file of fileChecks) {
-      if (!file.exists && file.critical) blockers.push("Critical file missing: " + file.file);
-      else if (!file.exists) warnings.push("Optional/readiness file missing: " + file.file);
-    }
-
-    const routeChecks = stage35aRouteChecks(serverText);
-    for (const route of routeChecks) {
-      if (!route.found && route.critical) blockers.push("Critical route/code pattern missing: " + route.pattern);
-      else if (!route.found) warnings.push("Optional route/code pattern missing: " + route.pattern);
-    }
-
-    const routeOrder = stage35aRouteOrder(serverText);
-    if (routeOrder.routesAfterFallback && routeOrder.routesAfterFallback.length) {
-      blockers.push("One or more routes appear after the final 404 fallback and may be unreachable: " + routeOrder.routesAfterFallback.join(", "));
-    }
-
-    const databaseCounts = await stage35aDatabaseCounts();
-    const productCount = databaseCounts.find((item) => item.model === "product");
-    const orderCount = databaseCounts.find((item) => item.model === "order");
-    const paymentCount = databaseCounts.find((item) => item.model === "payment");
-
-    if (productCount && productCount.available && productCount.count === 0) blockers.push("Product table has zero products. Buyers will not have products to purchase.");
-    if (productCount && !productCount.available) warnings.push("Could not verify Product model count.");
-    if (orderCount && !orderCount.available) warnings.push("Could not verify Order model count.");
-    if (paymentCount && !paymentCount.available) warnings.push("Could not verify Payment model count.");
-
-    const secretScan = stage35aSecretScan(rootDir);
-    for (const item of secretScan) {
-      if (item.matches.length) blockers.push("Potential secret exposure in public file " + item.file + ": " + item.matches.join(", "));
-    }
-
-    const launchDecision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "CONTROLLED_TESTING_OK";
-
-    return res.json({
-      message: "Core readiness audit completed.",
-      generatedAt: new Date().toISOString(),
-      launchDecision,
-      blockers,
-      warnings,
-      environment: env,
-      fileChecks,
-      routeChecks,
-      databaseCounts,
-      routeOrder,
-      secretScan,
-      note: "Read-only audit. No application data or settings were changed.",
-    });
-  } catch (error) {
-    console.error("Core readiness audit error:", error);
-    return res.status(500).json({
-      message: "Could not run core readiness audit.",
-      details: error.message,
-    });
-  }
-});
-
-// SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
-// Final fallback only. Does not affect existing defined routes.
-// ================================
-app.use((req, res, next) => {
-  if (res.headersSent) return next();
-
-  if (req.path && req.path.startsWith("/api/")) {
-    return res.status(404).json({
-      message: "API endpoint not found.",
-      path: req.path,
-    });
-  }
-
-  if (req.method !== "GET" && req.method !== "HEAD") {
-    return res.status(404).send("Not found");
-  }
-
-  return res.status(404).sendFile(require("path").join(__dirname, "404.html"));
-});
-
-app.use((err, req, res, next) => {
-  console.error("Unhandled server error:", err);
-
-  if (res.headersSent) return next(err);
-
-  if (req.path && req.path.startsWith("/api/")) {
-    return res.status(500).json({
-      message: "Internal server error.",
-    });
-  }
-
-  return res.status(500).sendFile(require("path").join(__dirname, "500.html"));
-});
-
-
-
-// ================================
 // SokoYetu Stage 33A: Production M-PESA Readiness API
 // Read-only. Does not switch M-PESA environment or alter checkout logic.
 // ================================
@@ -4956,6 +4909,270 @@ app.get("/api/admin/mpesa-evidence/export", async (req, res) => {
       details: error.message,
     });
   }
+});
+
+
+// ================================
+function requireStage35aCoreReadinessToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage35aMask(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 10) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+function stage35aRouteOrder(serverText) {
+  const fallbackIndex = serverText.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
+  const stage35aIndex = serverText.indexOf("SokoYetu Stage 35A: Core Production Readiness Audit API");
+  const routePattern = /app\.(get|post|put|patch|delete|use)\s*\(\s*["']([^"']+)/g;
+  const routesAfterFallback = [];
+
+  if (fallbackIndex !== -1) {
+    let match;
+    while ((match = routePattern.exec(serverText))) {
+      if (match.index > fallbackIndex) routesAfterFallback.push(match[1].toUpperCase() + " " + match[2]);
+    }
+  }
+
+  return {
+    fallbackFound: fallbackIndex !== -1,
+    stage35aBeforeFallback: fallbackIndex === -1 || (stage35aIndex !== -1 && stage35aIndex < fallbackIndex),
+    routesAfterFallback,
+  };
+}
+
+async function stage35aSafeCount(modelName) {
+  try {
+    if (!global.prisma && typeof prisma === "undefined") {
+      return { model: modelName, available: false, count: null, note: "Prisma client variable not available." };
+    }
+
+    const client = typeof prisma !== "undefined" ? prisma : global.prisma;
+    const model = client && client[modelName];
+
+    if (!model || typeof model.count !== "function") {
+      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
+    }
+
+    const count = await model.count();
+    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
+  } catch (error) {
+    return { model: modelName, available: false, count: null, note: error.message };
+  }
+}
+
+async function stage35aDatabaseCounts() {
+  const models = ["user", "seller", "product", "order", "payment", "supportTicket", "supportRequest"];
+  const results = [];
+  for (const model of models) results.push(await stage35aSafeCount(model));
+  return results;
+}
+
+function stage35aFileChecks(rootDir) {
+  const files = [
+    { file: "index.html", critical: true, note: "Homepage must open." },
+    { file: "categories.html", critical: true, note: "Public product browsing must work." },
+    { file: "product-detail.html", critical: true, note: "Product detail flow must work." },
+    { file: "checkout.html", critical: true, note: "Checkout page must exist." },
+    { file: "track-order.html", critical: true, note: "Buyer order tracking must exist." },
+    { file: "admin-orders.html", critical: true, note: "Admin order monitoring must exist." },
+    { file: "admin-control.html", critical: true, note: "Central admin control must exist." },
+    { file: "admin-mpesa-readiness.html", critical: true, note: "M-PESA readiness must be reviewable." },
+    { file: "admin-mpesa-reconciliation.html", critical: true, note: "Payment/order reconciliation must exist." },
+    { file: "admin-mpesa-evidence.html", critical: false, note: "Evidence export is useful for launch audit." },
+    { file: "404.html", critical: false, note: "Friendly fallback should exist." },
+    { file: "500.html", critical: false, note: "Friendly server error page should exist." },
+    { file: "robots.txt", critical: false, note: "Admin/noindex controls should exist." },
+    { file: "sitemap.xml", critical: false, note: "Public SEO sitemap should exist." },
+  ];
+
+  return files.map((item) => ({
+    ...item,
+    exists: require("fs").existsSync(require("path").join(rootDir, item.file)),
+  }));
+}
+
+function stage35aRouteChecks(serverText) {
+  const routes = [
+    { pattern: "/api/health", critical: true, note: "API health check must exist." },
+    { pattern: "/api/products", critical: true, note: "Public product API must exist." },
+    { pattern: "/api/admin", critical: true, note: "Protected admin routes should exist." },
+    { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should be present." },
+    { pattern: "mpesa", critical: true, note: "M-PESA code or readiness references should exist." },
+    { pattern: "checkout", critical: true, note: "Checkout route/page references should exist." },
+    { pattern: "SokoYetu Stage 32E: Friendly Error Pages", critical: false, note: "Final friendly fallback should exist." },
+    { pattern: "SokoYetu Stage 33C: M-PESA Payment Reconciliation API", critical: false, note: "Payment reconciliation endpoint should exist if Stage 33C was applied." },
+    { pattern: "SokoYetu Stage 33D: M-PESA Evidence Export API", critical: false, note: "Evidence export endpoint should exist if Stage 33D was applied." },
+  ];
+
+  const lower = serverText.toLowerCase();
+
+  return routes.map((route) => ({
+    ...route,
+    found: route.pattern === "mpesa" || route.pattern === "checkout"
+      ? lower.includes(route.pattern.toLowerCase())
+      : serverText.includes(route.pattern),
+  }));
+}
+
+function stage35aSecretScan(rootDir) {
+  const files = ["index.html", "app.js", "public-nav.js", "checkout.html", "categories.html", "product-detail.html"];
+  const risky = ["MPESA_CONSUMER_SECRET", "MPESA_PASSKEY", "DATABASE_URL", "ADMIN_ORDER_TOKEN=", "sokoyetu_admin_orders_2026_change_this_secret"];
+  const results = [];
+
+  for (const file of files) {
+    const filePath = require("path").join(rootDir, file);
+    if (!require("fs").existsSync(filePath)) continue;
+    const text = require("fs").readFileSync(filePath, "utf8");
+    const matches = risky.filter((item) => text.includes(item));
+    results.push({ file, matches });
+  }
+
+  return results;
+}
+
+app.get("/api/admin/core-readiness/audit", async (req, res) => {
+  try {
+    if (!requireStage35aCoreReadinessToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const rootDir = __dirname;
+    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
+
+    const blockers = [];
+    const warnings = [];
+
+    const env = {
+      databaseUrlSet: Boolean(process.env.DATABASE_URL),
+      databaseUrl: process.env.DATABASE_URL ? stage35aMask(process.env.DATABASE_URL) : "",
+      adminOrderTokenSet: Boolean(process.env.ADMIN_ORDER_TOKEN),
+      adminOrderToken: process.env.ADMIN_ORDER_TOKEN ? stage35aMask(process.env.ADMIN_ORDER_TOKEN) : "",
+      publicSiteUrlSet: Boolean(process.env.PUBLIC_SITE_URL),
+      publicSiteUrl: process.env.PUBLIC_SITE_URL || "",
+      nodeEnv: process.env.NODE_ENV || "",
+      adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || "",
+      mpesaMode: process.env.MPESA_ENV || process.env.MPESA_MODE || "",
+      mpesaProductionConfirmed: String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true",
+    };
+
+    if (!env.databaseUrlSet) blockers.push("DATABASE_URL is missing.");
+    if (!env.adminOrderTokenSet) blockers.push("ADMIN_ORDER_TOKEN is missing.");
+    if (env.adminRegistrationEnabled === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before launch.");
+    if (env.nodeEnv && env.nodeEnv !== "production") warnings.push("NODE_ENV is not production. This can be acceptable locally but should be production on Render.");
+    if (!env.publicSiteUrlSet) warnings.push("PUBLIC_SITE_URL is not set.");
+    if (env.publicSiteUrl && !/mysokoyetu\.co\.ke/i.test(env.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use mysokoyetu.co.ke.");
+
+    const mpesaMode = String(env.mpesaMode || "").toLowerCase();
+    if ((mpesaMode === "production" || mpesaMode === "live") && !env.mpesaProductionConfirmed) {
+      blockers.push("M-PESA production/live mode appears requested but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+    }
+
+    const fileChecks = stage35aFileChecks(rootDir);
+    for (const file of fileChecks) {
+      if (!file.exists && file.critical) blockers.push("Critical file missing: " + file.file);
+      else if (!file.exists) warnings.push("Optional/readiness file missing: " + file.file);
+    }
+
+    const routeChecks = stage35aRouteChecks(serverText);
+    for (const route of routeChecks) {
+      if (!route.found && route.critical) blockers.push("Critical route/code pattern missing: " + route.pattern);
+      else if (!route.found) warnings.push("Optional route/code pattern missing: " + route.pattern);
+    }
+
+    const routeOrder = stage35aRouteOrder(serverText);
+    if (routeOrder.routesAfterFallback && routeOrder.routesAfterFallback.length) {
+      blockers.push("One or more routes appear after the final 404 fallback and may be unreachable: " + routeOrder.routesAfterFallback.join(", "));
+    }
+
+    const databaseCounts = await stage35aDatabaseCounts();
+    const productCount = databaseCounts.find((item) => item.model === "product");
+    const orderCount = databaseCounts.find((item) => item.model === "order");
+    const paymentCount = databaseCounts.find((item) => item.model === "payment");
+
+    if (productCount && productCount.available && productCount.count === 0) blockers.push("Product table has zero products. Buyers will not have products to purchase.");
+    if (productCount && !productCount.available) warnings.push("Could not verify Product model count.");
+    if (orderCount && !orderCount.available) warnings.push("Could not verify Order model count.");
+    if (paymentCount && !paymentCount.available) warnings.push("Could not verify Payment model count.");
+
+    const secretScan = stage35aSecretScan(rootDir);
+    for (const item of secretScan) {
+      if (item.matches.length) blockers.push("Potential secret exposure in public file " + item.file + ": " + item.matches.join(", "));
+    }
+
+    const launchDecision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "CONTROLLED_TESTING_OK";
+
+    return res.json({
+      message: "Core readiness audit completed.",
+      generatedAt: new Date().toISOString(),
+      launchDecision,
+      blockers,
+      warnings,
+      environment: env,
+      fileChecks,
+      routeChecks,
+      databaseCounts,
+      routeOrder,
+      secretScan,
+      note: "Read-only audit. No application data or settings were changed.",
+    });
+  } catch (error) {
+    console.error("Core readiness audit error:", error);
+    return res.status(500).json({
+      message: "Could not run core readiness audit.",
+      details: error.message,
+    });
+  }
+});
+
+// SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
+// Final fallback only. Does not affect existing defined routes.
+// ================================
+app.use((req, res, next) => {
+  if (res.headersSent) return next();
+
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(404).json({
+      message: "API endpoint not found.",
+      path: req.path,
+    });
+  }
+
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return res.status(404).send("Not found");
+  }
+
+  return res.status(404).sendFile(require("path").join(__dirname, "404.html"));
+});
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled server error:", err);
+
+  if (res.headersSent) return next(err);
+
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(500).json({
+      message: "Internal server error.",
+    });
+  }
+
+  return res.status(500).sendFile(require("path").join(__dirname, "500.html"));
 });
 
 app.listen(PORT, "0.0.0.0", () => {

@@ -64,7 +64,8 @@
     "stage34a:check": "node scripts/check-stage34a-launch-war-room.js",
     "stage34b:check": "node scripts/check-stage34b-trust-center.js",
     "stage34c:check": "node scripts/check-stage34c-how-it-works.js",
-    "stage35a:check": "node scripts/check-stage35a-core-readiness.js"
+    "stage35a:check": "node scripts/check-stage35a-core-readiness.js",
+    "stage35b:check": "node scripts/check-stage35b-route-order.js"
   },
   "keywords": [
     "sokoyetu",
