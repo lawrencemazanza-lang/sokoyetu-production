@@ -205,7 +205,7 @@ function renderProducts(){
         '<span class="price">' + money(p.price) + '</span>' +
         '<span class="' + stockClass + '">' + esc(stockText) + '</span>' +
         '<span class="muted">' + esc((p.description || "").slice(0, 100)) + (p.description && p.description.length > 100 ? "..." : "") + '</span>' +
-        '<a class="linkbtn" href="/product-detail.html?id=' + encodeURIComponent(p.id) + '">Product details</a>' +
+        '<a class="linkbtn" href="/product-detail.html?id=' + encodeURIComponent(p.id) + '">Product details</a>' + '<a class="linkbtn" href="/seller-store.html?sellerId=' + encodeURIComponent(p.sellerId || "unknown") + '">Seller store</a>' +
       '</div>' +
     '</article>';
   }).join("");

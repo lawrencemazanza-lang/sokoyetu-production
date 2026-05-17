@@ -137,7 +137,7 @@ function renderProduct(product){
         '<div class="grid">' +
           '<div class="smallcard"><b>Product ID</b><br><span class="muted">#' + esc(product.id) + '</span></div>' +
           '<div class="smallcard"><b>Category</b><br><span class="muted">' + esc(product.category || "Other") + '</span></div>' +
-          '<div class="smallcard"><b>Seller</b><br><span class="muted">Seller #' + esc(product.sellerId || "-") + '</span></div>' +
+          '<div class="smallcard"><b>Seller</b><br><a class="linkbtn" href="/seller-store.html?sellerId=' + encodeURIComponent(product.sellerId || "unknown") + '">View seller store</a></div>' +
         '</div>' +
         '<div class="actions">' +
           '<a class="linkbtn" href="/#products">Open shop</a>' +
