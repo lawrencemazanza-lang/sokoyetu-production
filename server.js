@@ -4364,6 +4364,179 @@ app.get("/api/admin/mpesa-env-guard", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 33C: M-PESA Payment Reconciliation API
+// Read-only payment/order evidence review. Does not change payment logic.
+// ================================
+function requireMpesaReconciliationToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage33cStatusCategory(value) {
+  const text = String(value || "").toLowerCase();
+
+  if (text.includes("paid") || text.includes("success") || text.includes("complete") || text.includes("confirmed")) {
+    return "paid";
+  }
+
+  if (text.includes("fail") || text.includes("cancel") || text.includes("error") || text.includes("decline")) {
+    return "failed";
+  }
+
+  return "pending";
+}
+
+function stage33cFlagRecord(payment, order) {
+  const flags = [];
+  const paymentAmount = Number(payment?.amount || 0);
+  const orderAmount = Number(order?.totalAmount || 0);
+  const paymentStatus = String(payment?.status || "");
+  const orderPaymentStatus = String(order?.paymentStatus || "");
+  const paymentCategory = stage33cStatusCategory(paymentStatus);
+  const orderPaymentCategory = stage33cStatusCategory(orderPaymentStatus);
+  const hasReceipt = Boolean(payment?.mpesaReceipt);
+
+  if (!order) {
+    flags.push({ label: "Payment has no linked order", severity: "bad" });
+  }
+
+  if (order && paymentAmount && orderAmount && Math.round(paymentAmount) !== Math.round(orderAmount)) {
+    flags.push({ label: "amountMismatch", severity: "bad" });
+  }
+
+  if (paymentCategory === "paid" && !hasReceipt) {
+    flags.push({ label: "missingReceipt", severity: "bad" });
+  }
+
+  if (paymentCategory === "pending") {
+    flags.push({ label: "Pending payment", severity: "warn" });
+  }
+
+  if (paymentCategory === "failed") {
+    flags.push({ label: "Failed/cancelled payment", severity: "bad" });
+  }
+
+  if (order && paymentCategory === "paid" && orderPaymentCategory !== "paid") {
+    flags.push({ label: "Order payment status not marked paid", severity: "warn" });
+  }
+
+  if (order && paymentCategory !== "paid" && orderPaymentCategory === "paid") {
+    flags.push({ label: "Order says paid but payment record is not paid", severity: "bad" });
+  }
+
+  return flags;
+}
+
+app.get("/api/admin/mpesa-reconciliation", async (req, res) => {
+  try {
+    if (!requireMpesaReconciliationToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const where = {};
+
+    if (q) {
+      const numeric = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numeric) && numeric > 0 ? [{ id: numeric }, { orderId: numeric }] : []),
+        { phone: { contains: q, mode: "insensitive" } },
+        { status: { contains: q, mode: "insensitive" } },
+        { mpesaReceipt: { contains: q, mode: "insensitive" } },
+        { checkoutRequestId: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const payments = await prisma.payment.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 200,
+      include: {
+        order: {
+          select: {
+            id: true,
+            totalAmount: true,
+            paymentStatus: true,
+            orderStatus: true,
+            phone: true,
+            deliveryAddress: true,
+            createdAt: true,
+            user: { select: { id: true, email: true, name: true, phone: true } },
+          },
+        },
+      },
+    });
+
+    let records = payments.map((payment) => {
+      const order = payment.order || null;
+      const flags = stage33cFlagRecord(payment, order);
+      const paymentStatusCategory = stage33cStatusCategory(payment.status);
+
+      return {
+        paymentId: payment.id,
+        orderId: payment.orderId || order?.id || null,
+        paymentAmount: payment.amount || 0,
+        orderAmount: order?.totalAmount || 0,
+        paymentStatus: payment.status || "",
+        paymentStatusCategory,
+        orderPaymentStatus: order?.paymentStatus || "",
+        orderStatus: order?.orderStatus || "",
+        phone: payment.phone || order?.phone || order?.user?.phone || "",
+        customerEmail: order?.user?.email || "",
+        mpesaReceipt: payment.mpesaReceipt || "",
+        checkoutRequestId: payment.checkoutRequestId || "",
+        createdAt: payment.createdAt,
+        flags,
+      };
+    });
+
+    if (filter === "issues") records = records.filter((r) => r.flags.length > 0);
+    if (filter === "pending") records = records.filter((r) => r.paymentStatusCategory === "pending");
+    if (filter === "paid") records = records.filter((r) => r.paymentStatusCategory === "paid");
+    if (filter === "missing-receipt") records = records.filter((r) => r.flags.some((f) => f.label === "missingReceipt"));
+    if (filter === "amount-mismatch") records = records.filter((r) => r.flags.some((f) => f.label === "amountMismatch"));
+
+    const summary = {
+      totalRecords: records.length,
+      issueRecords: records.filter((r) => r.flags.length > 0).length,
+      paidRecords: records.filter((r) => r.paymentStatusCategory === "paid").length,
+      pendingRecords: records.filter((r) => r.paymentStatusCategory === "pending").length,
+      failedRecords: records.filter((r) => r.paymentStatusCategory === "failed").length,
+      missingReceipt: records.filter((r) => r.flags.some((f) => f.label === "missingReceipt")).length,
+      amountMismatch: records.filter((r) => r.flags.some((f) => f.label === "amountMismatch")).length,
+    };
+
+    return res.json({
+      message: "M-PESA reconciliation loaded.",
+      generatedAt: new Date().toISOString(),
+      summary,
+      records,
+      note: "Read-only reconciliation. No order or payment records were changed.",
+    });
+  } catch (error) {
+    console.error("M-PESA reconciliation error:", error);
+    return res.status(500).json({
+      message: "Could not load M-PESA reconciliation.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);

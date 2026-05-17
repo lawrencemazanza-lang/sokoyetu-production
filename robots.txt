@@ -22,3 +22,5 @@ Disallow: /admin-accessibility-audit.html
 Disallow: /admin-mpesa-readiness.html
 
 Disallow: /admin-mpesa-env-guard.html
+
+Disallow: /admin-mpesa-reconciliation.html
