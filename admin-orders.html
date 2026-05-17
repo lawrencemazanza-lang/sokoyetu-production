@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Admin Orders</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:70px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .orders{display:grid;gap:14px}
+    .order{border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;background:#fff}
+    .orderTop{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .orderBody{padding:14px;display:grid;gap:12px}
+    .title{font-weight:900}
+    .muted{color:#64748b;font-size:13px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:800px){.orderTop{grid-template-columns:1fr}table{font-size:12px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Admin Orders</h1>
+    <p>Track customer orders, payments, delivery status and admin notes during soft launch.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Admin access and filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Order status filter</label>
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="PENDING_PAYMENT">Pending Payment</option>
+            <option value="PAID">Paid</option>
+            <option value="PROCESSING">Processing</option>
+            <option value="READY_FOR_DELIVERY">Ready for Delivery</option>
+            <option value="OUT_FOR_DELIVERY">Out for Delivery</option>
+            <option value="DELIVERED">Delivered</option>
+            <option value="FAILED_PAYMENT">Failed Payment</option>
+            <option value="CANCELLED">Cancelled</option>
+            <option value="REFUND_REQUESTED">Refund Requested</option>
+            <option value="REFUNDED">Refunded</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Order ID, phone, customer email">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load orders</button>
+        <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+      </div>
+      <div class="note">Use this page for soft-launch order operations. Do not fulfil unpaid or failed-payment orders.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Orders</div>
+    <div class="body">
+      <div id="summary" class="note">No orders loaded yet.</div>
+      <div id="orders" class="orders"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let orderList = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function statusClass(status){
+  const s = String(status || "").toUpperCase();
+  if (s.includes("FAILED") || s.includes("CANCELLED")) return "pill bad";
+  if (s.includes("PENDING") || s.includes("REFUND_REQUESTED")) return "pill warn";
+  return "pill";
+}
+async function api(url, options={}){
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {"Content-Type": "application/json", "x-admin-order-token": token(), ...(options.headers || {})},
+    ...options
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || "Request failed.");
+  return data;
+}
+function buildUrl(){
+  const params = new URLSearchParams();
+  const status = document.getElementById("statusFilter").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (status) params.set("status", status);
+  if (q) params.set("q", q);
+  return "/api/admin/orders/ops" + (params.toString() ? "?" + params.toString() : "");
+}
+async function loadOrders(){
+  if (!token()) { msg('<div class="err">Admin order token is required.</div>'); return; }
+  msg('<div class="note">Loading orders...</div>');
+  try {
+    const data = await api(buildUrl());
+    orderList = data.orders || [];
+    renderOrders();
+    msg('<div class="ok">Orders loaded successfully.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load orders.") + '</div>');
+  }
+}
+function renderOrders(){
+  const wrap = document.getElementById("orders");
+  const summary = document.getElementById("summary");
+  if (!orderList.length) {
+    summary.textContent = "No orders found for this filter.";
+    wrap.innerHTML = "";
+    return;
+  }
+  const totalValue = orderList.reduce((sum, order) => sum + Number(order.totalAmount || 0), 0);
+  summary.innerHTML = '<b>' + orderList.length + '</b> orders loaded. Total listed value: <b>' + money(totalValue) + '</b>.';
+
+  wrap.innerHTML = orderList.map(order => {
+    const items = (order.items || []).map(item => {
+      const product = item.product || {};
+      return '<tr><td>' + esc(product.name || ("Product #" + item.productId)) + '</td><td>' + esc(item.quantity) + '</td><td>' + money(item.price) + '</td><td>' + money(Number(item.price || 0) * Number(item.quantity || 0)) + '</td></tr>';
+    }).join("");
+    const tracking = (order.tracking || []).map(t => {
+      const date = t.createdAt ? new Date(t.createdAt).toLocaleString() : "";
+      return '<div class="muted">• ' + esc(t.status) + ' — ' + esc(t.note || "") + ' <small>(' + esc(date) + ')</small></div>';
+    }).join("") || '<div class="muted">No tracking notes yet.</div>';
+    const payment = order.payment || {};
+    return '<article class="order">' +
+      '<div class="orderTop"><div><div class="title">Order #' + order.id + ' · ' + esc(order.user?.email || "Customer") + '</div><div class="muted">Phone: ' + esc(order.phone || payment.phone || "-") + ' · Created: ' + esc(order.createdAt ? new Date(order.createdAt).toLocaleString() : "-") + '</div></div><div><span class="' + statusClass(order.orderStatus) + '">' + esc(order.orderStatus) + '</span><span class="' + statusClass(order.paymentStatus) + '">' + esc(order.paymentStatus) + '</span></div></div>' +
+      '<div class="orderBody">' +
+        '<div class="grid"><div><b>Total</b><br>' + money(order.totalAmount) + '</div><div><b>Delivery Fee</b><br>' + money(order.deliveryFee) + '</div><div><b>Payment</b><br>' + esc(payment.status || order.paymentStatus || "-") + '</div><div><b>M-PESA Receipt</b><br>' + esc(payment.mpesaReceipt || "-") + '</div></div>' +
+        '<div><b>Delivery Address</b><br><span class="muted">' + esc(order.deliveryAddress || "-") + '</span></div>' +
+        '<div><b>Checkout Request ID</b><br><span class="muted">' + esc(payment.checkoutRequestId || "-") + '</span></div>' +
+        '<div><b>Items</b><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>' + items + '</tbody></table></div>' +
+        '<div><b>Tracking notes</b>' + tracking + '</div>' +
+        '<div class="grid"><div><label>New order status</label><select id="status-' + order.id + '"><option value="PENDING_PAYMENT">Pending Payment</option><option value="PAID">Paid</option><option value="PROCESSING">Processing</option><option value="READY_FOR_DELIVERY">Ready for Delivery</option><option value="OUT_FOR_DELIVERY">Out for Delivery</option><option value="DELIVERED">Delivered</option><option value="FAILED_PAYMENT">Failed Payment</option><option value="CANCELLED">Cancelled</option><option value="REFUND_REQUESTED">Refund Requested</option><option value="REFUNDED">Refunded</option></select></div><div><label>Admin note</label><textarea id="note-' + order.id + '" placeholder="Example: Seller confirmed stock and delivery scheduled."></textarea></div></div>' +
+        '<div class="actions"><button type="button" onclick="updateOrderStatus(' + order.id + ')">Update status</button></div>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+
+  orderList.forEach(order => {
+    const select = document.getElementById("status-" + order.id);
+    if (select) select.value = order.orderStatus || "PENDING_PAYMENT";
+  });
+}
+async function updateOrderStatus(orderId){
+  const status = document.getElementById("status-" + orderId).value;
+  const note = document.getElementById("note-" + orderId).value.trim();
+  if (!status) { msg('<div class="err">Select an order status.</div>'); return; }
+  try {
+    msg('<div class="note">Updating order #' + orderId + '...</div>');
+    await api("/api/admin/orders/" + orderId + "/status", { method: "POST", body: JSON.stringify({ orderStatus: status, note }) });
+    msg('<div class="ok">Order #' + orderId + ' updated.</div>');
+    await loadOrders();
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not update order.") + '</div>');
+  }
+}
+document.getElementById("loadBtn").onclick = loadOrders;
+document.getElementById("refreshBtn").onclick = loadOrders;
+window.updateOrderStatus = updateOrderStatus;
+</script>
+</body>
+</html>

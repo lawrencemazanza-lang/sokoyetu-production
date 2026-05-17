@@ -2358,6 +2358,109 @@ app.post("/api/live/sessions/:id/token", requireAuth, async (req, res) => {
 app.use((req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
+
+
+// ================================
+// SokoYetu Stage 26B: Admin Order Tracking API
+// Protected by ADMIN_ORDER_TOKEN. Does not change checkout or M-PESA STK Push flow.
+// ================================
+function requireAdminOrderToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/orders/ops", async (req, res) => {
+  try {
+    if (!requireAdminOrderToken(req, res)) return;
+
+    const status = String(req.query.status || "").trim();
+    const q = String(req.query.q || "").trim();
+    const where = {};
+
+    if (status) where.orderStatus = status;
+
+    if (q) {
+      const numericId = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numericId) && numericId > 0 ? [{ id: numericId }] : []),
+        { phone: { contains: q, mode: "insensitive" } },
+        { deliveryAddress: { contains: q, mode: "insensitive" } },
+        { user: { email: { contains: q, mode: "insensitive" } } },
+      ];
+    }
+
+    const orders = await prisma.order.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 100,
+      include: {
+        user: { select: { id: true, name: true, email: true, phone: true, role: true } },
+        items: { include: { product: { select: { id: true, name: true, category: true, price: true, imageUrl: true } } } },
+        payment: true,
+        tracking: { orderBy: { createdAt: "desc" }, take: 10 },
+      },
+    });
+
+    return res.json({ message: "Admin orders loaded.", count: orders.length, orders });
+  } catch (error) {
+    console.error("Admin orders load error:", error);
+    return res.status(500).json({ message: "Could not load admin orders.", details: error.message });
+  }
+});
+
+app.post("/api/admin/orders/:id/status", async (req, res) => {
+  try {
+    if (!requireAdminOrderToken(req, res)) return;
+
+    const id = Number(req.params.id);
+    const orderStatus = String(req.body?.orderStatus || "").trim();
+    const note = String(req.body?.note || "").trim();
+
+    const allowedStatuses = new Set([
+      "PENDING_PAYMENT", "PAID", "PROCESSING", "READY_FOR_DELIVERY",
+      "OUT_FOR_DELIVERY", "DELIVERED", "FAILED_PAYMENT", "CANCELLED",
+      "REFUND_REQUESTED", "REFUNDED",
+    ]);
+
+    if (!id || id <= 0) return res.status(400).json({ message: "Valid order ID is required." });
+    if (!allowedStatuses.has(orderStatus)) return res.status(400).json({ message: "Invalid order status." });
+
+    const order = await prisma.order.update({
+      where: { id },
+      data: { orderStatus },
+      include: {
+        payment: true,
+        user: { select: { id: true, name: true, email: true, phone: true, role: true } },
+      },
+    });
+
+    await prisma.deliveryTracking.create({
+      data: {
+        orderId: id,
+        status: orderStatus,
+        note: note || `Admin updated order status to ${orderStatus}.`,
+      },
+    });
+
+    return res.json({ message: "Order status updated.", order });
+  } catch (error) {
+    console.error("Admin order status update error:", error);
+    return res.status(500).json({ message: "Could not update order status.", details: error.message });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
