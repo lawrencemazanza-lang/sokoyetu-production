@@ -2461,6 +2461,177 @@ app.post("/api/admin/orders/:id/status", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 27B: Seller Verification Dashboard API
+// Protected by SELLER_VERIFICATION_TOKEN. No schema migration in this safe version.
+// ================================
+function requireSellerVerificationToken(req, res) {
+  const configuredToken = process.env.SELLER_VERIFICATION_TOKEN;
+  const providedToken = req.headers["x-seller-verification-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "SELLER_VERIFICATION_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid seller verification token." });
+    return false;
+  }
+
+  return true;
+}
+
+function assessSellerRisk(seller, products) {
+  const issues = [];
+
+  if (!seller.phone) issues.push("Missing phone");
+  if (!seller.email) issues.push("Missing email");
+  if (!seller.name) issues.push("Missing name");
+  if (!products.length) issues.push("No products listed");
+
+  const missingImages = products.filter((p) => !p.imageUrl).length;
+  if (missingImages > 0) issues.push(`${missingImages} product(s) missing image`);
+
+  const lowStock = products.filter((p) => Number(p.stock || 0) <= 0).length;
+  if (lowStock > 0) issues.push(`${lowStock} product(s) out of stock`);
+
+  const suspicious = products.filter((p) => /fake|replica|copy|counterfeit/i.test(String(p.name || "") + " " + String(p.description || ""))).length;
+  if (suspicious > 0) issues.push(`${suspicious} product(s) need counterfeit wording review`);
+
+  let riskLevel = "LOW";
+  if (issues.some((issue) => /counterfeit|fake|replica|copy|Missing phone|Missing email/i.test(issue))) riskLevel = "HIGH";
+  else if (issues.length) riskLevel = "MEDIUM";
+
+  return { riskLevel, issues };
+}
+
+app.get("/api/admin/sellers/verification", async (req, res) => {
+  try {
+    if (!requireSellerVerificationToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const where = {
+      role: "seller",
+    };
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const sellers = await prisma.user.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        products: {
+          orderBy: { id: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            price: true,
+            stock: true,
+            imageUrl: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    let prepared = sellers.map((seller) => {
+      const products = seller.products || [];
+      const risk = assessSellerRisk(seller, products);
+
+      return {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone: seller.phone,
+        role: seller.role,
+        productCount: products.length,
+        products,
+        riskLevel: risk.riskLevel,
+        issues: risk.issues,
+      };
+    });
+
+    if (filter === "with-products") prepared = prepared.filter((seller) => seller.productCount > 0);
+    if (filter === "without-products") prepared = prepared.filter((seller) => seller.productCount === 0);
+    if (filter === "risk-review") prepared = prepared.filter((seller) => seller.riskLevel !== "LOW");
+
+    return res.json({
+      message: "Seller verification records loaded.",
+      count: prepared.length,
+      sellers: prepared,
+    });
+  } catch (error) {
+    console.error("Seller verification load error:", error);
+    return res.status(500).json({
+      message: "Could not load seller verification records.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/sellers/:id/verification-note", async (req, res) => {
+  try {
+    if (!requireSellerVerificationToken(req, res)) return;
+
+    const id = Number(req.params.id);
+    const decision = String(req.body?.decision || "").trim();
+    const note = String(req.body?.note || "").trim();
+
+    const allowed = new Set(["APPROVED", "MORE_INFO", "HOLD", "SUSPEND", "REJECT"]);
+
+    if (!id || id <= 0) return res.status(400).json({ message: "Valid seller ID is required." });
+    if (!allowed.has(decision)) return res.status(400).json({ message: "Invalid seller decision." });
+
+    const seller = await prisma.user.findFirst({
+      where: { id, role: "seller" },
+      select: { id: true, name: true, email: true, phone: true, role: true },
+    });
+
+    if (!seller) return res.status(404).json({ message: "Seller was not found." });
+
+    console.log("Seller verification decision:", {
+      sellerId: seller.id,
+      sellerEmail: seller.email,
+      decision,
+      note,
+      recordedAt: new Date().toISOString(),
+    });
+
+    return res.json({
+      message: "Seller verification decision recorded in server logs.",
+      seller,
+      decision,
+      note,
+    });
+  } catch (error) {
+    console.error("Seller verification note error:", error);
+    return res.status(500).json({
+      message: "Could not record seller verification decision.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
