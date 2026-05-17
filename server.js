@@ -3318,6 +3318,234 @@ app.get("/api/admin/system-health", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 29B: Admin Backup Export API
+// Protected by ADMIN_ORDER_TOKEN. Exports operational data without exposing secrets.
+// ================================
+function requireAdminBackupToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage29bFlatten(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function stage29bCsv(rows) {
+  if (!rows.length) return "message\nNo records found\n";
+  const headers = Object.keys(rows[0]);
+  const escape = (value) => {
+    const text = stage29bFlatten(value);
+    if (/[",\n\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+    return text;
+  };
+  return headers.join(",") + "\n" + rows.map((row) => headers.map((h) => escape(row[h])).join(",")).join("\n");
+}
+
+function stage29bSendExport(req, res, type, rows) {
+  const format = String(req.query.format || "csv").toLowerCase() === "json" ? "json" : "csv";
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filename = `sokoyetu-${type}-export-${stamp}.${format}`;
+
+  res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+
+  if (format === "json") {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.send(JSON.stringify(rows, null, 2));
+  }
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  return res.send(stage29bCsv(rows));
+}
+
+app.get("/api/admin/export/:type", async (req, res) => {
+  try {
+    if (!requireAdminBackupToken(req, res)) return;
+
+    const type = String(req.params.type || "").toLowerCase();
+    let rows = [];
+
+    if (type === "products") {
+      const products = await prisma.product.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          category: true,
+          price: true,
+          oldPrice: true,
+          stock: true,
+          imageUrl: true,
+          sellerId: true,
+          createdAt: true,
+        },
+      });
+
+      rows = products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        oldPrice: p.oldPrice,
+        stock: p.stock,
+        sellerId: p.sellerId,
+        hasImage: Boolean(p.imageUrl),
+        imageUrl: p.imageUrl,
+        createdAt: p.createdAt,
+        description: p.description,
+      }));
+    } else if (type === "orders") {
+      const orders = await prisma.order.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          payment: true,
+          items: true,
+        },
+      });
+
+      rows = orders.map((o) => ({
+        id: o.id,
+        userId: o.userId,
+        customerName: o.user?.name,
+        customerEmail: o.user?.email,
+        customerPhone: o.phone || o.user?.phone || o.payment?.phone,
+        totalAmount: o.totalAmount,
+        deliveryFee: o.deliveryFee,
+        paymentMethod: o.paymentMethod,
+        paymentStatus: o.paymentStatus,
+        orderStatus: o.orderStatus,
+        deliveryAddress: o.deliveryAddress,
+        itemCount: o.items?.length || 0,
+        checkoutRequestId: o.payment?.checkoutRequestId,
+        mpesaReceipt: o.payment?.mpesaReceipt,
+        createdAt: o.createdAt,
+      }));
+    } else if (type === "payments") {
+      const payments = await prisma.payment.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: { order: { select: { id: true, orderStatus: true, paymentStatus: true, totalAmount: true } } },
+      });
+
+      rows = payments.map((p) => ({
+        id: p.id,
+        orderId: p.orderId,
+        provider: p.provider,
+        phone: p.phone,
+        amount: p.amount,
+        status: p.status,
+        checkoutRequestId: p.checkoutRequestId,
+        mpesaReceipt: p.mpesaReceipt,
+        orderStatus: p.order?.orderStatus,
+        orderPaymentStatus: p.order?.paymentStatus,
+        createdAt: p.createdAt,
+      }));
+    } else if (type === "sellers") {
+      const sellers = await prisma.user.findMany({
+        where: { role: "seller" },
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: { products: { select: { id: true, name: true, stock: true, price: true } } },
+      });
+
+      rows = sellers.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: s.phone,
+        role: s.role,
+        productCount: s.products?.length || 0,
+        totalStock: (s.products || []).reduce((sum, p) => sum + Number(p.stock || 0), 0),
+        createdAt: s.createdAt,
+      }));
+    } else if (type === "support") {
+      const supportNotes = await prisma.deliveryTracking.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: {
+          order: {
+            select: {
+              id: true,
+              phone: true,
+              orderStatus: true,
+              paymentStatus: true,
+              totalAmount: true,
+              user: { select: { email: true, name: true } },
+            },
+          },
+        },
+      });
+
+      rows = supportNotes.map((t) => ({
+        id: t.id,
+        orderId: t.orderId,
+        status: t.status,
+        note: t.note,
+        orderStatus: t.order?.orderStatus,
+        paymentStatus: t.order?.paymentStatus,
+        orderPhone: t.order?.phone,
+        customerEmail: t.order?.user?.email,
+        createdAt: t.createdAt,
+      }));
+    } else if (type === "users") {
+      const users = await prisma.user.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          createdAt: true,
+        },
+      });
+
+      rows = users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role,
+        createdAt: u.createdAt,
+      }));
+    } else {
+      return res.status(400).json({
+        message: "Invalid export type. Use products, orders, payments, sellers, support, or users.",
+      });
+    }
+
+    return stage29bSendExport(req, res, type, rows);
+  } catch (error) {
+    console.error("Admin export error:", error);
+    return res.status(500).json({
+      message: "Could not export data.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
