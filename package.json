@@ -59,7 +59,8 @@
     "mpesa:env-map": "node scripts/mpesa-env-map.js",
     "stage33c:check": "node scripts/check-stage33c-mpesa-reconciliation.js",
     "stage33d:check": "node scripts/check-stage33d-mpesa-evidence.js",
-    "stage33e:check": "node scripts/check-stage33e-mpesa-live-test.js"
+    "stage33e:check": "node scripts/check-stage33e-mpesa-live-test.js",
+    "stage33f:check": "node scripts/check-stage33f-mpesa-incident.js"
   },
   "keywords": [
     "sokoyetu",
