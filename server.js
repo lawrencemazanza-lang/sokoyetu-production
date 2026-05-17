@@ -3993,6 +3993,43 @@ app.post("/api/admin/products/:id/update", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
+// Final fallback only. Does not affect existing defined routes.
+// ================================
+app.use((req, res, next) => {
+  if (res.headersSent) return next();
+
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(404).json({
+      message: "API endpoint not found.",
+      path: req.path,
+    });
+  }
+
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return res.status(404).send("Not found");
+  }
+
+  return res.status(404).sendFile(require("path").join(__dirname, "404.html"));
+});
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled server error:", err);
+
+  if (res.headersSent) return next(err);
+
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(500).json({
+      message: "Internal server error.",
+    });
+  }
+
+  return res.status(500).sendFile(require("path").join(__dirname, "500.html"));
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
