@@ -16,6 +16,213 @@ require("dotenv").config();
 const app = express();
 
 // ================================
+// SokoYetu Stage 35C Repair: Early Buyer Journey Smoke Test API
+// Registered early so /api/admin/buyer-journey-smoke is not swallowed by static/index fallback.
+// Read-only. Does not create orders, trigger M-PESA, edit products, modify payments or change schema.
+// ================================
+function requireStage35cEarlySmokeToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+async function stage35cEarlySafeCount(modelName) {
+  try {
+    let client = null;
+    try { if (typeof prisma !== "undefined") client = prisma; } catch (_) {}
+    if (!client && global.prisma) client = global.prisma;
+
+    if (!client || !client[modelName] || typeof client[modelName].count !== "function") {
+      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
+    }
+
+    const count = await client[modelName].count();
+    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
+  } catch (error) {
+    return { model: modelName, available: false, count: null, note: error.message };
+  }
+}
+
+async function stage35cEarlyBuyerSmokeCounts() {
+  const models = ["product", "order", "payment", "user"];
+  const out = [];
+  for (const model of models) out.push(await stage35cEarlySafeCount(model));
+  return out;
+}
+
+function stage35cEarlyFileChecks(rootDir) {
+  const files = [
+    { file: "index.html", critical: true, note: "Homepage must open." },
+    { file: "categories.html", critical: true, note: "Product browsing page must open." },
+    { file: "product-detail.html", critical: true, note: "Product detail page must open." },
+    { file: "checkout.html", critical: true, note: "Checkout page must open." },
+    { file: "track-order.html", critical: true, note: "Order tracking page must open." },
+    { file: "support-request.html", critical: false, note: "Support request page should exist." },
+    { file: "admin-orders.html", critical: true, note: "Admin order monitoring must open." },
+    { file: "admin-mpesa-reconciliation.html", critical: true, note: "Payment reconciliation must open." }
+  ];
+
+  return files.map((item) => ({
+    ...item,
+    exists: require("fs").existsSync(require("path").join(rootDir, item.file))
+  }));
+}
+
+function stage35cEarlyRouteChecks(serverText) {
+  const checks = [
+    { pattern: "/api/health", critical: true, note: "Health endpoint must exist." },
+    { pattern: "/api/products", critical: true, note: "Products API must exist." },
+    { pattern: "/api/products/:id", critical: true, note: "Product detail API must exist." },
+    { pattern: "/api/cart", critical: true, note: "Cart API pattern should exist." },
+    { pattern: "/api/orders", critical: true, note: "Order API pattern should exist." },
+    { pattern: "/api/orders/track", critical: true, note: "Order tracking route should exist." },
+    { pattern: "/api/payments/:orderId/status", critical: true, note: "Payment status route should exist." },
+    { pattern: "/api/admin/orders", critical: true, note: "Admin orders route should exist." },
+    { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should exist." }
+  ];
+
+  return checks.map((item) => ({ ...item, found: serverText.includes(item.pattern) }));
+}
+
+async function stage35cEarlySampleProduct() {
+  try {
+    let client = null;
+
+    try {
+      if (typeof prisma !== "undefined") client = prisma;
+    } catch (_) {}
+
+    if (!client && global.prisma) client = global.prisma;
+
+    if (!client || !client.product || typeof client.product.findFirst !== "function") {
+      return null;
+    }
+
+    let product = null;
+
+    try {
+      product = await client.product.findFirst({ orderBy: { id: "asc" } });
+    } catch (_) {
+      product = await client.product.findFirst();
+    }
+
+    if (!product) return null;
+
+    const name =
+      product.name ||
+      product.title ||
+      product.productName ||
+      product.label ||
+      ("Product " + product.id);
+
+    const price =
+      product.price ??
+      product.sellingPrice ??
+      product.unitPrice ??
+      product.amount ??
+      product.finalPrice ??
+      null;
+
+    const stock =
+      product.stock ??
+      product.quantity ??
+      product.availableStock ??
+      product.inventory ??
+      null;
+
+    const imageUrl =
+      product.imageUrl ||
+      product.image ||
+      product.photoUrl ||
+      product.thumbnail ||
+      product.productImage ||
+      "";
+
+    return {
+      id: product.id,
+      name,
+      title: product.title || product.name || name,
+      price,
+      stock,
+      imageUrl,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+app.get("/api/admin/buyer-journey-smoke", async (req, res) => {
+  try {
+    if (!requireStage35cEarlySmokeToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const rootDir = __dirname;
+    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
+
+    const blockers = [];
+    const warnings = [];
+    const fileChecks = stage35cEarlyFileChecks(rootDir);
+    const routeChecks = stage35cEarlyRouteChecks(serverText);
+
+    for (const item of fileChecks) {
+      if (!item.exists && item.critical) blockers.push("Critical buyer-flow file missing: " + item.file);
+      else if (!item.exists) warnings.push("Optional buyer-flow file missing: " + item.file);
+    }
+
+    for (const item of routeChecks) {
+      if (!item.found && item.critical) blockers.push("Critical buyer-flow route/code pattern missing: " + item.pattern);
+      else if (!item.found) warnings.push("Optional buyer-flow route/code pattern missing: " + item.pattern);
+    }
+
+    const counts = await stage35cEarlyBuyerSmokeCounts();
+    const productCount = counts.find((item) => item.model === "product");
+
+    if (!productCount || !productCount.available) blockers.push("Could not verify product count.");
+    else if (productCount.count === 0) blockers.push("Product table has zero products.");
+
+    const sampleProduct = await stage35cEarlySampleProduct();
+    if (!sampleProduct) blockers.push("No sample product could be selected.");
+
+    const mpesaMode = process.env.MPESA_ENV || process.env.MPESA_MODE || "";
+    if (!mpesaMode) warnings.push("M-PESA mode is not set; confirm expected checkout/payment behaviour manually.");
+
+    const decision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "READY_FOR_CONTROLLED_MANUAL_BUYER_TEST";
+
+    return res.json({
+      message: "Buyer journey smoke test loaded.",
+      generatedAt: new Date().toISOString(),
+      decision,
+      blockers,
+      warnings,
+      mpesaMode,
+      fileChecks,
+      routeChecks,
+      counts,
+      sampleProduct,
+      repair: "Stage 35C early API order repair active",
+      note: "Read-only API. No order or payment was created by this smoke check."
+    });
+  } catch (error) {
+    console.error("Buyer journey smoke test error:", error);
+    return res.status(500).json({ message: "Could not run buyer journey smoke test.", details: error.message });
+  }
+});
+
+
+
+// ================================
 // SokoYetu Stage 35A Repair: Early Core Readiness Audit API
 // Registered early so /api/admin/core-readiness/audit is not swallowed by static/index fallback.
 // Read-only. Does not change orders, products, payments, sellers, support tickets or schema.
@@ -5138,6 +5345,211 @@ app.get("/api/admin/core-readiness/audit", async (req, res) => {
       message: "Could not run core readiness audit.",
       details: error.message,
     });
+  }
+});
+
+
+
+// ================================
+// SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API
+// Read-only buyer journey smoke test. Does not create orders or trigger payments.
+// ================================
+function requireStage35cBuyerSmokeToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+async function stage35cSafeCount(modelName) {
+  try {
+    let client = null;
+    try { if (typeof prisma !== "undefined") client = prisma; } catch (_) {}
+    if (!client && global.prisma) client = global.prisma;
+
+    if (!client || !client[modelName] || typeof client[modelName].count !== "function") {
+      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
+    }
+
+    const count = await client[modelName].count();
+    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
+  } catch (error) {
+    return { model: modelName, available: false, count: null, note: error.message };
+  }
+}
+
+async function stage35cBuyerSmokeCounts() {
+  const models = ["product", "order", "payment", "user"];
+  const out = [];
+  for (const model of models) out.push(await stage35cSafeCount(model));
+  return out;
+}
+
+function stage35cFileChecks(rootDir) {
+  const files = [
+    { file: "index.html", critical: true, note: "Homepage must open." },
+    { file: "categories.html", critical: true, note: "Product browsing page must open." },
+    { file: "product-detail.html", critical: true, note: "Product detail page must open." },
+    { file: "checkout.html", critical: true, note: "Checkout page must open." },
+    { file: "track-order.html", critical: true, note: "Order tracking page must open." },
+    { file: "support-request.html", critical: false, note: "Support request page should exist." },
+    { file: "admin-orders.html", critical: true, note: "Admin order monitoring must open." },
+    { file: "admin-mpesa-reconciliation.html", critical: true, note: "Payment reconciliation must open." },
+  ];
+
+  return files.map((item) => ({
+    ...item,
+    exists: require("fs").existsSync(require("path").join(rootDir, item.file)),
+  }));
+}
+
+function stage35cRouteChecks(serverText) {
+  const checks = [
+    { pattern: "/api/health", critical: true, note: "Health endpoint must exist." },
+    { pattern: "/api/products", critical: true, note: "Products API must exist." },
+    { pattern: "/api/products/:id", critical: true, note: "Product detail API must exist." },
+    { pattern: "/api/cart", critical: true, note: "Cart API pattern should exist." },
+    { pattern: "/api/orders", critical: true, note: "Order API pattern should exist." },
+    { pattern: "/api/orders/track", critical: true, note: "Order tracking route should exist." },
+    { pattern: "/api/payments/:orderId/status", critical: true, note: "Payment status route should exist." },
+    { pattern: "/api/admin/orders", critical: true, note: "Admin orders route should exist." },
+    { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should exist." },
+  ];
+
+  return checks.map((item) => ({ ...item, found: serverText.includes(item.pattern) }));
+}
+
+async function stage35cSampleProduct() {
+  try {
+    let client = null;
+
+    try {
+      if (typeof prisma !== "undefined") client = prisma;
+    } catch (_) {}
+
+    if (!client && global.prisma) client = global.prisma;
+
+    if (!client || !client.product || typeof client.product.findFirst !== "function") {
+      return null;
+    }
+
+    let product = null;
+
+    try {
+      product = await client.product.findFirst({ orderBy: { id: "asc" } });
+    } catch (_) {
+      product = await client.product.findFirst();
+    }
+
+    if (!product) return null;
+
+    const name =
+      product.name ||
+      product.title ||
+      product.productName ||
+      product.label ||
+      ("Product " + product.id);
+
+    const price =
+      product.price ??
+      product.sellingPrice ??
+      product.unitPrice ??
+      product.amount ??
+      product.finalPrice ??
+      null;
+
+    const stock =
+      product.stock ??
+      product.quantity ??
+      product.availableStock ??
+      product.inventory ??
+      null;
+
+    const imageUrl =
+      product.imageUrl ||
+      product.image ||
+      product.photoUrl ||
+      product.thumbnail ||
+      product.productImage ||
+      "";
+
+    return {
+      id: product.id,
+      name,
+      title: product.title || product.name || name,
+      price,
+      stock,
+      imageUrl,
+    };
+  } catch (_) {
+    return null;
+  }
+}
+
+app.get("/api/admin/buyer-journey-smoke", async (req, res) => {
+  try {
+    if (!requireStage35cBuyerSmokeToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const rootDir = __dirname;
+    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
+
+    const blockers = [];
+    const warnings = [];
+    const fileChecks = stage35cFileChecks(rootDir);
+    const routeChecks = stage35cRouteChecks(serverText);
+
+    for (const item of fileChecks) {
+      if (!item.exists && item.critical) blockers.push("Critical buyer-flow file missing: " + item.file);
+      else if (!item.exists) warnings.push("Optional buyer-flow file missing: " + item.file);
+    }
+
+    for (const item of routeChecks) {
+      if (!item.found && item.critical) blockers.push("Critical buyer-flow route/code pattern missing: " + item.pattern);
+      else if (!item.found) warnings.push("Optional buyer-flow route/code pattern missing: " + item.pattern);
+    }
+
+    const counts = await stage35cBuyerSmokeCounts();
+    const productCount = counts.find((item) => item.model === "product");
+
+    if (!productCount || !productCount.available) blockers.push("Could not verify product count.");
+    else if (productCount.count === 0) blockers.push("Product table has zero products.");
+
+    const sampleProduct = await stage35cSampleProduct();
+    if (!sampleProduct) blockers.push("No sample product could be selected.");
+
+    const mpesaMode = process.env.MPESA_ENV || process.env.MPESA_MODE || "";
+    if (!mpesaMode) warnings.push("M-PESA mode is not set; confirm expected checkout/payment behaviour manually.");
+
+    const decision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "READY_FOR_CONTROLLED_MANUAL_BUYER_TEST";
+
+    return res.json({
+      message: "Buyer journey smoke test loaded.",
+      generatedAt: new Date().toISOString(),
+      decision,
+      blockers,
+      warnings,
+      mpesaMode,
+      fileChecks,
+      routeChecks,
+      counts,
+      sampleProduct,
+      note: "Read-only API. No order or payment was created by this smoke check.",
+    });
+  } catch (error) {
+    console.error("Buyer journey smoke test error:", error);
+    return res.status(500).json({ message: "Could not run buyer journey smoke test.", details: error.message });
   }
 });
 

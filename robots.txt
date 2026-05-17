@@ -34,3 +34,5 @@ Disallow: /admin-mpesa-incident.html
 Disallow: /admin-launch-war-room.html
 
 Disallow: /admin-core-readiness.html
+
+Disallow: /admin-buyer-smoke-test.html
