@@ -26,3 +26,5 @@ Disallow: /admin-mpesa-env-guard.html
 Disallow: /admin-mpesa-reconciliation.html
 
 Disallow: /admin-mpesa-evidence.html
+
+Disallow: /admin-mpesa-live-test.html
