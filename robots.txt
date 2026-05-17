@@ -32,3 +32,5 @@ Disallow: /admin-mpesa-live-test.html
 Disallow: /admin-mpesa-incident.html
 
 Disallow: /admin-launch-war-room.html
+
+Disallow: /admin-core-readiness.html
