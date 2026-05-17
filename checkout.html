@@ -37,6 +37,7 @@
     .empty { border:1px dashed #86efac; background:#f0fdf4; color:#166534; border-radius:16px; padding:16px; font-weight:800; }
     @media(max-width:720px){ .row{grid-template-columns:54px 1fr;} .row img{width:54px;height:54px;} .price{grid-column:2;text-align:left;} }
   </style>
+  <link rel="stylesheet" href="/public-a11y.css">
 </head>
 <body>
   <header><div><h1>SokoYetu Secure Checkout</h1><p>Green M-PESA checkout · Real Daraja STK Push</p></div></header>
@@ -66,5 +67,6 @@
     form.addEventListener("submit",async e=>{e.preventDefault();const phone=document.getElementById("phone").value.trim(),deliveryAddress=document.getElementById("deliveryAddress").value.trim();if(!phone){message.innerHTML="<div class='msg err'>M-PESA phone number is required.</div>";return}if(!deliveryAddress){message.innerHTML="<div class='msg err'>Delivery address is required.</div>";return}try{payBtn.disabled=true;message.innerHTML="<div class='msg ok'>Creating order and sending M-PESA STK Push...</div>";const od=await fetchJson("/api/orders",{method:"POST",body:JSON.stringify({phone,deliveryAddress})});const order=od.order||od;if(!order.id)throw new Error("Order was created but no order ID was returned.");const sd=await fetchJson("/api/payments/mpesa/stk-push",{method:"POST",body:JSON.stringify({orderId:order.id,phone})});message.innerHTML="<div class='msg ok'><b>M-PESA STK Push sent.</b><br>Check the customer phone, enter the M-PESA PIN, then wait for payment confirmation."+(sd.checkoutRequestId?"<br><small>Checkout Request ID: "+esc(sd.checkoutRequestId)+"</small>":"")+"</div>"}catch(e){message.innerHTML="<div class='msg err'><b>Checkout could not continue.</b><br>"+esc(e.message||"Please check Daraja settings and try again.")+"</div>"}finally{payBtn.disabled=false}});
     loadCart();
   </script>
+  <script src="/public-a11y.js" defer></script>
 </body>
 </html>

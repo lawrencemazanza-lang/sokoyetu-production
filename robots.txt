@@ -16,3 +16,5 @@ Sitemap: https://www.mysokoyetu.co.ke/sitemap.xml
 Disallow: /admin-product-editor.html
 
 Disallow: /admin-public-audit.html
+
+Disallow: /admin-accessibility-audit.html
