@@ -28,7 +28,8 @@
     "stage21:check": "node scripts/check-stage21-golive.js",
     "golive:check": "node scripts/check-stage21-golive.js",
     "stage26a:check": "node scripts/check-stage26a-orders.js",
-    "stage26b:check": "node scripts/check-stage26b-admin-orders.js"
+    "stage26b:check": "node scripts/check-stage26b-admin-orders.js",
+    "stage27a:check": "node scripts/check-stage27a-sellers.js"
   },
   "keywords": [
     "sokoyetu",
