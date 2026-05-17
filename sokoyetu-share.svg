@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="980" cy="90" r="210" fill="rgba(255,255,255,0.10)"/>
+  <circle cx="170" cy="560" r="230" fill="rgba(255,255,255,0.08)"/>
+  <rect x="76" y="76" width="1048" height="478" rx="42" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
+  <text x="110" y="220" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="900" fill="#ffffff">SokoYetu</text>
+  <text x="112" y="304" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="#dcfce7">Kenyan marketplace for buyers and sellers</text>
+  <text x="112" y="384" font-family="Arial, Helvetica, sans-serif" font-size="34" fill="#ffffff">Browse categories · Seller stores · Checkout · Track orders · Support</text>
+  <rect x="112" y="430" width="250" height="66" rx="33" fill="#ffffff"/>
+  <text x="237" y="474" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="#064e3b">mysokoyetu.co.ke</text>
+  <text x="980" y="470" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="900" fill="#ffffff">SY</text>
+</svg>

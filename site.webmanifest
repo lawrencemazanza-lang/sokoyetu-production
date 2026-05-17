@@ -1,0 +1,60 @@
+{
+  "name": "SokoYetu Marketplace",
+  "short_name": "SokoYetu",
+  "description": "SokoYetu marketplace for Kenyan buyers and sellers.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#f8fafc",
+  "theme_color": "#16a34a",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/sokoyetu-icon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Browse Categories",
+      "short_name": "Categories",
+      "description": "Browse SokoYetu products by category.",
+      "url": "/categories.html",
+      "icons": [
+        {
+          "src": "/sokoyetu-icon.svg",
+          "sizes": "512x512",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Track Order",
+      "short_name": "Track",
+      "description": "Track a SokoYetu order.",
+      "url": "/track-order.html",
+      "icons": [
+        {
+          "src": "/sokoyetu-icon.svg",
+          "sizes": "512x512",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "Help Center",
+      "short_name": "Help",
+      "description": "Open the SokoYetu Help Center.",
+      "url": "/help-center.html",
+      "icons": [
+        {
+          "src": "/sokoyetu-icon.svg",
+          "sizes": "512x512",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
+  ]
+}
