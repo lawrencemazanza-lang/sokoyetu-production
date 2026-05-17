@@ -30,7 +30,9 @@
     "stage26a:check": "node scripts/check-stage26a-orders.js",
     "stage26b:check": "node scripts/check-stage26b-admin-orders.js",
     "stage27a:check": "node scripts/check-stage27a-sellers.js",
-    "stage27b:check": "node scripts/check-stage27b-seller-dashboard.js"
+    "stage27b:check": "node scripts/check-stage27b-seller-dashboard.js",
+    "stage27c:check": "node scripts/check-stage27c-seller-verification.js",
+    "stage27c:prisma": "npx prisma generate && npx prisma db push"
   },
   "keywords": [
     "sokoyetu",

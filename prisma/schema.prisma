@@ -20,6 +20,7 @@ model User {
   orders       Order[]
   reviews      Review[]
   wishlists    Wishlist[]
+  sellerVerification SellerVerification?
 }
 
 model Product {
@@ -173,3 +174,18 @@ model LiveSession {
   createdAt   DateTime  @default(now())
   endedAt     DateTime?
 }
+
+model SellerVerification {
+  id         Int      @id @default(autoincrement())
+  sellerId   Int      @unique
+  status     String   @default("UNDER_REVIEW")
+  riskLevel  String   @default("LOW")
+  decision   String?
+  notes      String?
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  seller     User     @relation(fields: [sellerId], references: [id])
+}
+

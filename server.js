@@ -2632,6 +2632,201 @@ app.post("/api/admin/sellers/:id/verification-note", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 27C: Persistent Seller Verification API
+// Requires SellerVerification Prisma model and SELLER_VERIFICATION_TOKEN.
+// ================================
+function requirePersistentSellerVerificationToken(req, res) {
+  const configuredToken = process.env.SELLER_VERIFICATION_TOKEN;
+  const providedToken = req.headers["x-seller-verification-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "SELLER_VERIFICATION_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid seller verification token." });
+    return false;
+  }
+
+  return true;
+}
+
+function assessPersistentSellerRisk(seller, products) {
+  const issues = [];
+
+  if (!seller.phone) issues.push("Missing phone");
+  if (!seller.email) issues.push("Missing email");
+  if (!seller.name) issues.push("Missing name");
+  if (!products.length) issues.push("No products listed");
+
+  const missingImages = products.filter((p) => !p.imageUrl).length;
+  if (missingImages > 0) issues.push(`${missingImages} product(s) missing image`);
+
+  const lowStock = products.filter((p) => Number(p.stock || 0) <= 0).length;
+  if (lowStock > 0) issues.push(`${lowStock} product(s) out of stock`);
+
+  const suspicious = products.filter((p) => /fake|replica|copy|counterfeit/i.test(String(p.name || "") + " " + String(p.description || ""))).length;
+  if (suspicious > 0) issues.push(`${suspicious} product(s) need counterfeit wording review`);
+
+  let riskLevel = "LOW";
+  if (issues.some((issue) => /counterfeit|fake|replica|copy|Missing phone|Missing email/i.test(issue))) riskLevel = "HIGH";
+  else if (issues.length) riskLevel = "MEDIUM";
+
+  return { riskLevel, issues };
+}
+
+app.get("/api/admin/sellers/persistent-verification", async (req, res) => {
+  try {
+    if (!requirePersistentSellerVerificationToken(req, res)) return;
+
+    const status = String(req.query.status || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const where = { role: "seller" };
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const sellers = await prisma.user.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        sellerVerification: true,
+        products: {
+          orderBy: { id: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            price: true,
+            stock: true,
+            imageUrl: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    let prepared = sellers.map((seller) => {
+      const products = seller.products || [];
+      const risk = assessPersistentSellerRisk(seller, products);
+      const verification = seller.sellerVerification || {
+        status: "UNDER_REVIEW",
+        riskLevel: risk.riskLevel,
+        decision: null,
+        notes: null,
+        reviewedBy: null,
+      };
+
+      return {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone: seller.phone,
+        role: seller.role,
+        productCount: products.length,
+        products,
+        riskLevel: verification.riskLevel || risk.riskLevel,
+        issues: risk.issues,
+        verification,
+      };
+    });
+
+    if (status) {
+      prepared = prepared.filter((seller) => String(seller.verification?.status || "UNDER_REVIEW") === status);
+    }
+
+    return res.json({
+      message: "Persistent seller verification records loaded.",
+      count: prepared.length,
+      sellers: prepared,
+    });
+  } catch (error) {
+    console.error("Persistent seller verification load error:", error);
+    return res.status(500).json({
+      message: "Could not load persistent seller verification records.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/sellers/:id/persistent-verification", async (req, res) => {
+  try {
+    if (!requirePersistentSellerVerificationToken(req, res)) return;
+
+    const sellerId = Number(req.params.id);
+    const status = String(req.body?.status || "UNDER_REVIEW").trim();
+    const riskLevel = String(req.body?.riskLevel || "LOW").trim();
+    const decision = String(req.body?.decision || "").trim();
+    const notes = String(req.body?.notes || "").trim();
+    const reviewedBy = String(req.body?.reviewedBy || "").trim();
+
+    const allowedStatuses = new Set(["UNDER_REVIEW", "APPROVED", "MORE_INFO", "HOLD", "SUSPENDED", "REJECTED"]);
+    const allowedRisk = new Set(["LOW", "MEDIUM", "HIGH"]);
+    const allowedDecision = new Set(["APPROVE", "REQUEST_MORE_INFO", "HOLD", "SUSPEND", "REJECT", ""]);
+
+    if (!sellerId || sellerId <= 0) return res.status(400).json({ message: "Valid seller ID is required." });
+    if (!allowedStatuses.has(status)) return res.status(400).json({ message: "Invalid seller verification status." });
+    if (!allowedRisk.has(riskLevel)) return res.status(400).json({ message: "Invalid risk level." });
+    if (!allowedDecision.has(decision)) return res.status(400).json({ message: "Invalid seller decision." });
+
+    const seller = await prisma.user.findFirst({
+      where: { id: sellerId, role: "seller" },
+      select: { id: true, name: true, email: true, phone: true, role: true },
+    });
+
+    if (!seller) return res.status(404).json({ message: "Seller was not found." });
+
+    const verification = await prisma.sellerVerification.upsert({
+      where: { sellerId },
+      update: {
+        status,
+        riskLevel,
+        decision: decision || null,
+        notes: notes || null,
+        reviewedBy: reviewedBy || null,
+      },
+      create: {
+        sellerId,
+        status,
+        riskLevel,
+        decision: decision || null,
+        notes: notes || null,
+        reviewedBy: reviewedBy || null,
+      },
+    });
+
+    return res.json({
+      message: "Seller verification saved.",
+      seller,
+      verification,
+    });
+  } catch (error) {
+    console.error("Persistent seller verification save error:", error);
+    return res.status(500).json({
+      message: "Could not save seller verification.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
