@@ -44,7 +44,8 @@
     "stage30d:check": "node scripts/check-stage30d-help-center.js",
     "stage30e:check": "node scripts/check-stage30e-public-navigation.js",
     "stage31a:check": "node scripts/check-stage31a-catalog-audit.js",
-    "stage31b:check": "node scripts/check-stage31b-product-editor.js"
+    "stage31b:check": "node scripts/check-stage31b-product-editor.js",
+    "stage31c:check": "node scripts/check-stage31c-categories.js"
   },
   "keywords": [
     "sokoyetu",
