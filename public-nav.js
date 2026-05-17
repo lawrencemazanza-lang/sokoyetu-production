@@ -24,6 +24,7 @@
           link("/", "Home") +
           link("/categories.html", "Categories") +
           link("/seller-stores.html", "Seller Stores") +
+          link("/trust-center.html", "Trust Center") +
           link("/help-center.html", "Help Center") +
           link("/track-order.html", "Track Order") +
           link("/support-request.html", "Support", "sy-dark") +

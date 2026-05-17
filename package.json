@@ -61,7 +61,8 @@
     "stage33d:check": "node scripts/check-stage33d-mpesa-evidence.js",
     "stage33e:check": "node scripts/check-stage33e-mpesa-live-test.js",
     "stage33f:check": "node scripts/check-stage33f-mpesa-incident.js",
-    "stage34a:check": "node scripts/check-stage34a-launch-war-room.js"
+    "stage34a:check": "node scripts/check-stage34a-launch-war-room.js",
+    "stage34b:check": "node scripts/check-stage34b-trust-center.js"
   },
   "keywords": [
     "sokoyetu",
