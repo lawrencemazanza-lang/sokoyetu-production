@@ -37,7 +37,8 @@
     "stage28b:check": "node scripts/check-stage28b-support.js",
     "stage28c:check": "node scripts/check-stage28c-support-queue.js",
     "stage29a:check": "node scripts/check-stage29a-security-monitoring.js",
-    "stage29b:check": "node scripts/check-stage29b-backup-export.js"
+    "stage29b:check": "node scripts/check-stage29b-backup-export.js",
+    "stage30a:check": "node scripts/check-stage30a-soft-launch.js"
   },
   "keywords": [
     "sokoyetu",

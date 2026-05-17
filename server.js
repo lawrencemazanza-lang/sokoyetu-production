@@ -3546,6 +3546,126 @@ app.get("/api/admin/export/:type", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 30A: Soft Launch Readiness API
+// Protected by ADMIN_ORDER_TOKEN. Final go/no-go operational view.
+// ================================
+function requireSoftLaunchToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/launch-readiness", async (req, res) => {
+  try {
+    if (!requireSoftLaunchToken(req, res)) return;
+
+    const blockers = [];
+    const warnings = [];
+
+    let users = 0;
+    let sellers = 0;
+    let products = 0;
+    let orders = 0;
+    let payments = 0;
+    let supportNotes = 0;
+    let recentOrders = [];
+
+    try {
+      users = await prisma.user.count();
+      sellers = await prisma.user.count({ where: { role: "seller" } });
+      products = await prisma.product.count();
+      orders = await prisma.order.count();
+      payments = await prisma.payment.count();
+      supportNotes = await prisma.deliveryTracking.count();
+      recentOrders = await prisma.order.findMany({
+        orderBy: { id: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          totalAmount: true,
+          paymentStatus: true,
+          orderStatus: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      blockers.push("Database health check failed: " + error.message);
+    }
+
+    if (!process.env.PUBLIC_SITE_URL) blockers.push("PUBLIC_SITE_URL is not set.");
+    if (!process.env.DATABASE_URL) blockers.push("DATABASE_URL is not set.");
+    if (!process.env.JWT_SECRET) blockers.push("JWT_SECRET is not set.");
+    if (!process.env.ADMIN_ORDER_TOKEN) blockers.push("ADMIN_ORDER_TOKEN is not set.");
+    if (!process.env.SUPPORT_EMAIL) warnings.push("SUPPORT_EMAIL is not set.");
+    if (!process.env.BUSINESS_NAME) warnings.push("BUSINESS_NAME is not set.");
+    if (!process.env.MPESA_CALLBACK_URL) blockers.push("MPESA_CALLBACK_URL is not set.");
+    if (process.env.ADMIN_REGISTRATION_ENABLED === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Public admin registration should be locked.");
+    if (process.env.MPESA_ENV === "sandbox") warnings.push("M-PESA is still in sandbox mode. Continue only with controlled testing until production Daraja credentials are issued.");
+    if (process.env.UPLOAD_MODE !== "cloudinary") warnings.push("UPLOAD_MODE is not cloudinary. Confirm product image storage before wider launch.");
+    if (products === 0) warnings.push("No products found. Add launch products before inviting buyers.");
+    if (sellers === 0) warnings.push("No seller accounts found. Add or verify sellers before marketplace launch.");
+
+    const base = process.env.PUBLIC_SITE_URL || "https://www.mysokoyetu.co.ke";
+    const links = [
+      { label: "Public site", url: base },
+      { label: "Checkout", url: base + "/checkout.html" },
+      { label: "Track order", url: base + "/track-order.html" },
+      { label: "Support request", url: base + "/support-request.html" },
+      { label: "Admin orders", url: base + "/admin-orders.html" },
+      { label: "Admin support", url: base + "/admin-support.html" },
+      { label: "Admin backup", url: base + "/admin-backup.html" },
+      { label: "System health", url: base + "/admin-system-health.html" },
+    ];
+
+    return res.json({
+      message: "Launch readiness loaded.",
+      generatedAt: new Date().toISOString(),
+      readiness: blockers.length ? "NOT_READY" : "CONTROLLED_SOFT_LAUNCH_READY",
+      config: {
+        publicSiteUrl: process.env.PUBLIC_SITE_URL || null,
+        supportEmail: process.env.SUPPORT_EMAIL || null,
+        businessName: process.env.BUSINESS_NAME || null,
+        mpesaMode: process.env.MPESA_MODE || null,
+        mpesaEnv: process.env.MPESA_ENV || null,
+        uploadMode: process.env.UPLOAD_MODE || null,
+        adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || null,
+      },
+      metrics: {
+        users,
+        sellers,
+        products,
+        orders,
+        payments,
+        supportNotes,
+      },
+      recentOrders,
+      links,
+      blockers,
+      warnings,
+    });
+  } catch (error) {
+    console.error("Launch readiness error:", error);
+    return res.status(500).json({
+      message: "Could not load launch readiness.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
