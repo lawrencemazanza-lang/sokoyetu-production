@@ -12,3 +12,5 @@ Disallow: /order-operations.html
 Disallow: /seller-onboarding.html
 
 Sitemap: https://www.mysokoyetu.co.ke/sitemap.xml
+
+Disallow: /admin-product-editor.html

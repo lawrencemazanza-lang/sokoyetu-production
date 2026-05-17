@@ -3828,6 +3828,171 @@ app.get("/api/admin/catalog-audit", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 31B: Admin Product Editor API
+// Protected by ADMIN_ORDER_TOKEN. Updates only existing Product fields.
+// ================================
+function requireProductEditorToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/products/manage", async (req, res) => {
+  try {
+    if (!requireProductEditorToken(req, res)) return;
+
+    const q = String(req.query.q || "").trim();
+    const filter = String(req.query.filter || "").trim();
+
+    const where = {};
+
+    if (q) {
+      const numeric = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numeric) && numeric > 0 ? [{ id: numeric }, { sellerId: numeric }] : []),
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { category: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    if (filter === "missing-image") {
+      where.OR = [...(where.OR || []), { imageUrl: null }, { imageUrl: "" }];
+    }
+
+    if (filter === "out-of-stock") {
+      where.stock = { lte: 0 };
+    }
+
+    if (filter === "weak-description") {
+      where.OR = [
+        ...(where.OR || []),
+        { description: null },
+        { description: "" },
+      ];
+    }
+
+    if (filter === "missing-category") {
+      where.OR = [
+        ...(where.OR || []),
+        { category: null },
+        { category: "" },
+      ];
+    }
+
+    const products = await prisma.product.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        price: true,
+        oldPrice: true,
+        stock: true,
+        imageUrl: true,
+        sellerId: true,
+        createdAt: true,
+      },
+    });
+
+    return res.json({
+      message: "Products loaded for editing.",
+      count: products.length,
+      products,
+    });
+  } catch (error) {
+    console.error("Admin product manage load error:", error);
+    return res.status(500).json({
+      message: "Could not load products for editing.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/products/:id/update", async (req, res) => {
+  try {
+    if (!requireProductEditorToken(req, res)) return;
+
+    const id = Number(req.params.id);
+    const name = String(req.body?.name || "").trim();
+    const description = String(req.body?.description || "").trim();
+    const category = String(req.body?.category || "").trim();
+    const imageUrl = String(req.body?.imageUrl || "").trim();
+    const price = Number(req.body?.price);
+    const oldPrice = Number(req.body?.oldPrice || 0);
+    const stock = Number(req.body?.stock || 0);
+
+    if (!id || id <= 0) return res.status(400).json({ message: "Valid product ID is required." });
+    if (!name || name.length < 3) return res.status(400).json({ message: "Product name must be at least 3 characters." });
+    if (!Number.isFinite(price) || price <= 0) return res.status(400).json({ message: "Product price must be greater than 0." });
+    if (!Number.isFinite(oldPrice) || oldPrice < 0) return res.status(400).json({ message: "Old price cannot be negative." });
+    if (!Number.isFinite(stock) || stock < 0) return res.status(400).json({ message: "Stock cannot be negative." });
+
+    if (/fake|replica|copy|counterfeit/i.test(name + " " + description)) {
+      return res.status(400).json({
+        message: "Product contains suspicious counterfeit wording. Remove or review this wording before saving.",
+      });
+    }
+
+    if (imageUrl && !new RegExp("https?://", "i").test(imageUrl)) {
+      return res.status(400).json({ message: "Image URL must start with http:// or https://." });
+    }
+
+    const product = await prisma.product.update({
+      where: { id },
+      data: {
+        name,
+        description: description || null,
+        category: category || null,
+        price: Math.round(price),
+        oldPrice: Math.round(oldPrice),
+        stock: Math.round(stock),
+        imageUrl: imageUrl || null,
+      },
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        price: true,
+        oldPrice: true,
+        stock: true,
+        imageUrl: true,
+        sellerId: true,
+        createdAt: true,
+      },
+    });
+
+    return res.json({
+      message: "Product updated.",
+      product,
+    });
+  } catch (error) {
+    console.error("Admin product update error:", error);
+    return res.status(500).json({
+      message: "Could not update product.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
