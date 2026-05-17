@@ -30,3 +30,5 @@ Disallow: /admin-mpesa-evidence.html
 Disallow: /admin-mpesa-live-test.html
 
 Disallow: /admin-mpesa-incident.html
+
+Disallow: /admin-launch-war-room.html
