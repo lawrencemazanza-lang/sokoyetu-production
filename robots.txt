@@ -24,3 +24,5 @@ Disallow: /admin-mpesa-readiness.html
 Disallow: /admin-mpesa-env-guard.html
 
 Disallow: /admin-mpesa-reconciliation.html
+
+Disallow: /admin-mpesa-evidence.html

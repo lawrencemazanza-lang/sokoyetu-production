@@ -4537,6 +4537,193 @@ app.get("/api/admin/mpesa-reconciliation", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 33D: M-PESA Evidence Export API
+// Read-only evidence export. Does not update payments or orders.
+// ================================
+function requireMpesaEvidenceToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage33dStatusCategory(value) {
+  const text = String(value || "").toLowerCase();
+
+  if (text.includes("paid") || text.includes("success") || text.includes("complete") || text.includes("confirmed")) {
+    return "paid";
+  }
+
+  if (text.includes("fail") || text.includes("cancel") || text.includes("error") || text.includes("decline")) {
+    return "failed";
+  }
+
+  return "pending";
+}
+
+function stage33dFlags(payment, order) {
+  const flags = [];
+  const paymentAmount = Number(payment?.amount || 0);
+  const orderAmount = Number(order?.totalAmount || 0);
+  const paymentCategory = stage33dStatusCategory(payment?.status);
+  const orderPaymentCategory = stage33dStatusCategory(order?.paymentStatus);
+  const hasReceipt = Boolean(payment?.mpesaReceipt);
+
+  if (!order) flags.push("Payment has no linked order");
+  if (order && paymentAmount && orderAmount && Math.round(paymentAmount) !== Math.round(orderAmount)) flags.push("amountMismatch");
+  if (paymentCategory === "paid" && !hasReceipt) flags.push("missingReceipt");
+  if (paymentCategory === "pending") flags.push("Pending payment");
+  if (paymentCategory === "failed") flags.push("Failed/cancelled payment");
+  if (order && paymentCategory === "paid" && orderPaymentCategory !== "paid") flags.push("Order payment status not marked paid");
+  if (order && paymentCategory !== "paid" && orderPaymentCategory === "paid") flags.push("Order says paid but payment record is not paid");
+
+  return flags;
+}
+
+function stage33dFlatten(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.join(" | ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function stage33dCsv(rows) {
+  if (!rows.length) return "message\nNo evidence records found\n";
+  const headers = Object.keys(rows[0]);
+  const escape = (value) => {
+    const text = stage33dFlatten(value);
+    if (text.includes(",") || text.includes('"') || text.includes("\n") || text.includes("\r")) {
+      return '"' + text.replace(/"/g, '""') + '"';
+    }
+    return text;
+  };
+  return headers.join(",") + "\n" + rows.map((row) => headers.map((header) => escape(row[header])).join(",")).join("\n");
+}
+
+app.get("/api/admin/mpesa-evidence/export", async (req, res) => {
+  try {
+    if (!requireMpesaEvidenceToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+    const format = String(req.query.format || "csv").toLowerCase() === "json" ? "json" : "csv";
+
+    const where = {};
+
+    if (q) {
+      const numeric = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numeric) && numeric > 0 ? [{ id: numeric }, { orderId: numeric }] : []),
+        { phone: { contains: q, mode: "insensitive" } },
+        { status: { contains: q, mode: "insensitive" } },
+        { mpesaReceipt: { contains: q, mode: "insensitive" } },
+        { checkoutRequestId: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const payments = await prisma.payment.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 1000,
+      include: {
+        order: {
+          select: {
+            id: true,
+            totalAmount: true,
+            deliveryFee: true,
+            paymentStatus: true,
+            orderStatus: true,
+            phone: true,
+            deliveryAddress: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let rows = payments.map((payment) => {
+      const order = payment.order || null;
+      const flags = stage33dFlags(payment, order);
+      const paymentStatusCategory = stage33dStatusCategory(payment.status);
+
+      return {
+        paymentId: payment.id,
+        orderId: payment.orderId || order?.id || "",
+        customerName: order?.user?.name || "",
+        customerEmail: order?.user?.email || "",
+        phone: payment.phone || order?.phone || order?.user?.phone || "",
+        paymentAmount: payment.amount || 0,
+        orderAmount: order?.totalAmount || 0,
+        deliveryFee: order?.deliveryFee || 0,
+        paymentStatus: payment.status || "",
+        paymentStatusCategory,
+        orderPaymentStatus: order?.paymentStatus || "",
+        orderStatus: order?.orderStatus || "",
+        mpesaReceipt: payment.mpesaReceipt || "",
+        checkoutRequestId: payment.checkoutRequestId || "",
+        deliveryAddress: order?.deliveryAddress || "",
+        flags,
+        paymentCreatedAt: payment.createdAt,
+        orderCreatedAt: order?.createdAt || "",
+      };
+    });
+
+    if (filter === "issues") rows = rows.filter((row) => row.flags.length > 0);
+    if (filter === "paid") rows = rows.filter((row) => row.paymentStatusCategory === "paid");
+    if (filter === "pending") rows = rows.filter((row) => row.paymentStatusCategory === "pending");
+    if (filter === "failed") rows = rows.filter((row) => row.paymentStatusCategory === "failed");
+    if (filter === "missing-receipt") rows = rows.filter((row) => row.flags.includes("missingReceipt"));
+    if (filter === "amount-mismatch") rows = rows.filter((row) => row.flags.includes("amountMismatch"));
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safeFilter = filter || "all";
+    const filename = "sokoyetu-mpesa-evidence-" + safeFilter + "-" + stamp + "." + format;
+
+    res.setHeader("Content-Disposition", 'attachment; filename="' + filename + '"');
+
+    if (format === "json") {
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      return res.send(JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        filter: safeFilter,
+        count: rows.length,
+        records: rows,
+      }, null, 2));
+    }
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    return res.send(stage33dCsv(rows));
+  } catch (error) {
+    console.error("M-PESA evidence export error:", error);
+    return res.status(500).json({
+      message: "Could not export M-PESA evidence.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
