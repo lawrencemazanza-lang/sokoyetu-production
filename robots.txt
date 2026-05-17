@@ -1,4 +1,14 @@
 User-agent: *
 Allow: /
+Disallow: /admin-control.html
+Disallow: /admin-orders.html
+Disallow: /admin-support.html
+Disallow: /admin-backup.html
+Disallow: /admin-system-health.html
+Disallow: /admin-launch.html
+Disallow: /seller-verification.html
+Disallow: /seller-verification-persistent.html
+Disallow: /order-operations.html
+Disallow: /seller-onboarding.html
 
-Sitemap: https://sokoyetu-production-1.onrender.com/sitemap.xml
+Sitemap: https://www.mysokoyetu.co.ke/sitemap.xml
