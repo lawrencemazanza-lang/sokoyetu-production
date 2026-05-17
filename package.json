@@ -50,7 +50,8 @@
     "stage31e:check": "node scripts/check-stage31e-seller-storefronts.js",
     "stage31f:check": "node scripts/check-stage31f-buyer-journey.js",
     "stage32a:check": "node scripts/check-stage32a-seo-social.js",
-    "stage32b:check": "node scripts/check-stage32b-brand-assets.js"
+    "stage32b:check": "node scripts/check-stage32b-brand-assets.js",
+    "stage32c:check": "node scripts/check-stage32c-public-qa.js"
   },
   "keywords": [
     "sokoyetu",
