@@ -3666,6 +3666,168 @@ app.get("/api/admin/launch-readiness", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 31A: Product Catalogue Audit API
+// Protected by ADMIN_ORDER_TOKEN. Read-only catalogue quality review.
+// ================================
+function requireCatalogAuditToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function auditProductQuality(product) {
+  const issues = [];
+  let score = 0;
+
+  const name = String(product.name || "").trim();
+  const description = String(product.description || "").trim();
+  const category = String(product.category || "").trim();
+  const price = Number(product.price || 0);
+  const stock = Number(product.stock || 0);
+  const combined = (name + " " + description).toLowerCase();
+
+  if (!name || name.length < 3) {
+    issues.push("Missing or very short product name");
+    score += 20;
+  }
+
+  if (!description || description.length < 30) {
+    issues.push("Weak or missing description");
+    score += 20;
+  }
+
+  if (!category) {
+    issues.push("Missing category");
+    score += 15;
+  }
+
+  if (!product.imageUrl) {
+    issues.push("Missing product image");
+    score += 25;
+  }
+
+  if (!price || price <= 0) {
+    issues.push("Missing or invalid price");
+    score += 25;
+  }
+
+  if (stock <= 0) {
+    issues.push("Out of stock");
+    score += 15;
+  }
+
+  if (/fake|replica|copy|counterfeit/i.test(combined)) {
+    issues.push("Suspicious/counterfeit wording");
+    score += 50;
+  }
+
+  if (/test|demo|placeholder/i.test(combined)) {
+    issues.push("Demo/test/placeholder wording");
+    score += 30;
+  }
+
+  if (description.length > 0 && description.length < 80) {
+    issues.push("Description could be more detailed");
+    score += 10;
+  }
+
+  return {
+    issues,
+    qualityScore: Math.min(score, 100),
+  };
+}
+
+app.get("/api/admin/catalog-audit", async (req, res) => {
+  try {
+    if (!requireCatalogAuditToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const where = {};
+
+    if (q) {
+      const numeric = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numeric) && numeric > 0 ? [{ id: numeric }, { sellerId: numeric }] : []),
+        { name: { contains: q, mode: "insensitive" } },
+        { description: { contains: q, mode: "insensitive" } },
+        { category: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const products = await prisma.product.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 500,
+      select: {
+        id: true,
+        name: true,
+        description: true,
+        category: true,
+        price: true,
+        oldPrice: true,
+        stock: true,
+        imageUrl: true,
+        sellerId: true,
+        createdAt: true,
+      },
+    });
+
+    let audited = products.map((product) => {
+      const audit = auditProductQuality(product);
+      return {
+        ...product,
+        issues: audit.issues,
+        qualityScore: audit.qualityScore,
+      };
+    });
+
+    if (filter === "issues") audited = audited.filter((p) => p.issues.length > 0);
+    if (filter === "missing-image") audited = audited.filter((p) => !p.imageUrl);
+    if (filter === "weak-description") audited = audited.filter((p) => !p.description || String(p.description).trim().length < 30);
+    if (filter === "out-of-stock") audited = audited.filter((p) => Number(p.stock || 0) <= 0);
+    if (filter === "missing-category") audited = audited.filter((p) => !p.category);
+    if (filter === "suspicious") audited = audited.filter((p) => /fake|replica|copy|counterfeit|test|demo|placeholder/i.test(String(p.name || "") + " " + String(p.description || "")));
+
+    const summary = {
+      totalLoaded: audited.length,
+      withIssues: audited.filter((p) => p.issues.length > 0).length,
+      missingImages: audited.filter((p) => !p.imageUrl).length,
+      weakDescriptions: audited.filter((p) => !p.description || String(p.description).trim().length < 30).length,
+      outOfStock: audited.filter((p) => Number(p.stock || 0) <= 0).length,
+      suspicious: audited.filter((p) => /fake|replica|copy|counterfeit|test|demo|placeholder/i.test(String(p.name || "") + " " + String(p.description || ""))).length,
+    };
+
+    return res.json({
+      message: "Catalogue audit loaded.",
+      count: audited.length,
+      summary,
+      products: audited,
+    });
+  } catch (error) {
+    console.error("Catalogue audit error:", error);
+    return res.status(500).json({
+      message: "Could not load catalogue audit.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);

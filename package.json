@@ -42,7 +42,8 @@
     "stage30b:check": "node scripts/check-stage30b-admin-control.js",
     "stage30c:check": "node scripts/check-stage30c-noindex.js",
     "stage30d:check": "node scripts/check-stage30d-help-center.js",
-    "stage30e:check": "node scripts/check-stage30e-public-navigation.js"
+    "stage30e:check": "node scripts/check-stage30e-public-navigation.js",
+    "stage31a:check": "node scripts/check-stage31a-catalog-audit.js"
   },
   "keywords": [
     "sokoyetu",
