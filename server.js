@@ -2923,6 +2923,112 @@ app.post("/api/orders/track", async (req, res) => {
   }
 });
 
+
+
+// ================================
+// SokoYetu Stage 28B: Customer Support Request API
+// Public request protected by order ID + matching checkout/payment phone.
+// Uses DeliveryTracking so no database migration is needed.
+// ================================
+function normalizeKenyanPhoneForSupport(value) {
+  const digits = String(value || "").replace(/\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("254")) return digits;
+  if (digits.startsWith("0") && digits.length === 10) return "254" + digits.slice(1);
+  if (digits.startsWith("7") && digits.length === 9) return "254" + digits;
+  if (digits.startsWith("1") && digits.length === 9) return "254" + digits;
+  return digits;
+}
+
+app.post("/api/orders/support-request", async (req, res) => {
+  try {
+    const orderId = Number(req.body?.orderId);
+    const phone = normalizeKenyanPhoneForSupport(req.body?.phone);
+    const requestType = String(req.body?.requestType || "GENERAL_SUPPORT").trim();
+    const customerName = String(req.body?.customerName || "").trim();
+    const message = String(req.body?.message || "").trim();
+
+    const allowedTypes = new Set([
+      "GENERAL_SUPPORT",
+      "DELIVERY_ISSUE",
+      "PAYMENT_ISSUE",
+      "PRODUCT_ISSUE",
+      "CANCELLATION_REQUEST",
+      "REFUND_REQUEST",
+    ]);
+
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ message: "A valid order ID is required." });
+    }
+
+    if (!phone) {
+      return res.status(400).json({ message: "A valid checkout phone number is required." });
+    }
+
+    if (!allowedTypes.has(requestType)) {
+      return res.status(400).json({ message: "Invalid support request type." });
+    }
+
+    if (!message || message.length < 8) {
+      return res.status(400).json({ message: "Please enter a clear support message." });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order was not found." });
+    }
+
+    const orderPhone = normalizeKenyanPhoneForSupport(order.phone);
+    const paymentPhone = normalizeKenyanPhoneForSupport(order.payment?.phone);
+
+    if (phone !== orderPhone && phone !== paymentPhone) {
+      return res.status(403).json({ message: "The phone number does not match this order." });
+    }
+
+    let nextOrderStatus = order.orderStatus;
+    if (requestType === "REFUND_REQUEST") nextOrderStatus = "REFUND_REQUESTED";
+    if (requestType === "CANCELLATION_REQUEST" && order.orderStatus !== "DELIVERED") nextOrderStatus = "CANCELLED";
+
+    if (nextOrderStatus !== order.orderStatus) {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { orderStatus: nextOrderStatus },
+      });
+    }
+
+    const noteParts = [
+      `Customer support request: ${requestType}`,
+      customerName ? `Customer name: ${customerName}` : null,
+      `Message: ${message}`,
+    ].filter(Boolean);
+
+    await prisma.deliveryTracking.create({
+      data: {
+        orderId: order.id,
+        status: requestType === "REFUND_REQUEST" ? "REFUND_REQUESTED" : "CUSTOMER_SUPPORT_REQUESTED",
+        note: noteParts.join(" | "),
+      },
+    });
+
+    return res.json({
+      message: "Support request received.",
+      orderId: order.id,
+      orderStatus: nextOrderStatus,
+      requestType,
+    });
+  } catch (error) {
+    console.error("Customer support request error:", error);
+    return res.status(500).json({
+      message: "Could not submit support request.",
+      details: error.message,
+    });
+  }
+});
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
