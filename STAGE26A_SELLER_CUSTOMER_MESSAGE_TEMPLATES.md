@@ -10,7 +10,7 @@ Hello [Seller], a SokoYetu order has been placed for [Product]. Please confirm a
 
 ## Failed payment
 
-Hello [Name], your SokoYetu payment did not complete. Please retry checkout when your M-PESA line has enough balance, or contact support@mysokoyetu.co.ke for help.
+Hello [Name], your SokoYetu payment did not complete. Please retry checkout when your M-PESA line has enough balance, or contact mysokoyetu@gmail.com for help.
 
 ## Delivery confirmation
 
@@ -22,4 +22,4 @@ Hello [Name], your SokoYetu order #[Order ID] is now out for delivery. Please ke
 
 ## Delivered
 
-Hello [Name], your SokoYetu order #[Order ID] has been delivered. Thank you for shopping with us. Please contact support@mysokoyetu.co.ke if you need help.
+Hello [Name], your SokoYetu order #[Order ID] has been delivered. Thank you for shopping with us. Please contact mysokoyetu@gmail.com if you need help.

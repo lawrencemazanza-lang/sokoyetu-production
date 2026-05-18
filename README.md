@@ -36,5 +36,5 @@ http://localhost:5173/
 ## Contacts configured
 
 Phone: 0714565555
-Email: lawrencemazanza@gmail.com
+Email: mysokoyetu@gmail.com
 Location: Nairobi, Kenya
