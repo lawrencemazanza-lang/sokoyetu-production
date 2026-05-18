@@ -67,7 +67,8 @@
     "stage35a:check": "node scripts/check-stage35a-core-readiness.js",
     "stage35b:check": "node scripts/check-stage35b-route-order.js",
     "stage35c:check": "node scripts/check-stage35c-buyer-smoke.js",
-    "stage36a:check": "node scripts/check-stage36a-self-pickup.js"
+    "stage36a:check": "node scripts/check-stage36a-self-pickup.js",
+    "stage36b:check": "node scripts/check-stage36b-checkout-routing.js"
   },
   "keywords": [
     "sokoyetu",

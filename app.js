@@ -348,7 +348,7 @@ function renderMarketplaceTop() {
         <button class="quick-card orange" onclick="openModal('liveModal')"><div class="quick-icon">🔴</div><strong>Live Sellers Now</strong><span>Join live rooms and buy pinned products.</span></button>
         <button class="quick-card blue" onclick="openModal('smartModal')"><div class="quick-icon">🤖</div><strong>Smart Buyer Tools</strong><span>Ask AI to find best deals by budget.</span></button>
         <button class="quick-card green" onclick="setRole('seller'); openModal('accountModal')"><div class="quick-icon">🏪</div><strong>Sell on SokoYetu</strong><span>Go live, list products and grow sales.</span></button>
-        <button class="quick-card" onclick="openModal('mpesaModal')"><div class="quick-icon">📲</div><strong>M-PESA Checkout</strong><span>Fast STK-ready payment experience.</span></button>
+        <button class="quick-card" onclick="window.location.href='/checkout.html'"><div class="quick-icon">📲</div><strong>M-PESA Checkout</strong><span>Fast STK-ready payment experience.</span></button>
       </aside>
     </section>
   `;
@@ -593,7 +593,7 @@ function renderCartModal(){
       <div class="seller">Free delivery applies above KES 10,000.</div>
       <div class="summary-line total"><span>Total</span><b>${formatMoney(total)}</b></div>
     </div>
-    <button style="margin-top:12px;width:100%" class="btn green" onclick="openModal('mpesaModal')">Checkout with M-PESA</button>`;
+    <button style="margin-top:12px;width:100%" class="btn green" onclick="window.location.href='/checkout.html'">Checkout with M-PESA</button>`;
 }
 
 function renderDynamicBits() { renderAdBurner(); renderFlashProduct(); updateCountdown(); }
@@ -4834,4 +4834,44 @@ setInterval(updateCountdown, 1000);
   if (document.readyState !== "loading") {
     ensureCheckoutButton();
   }
+})();
+
+
+// SokoYetu Stage 36B: Checkout routing repair
+// Sends cart and M-PESA checkout buttons to checkout.html so buyers can choose Home delivery or Self-pickup.
+(function initStage36BCheckoutRoutingRepair() {
+  function goToSokoYetuCheckout(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.location.href = "/checkout.html";
+  }
+
+  function isCheckoutRouteClick(element) {
+    if (!element) return false;
+
+    const clickable = element.closest ? element.closest("button, a, [onclick], .quick-card, .btn") : null;
+    if (!clickable) return false;
+
+    const text = String(clickable.textContent || "").toLowerCase().replace(/\s+/g, " ").trim();
+    const onclick = String(clickable.getAttribute && clickable.getAttribute("onclick") || "").toLowerCase();
+    const id = String(clickable.id || "").toLowerCase();
+
+    if (onclick.includes("mpesamodal")) return true;
+    if (id === "systage20pcheckoutbtn") return true;
+    if (text === "checkout") return true;
+    if (text.includes("secure checkout")) return true;
+    if (text.includes("checkout with m-pesa")) return true;
+    if (text.includes("m-pesa checkout")) return true;
+
+    return false;
+  }
+
+  document.addEventListener("click", function(event) {
+    const target = event.target;
+    if (isCheckoutRouteClick(target)) goToSokoYetuCheckout(event);
+  }, true);
+
+  window.goToSokoYetuCheckout = goToSokoYetuCheckout;
 })();
