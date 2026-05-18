@@ -1203,10 +1203,18 @@ app.delete("/api/cart", requireAuth, requireRole("buyer"), async (req, res) => {
 
 app.post("/api/orders", requireAuth, requireRole("buyer"), async (req, res) => {
   try {
-    const { deliveryAddress, phone } = req.body;
+    // SokoYetu Stage 36A: Self-pickup checkout support
+    const { phone } = req.body;
+    const requestedDeliveryMethod = String(req.body.deliveryMethod || req.body.fulfillmentMethod || "DELIVERY").toUpperCase();
+    const isSelfPickup = ["SELF_PICKUP", "SELF-PICKUP", "PICKUP", "COLLECTION"].includes(requestedDeliveryMethod);
+    const rawDeliveryAddress = String(req.body.deliveryAddress || "").trim();
+    const deliveryMethod = isSelfPickup ? "SELF_PICKUP" : "DELIVERY";
+    const finalDeliveryAddress = isSelfPickup
+      ? "SELF PICKUP - Buyer will collect the order. Confirm pickup details using the checkout phone before releasing the product."
+      : rawDeliveryAddress;
 
-    if (!deliveryAddress) {
-      return res.status(400).json({ message: "Delivery address is required." });
+    if (!isSelfPickup && !finalDeliveryAddress) {
+      return res.status(400).json({ message: "Delivery address is required for home delivery." });
     }
 
     const cartItems = await prisma.cartItem.findMany({
@@ -1222,8 +1230,9 @@ app.post("/api/orders", requireAuth, requireRole("buyer"), async (req, res) => {
       return sum + item.product.price * item.quantity;
     }, 0);
 
-    const deliveryFee = subtotal >= 10000 ? 0 : 300;
+    const deliveryFee = isSelfPickup ? 0 : (subtotal >= 10000 ? 0 : 300);
     const totalAmount = subtotal + deliveryFee;
+    const orderFulfilmentMethod = deliveryMethod;
     const paymentPhone = phone || req.user.phone || "";
 
     const result = await prisma.$transaction(async (tx) => {
@@ -1235,7 +1244,7 @@ app.post("/api/orders", requireAuth, requireRole("buyer"), async (req, res) => {
           paymentMethod: "MPESA",
           paymentStatus: "PENDING",
           orderStatus: "PENDING_PAYMENT",
-          deliveryAddress,
+          deliveryAddress: finalDeliveryAddress,
           phone: paymentPhone,
         },
       });
