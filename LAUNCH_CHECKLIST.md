@@ -1,4 +1,4 @@
-# SokoYetu Launch Checklist
+﻿# SokoYetu Mtaani Launch Checklist
 
 ## A. Core buyer checks
 
@@ -57,3 +57,4 @@
 - [ ] Backup process configured.
 - [ ] Error logging configured.
 - [ ] Final mobile responsiveness check completed.
+

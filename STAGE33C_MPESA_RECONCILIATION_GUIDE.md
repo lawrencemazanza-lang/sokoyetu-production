@@ -1,4 +1,4 @@
-# SokoYetu Stage 33C: M-PESA Payment Reconciliation and Transaction Evidence Dashboard
+﻿# SokoYetu Mtaani Stage 33C: M-PESA Payment Reconciliation and Transaction Evidence Dashboard
 
 Stage 33C is read-only. It reviews M-PESA payment records against order records.
 
@@ -85,3 +85,4 @@ Open:
 ```text
 http://localhost:5173/admin-mpesa-reconciliation.html
 ```
+

@@ -1,0 +1,841 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+const robotsPath = path.join(root, "robots.txt");
+const adminControlPath = path.join(root, "admin-control.html");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage35a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+backup(robotsPath, "robots");
+backup(adminControlPath, "admin-control");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage35a:check"] = "node scripts/check-stage35a-core-readiness.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage35a-core-readiness.js"), `require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 35A Core Production Readiness Check");
+console.log("-------------------------------------------------");
+
+let warnings = 0;
+
+const requiredFiles = [
+  "admin-core-readiness.html",
+  "scripts/check-stage35a-core-readiness.js",
+  "STAGE35A_CORE_READINESS_GUIDE.md",
+  "STAGE35A_CRITICAL_GAP_REPORT_TEMPLATE.md"
+];
+
+for (const file of requiredFiles) {
+  if (!fs.existsSync(path.join(root, file))) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const serverPath = path.join(root, "server.js");
+if (!fs.existsSync(serverPath)) {
+  console.log("WARN: server.js is missing.");
+  warnings += 1;
+} else {
+  const server = fs.readFileSync(serverPath, "utf8");
+  const requiredServer = [
+    "SokoYetu Stage 35A: Core Production Readiness Audit API",
+    "/api/admin/core-readiness/audit",
+    "stage35aRouteOrder",
+    "stage35aDatabaseCounts",
+    "Core readiness audit"
+  ];
+
+  for (const item of requiredServer) {
+    if (!server.includes(item)) {
+      console.log("WARN: server.js missing:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: server.js includes", item);
+    }
+  }
+
+  const fallbackIndex = server.indexOf("SokoYetu Stage 32E: Friendly Error Pages");
+  const stage35Index = server.indexOf("SokoYetu Stage 35A: Core Production Readiness Audit API");
+  if (fallbackIndex !== -1 && stage35Index !== -1 && stage35Index > fallbackIndex) {
+    console.log("WARN: Stage 35A endpoint appears after the 404 fallback and may be unreachable.");
+    warnings += 1;
+  } else if (fallbackIndex !== -1 && stage35Index !== -1) {
+    console.log("OK: Stage 35A endpoint appears before the 404 fallback.");
+  }
+}
+
+if (!process.env.ADMIN_ORDER_TOKEN) {
+  console.log("WARN: ADMIN_ORDER_TOKEN is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: ADMIN_ORDER_TOKEN =", process.env.ADMIN_ORDER_TOKEN.slice(0, 4) + "...hidden");
+}
+
+if (!process.env.DATABASE_URL) {
+  console.log("WARN: DATABASE_URL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: DATABASE_URL =", process.env.DATABASE_URL.slice(0, 4) + "...hidden");
+}
+
+const controlPath = path.join(root, "admin-control.html");
+if (fs.existsSync(controlPath)) {
+  const control = fs.readFileSync(controlPath, "utf8");
+  if (!control.includes("/admin-core-readiness.html")) {
+    console.log("WARN: admin-control.html does not link admin-core-readiness.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: admin-control.html links admin-core-readiness.html.");
+  }
+}
+
+const robotsPath = path.join(root, "robots.txt");
+if (fs.existsSync(robotsPath)) {
+  const robots = fs.readFileSync(robotsPath, "utf8");
+  if (!robots.includes("Disallow: /admin-core-readiness.html")) {
+    console.log("WARN: robots.txt does not disallow admin-core-readiness.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: robots.txt disallows admin-core-readiness.html.");
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 35A core production readiness check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-core-readiness.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Core Production Readiness Audit</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#064e3b);color:#fff;padding:24px}
+    header .wrap,main{width:min(1260px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .danger{background:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .info{background:#dbeafe;color:#1e40af}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9;color:#064e3b}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Core Production Readiness Audit</h1>
+    <p>Hard audit of launch-critical files, routes, environment variables, database counts, admin exposure risks, M-PESA switch safety and final fallback route order.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-orders.html">Admin orders</a>
+    <a class="linkbtn secondary" href="/admin-products.html">Admin products</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-reconciliation.html">M-PESA reconciliation</a>
+    <a class="linkbtn secondary" href="/admin-launch-war-room.html">Launch war room</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Run audit</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Run core readiness audit</button>
+        <button id="copyReportBtn" class="secondary" type="button">Copy gap report</button>
+      </div>
+      <div class="warnBox">This page is read-only. It does not change checkout, payments, orders, products, seller records, support tickets or database schema.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="summaryCard" class="card" style="display:none">
+    <div class="head">Launch decision summary</div>
+    <div class="body">
+      <div id="decisionBox"></div>
+      <div id="summary" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="blockerCard" class="card" style="display:none">
+    <div class="head">Critical blockers and warnings</div>
+    <div class="body">
+      <div id="blockers"></div>
+      <div id="warnings"></div>
+    </div>
+  </section>
+
+  <section id="detailCard" class="card" style="display:none">
+    <div class="head">Detailed audit</div>
+    <div class="body" id="details"></div>
+  </section>
+</main>
+
+<script>
+let lastAudit = null;
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "bad" ? "pill bad" : kind === "warn" ? "pill warn" : "pill info";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+function boolPill(value){
+  return value ? pill("ok", "OK") : pill("bad", "MISSING");
+}
+async function runAudit(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+
+  msg('<div class="note">Running core production readiness audit...</div>');
+
+  try {
+    const response = await fetch("/api/admin/core-readiness/audit", {
+      headers: { "x-admin-order-token": token() },
+      credentials: "include",
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not run core readiness audit.");
+    lastAudit = data;
+    renderAudit(data);
+    msg('<div class="ok">Core readiness audit completed.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not run core readiness audit.") + '</div>');
+  }
+}
+function listBox(items, empty, bad){
+  if (!items || !items.length) return '<div class="ok">' + esc(empty) + '</div>';
+  return '<div class="' + (bad ? "badBox" : "warnBox") + '">' + items.map(x => "• " + esc(x)).join("<br>") + '</div>';
+}
+function renderAudit(data){
+  const blockers = data.blockers || [];
+  const warnings = data.warnings || [];
+  const env = data.environment || {};
+  const files = data.fileChecks || [];
+  const routes = data.routeChecks || [];
+  const db = data.databaseCounts || [];
+  const order = data.routeOrder || {};
+  const secrets = data.secretScan || [];
+  const launchDecision = data.launchDecision || "UNKNOWN";
+
+  document.getElementById("decisionBox").innerHTML =
+    launchDecision === "HOLD"
+      ? '<div class="badBox"><b>Launch decision: HOLD</b><br>Resolve critical blockers before production launch or live M-PESA use.</div>'
+      : warnings.length
+        ? '<div class="warnBox"><b>Launch decision: REVIEW</b><br>No hard blocker was returned, but warnings need review before wider launch.</div>'
+        : '<div class="ok"><b>Launch decision: CAN PROCEED TO CONTROLLED TESTING</b><br>No blocker or warning was returned by this audit. Still run a controlled first transaction and monitor logs.</div>';
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Blockers<b>' + blockers.length + '</b></div>' +
+    '<div class="metric">Warnings<b>' + warnings.length + '</b></div>' +
+    '<div class="metric">Critical files checked<b>' + files.length + '</b></div>' +
+    '<div class="metric">Route patterns checked<b>' + routes.length + '</b></div>' +
+    '<div class="metric">Database models checked<b>' + db.length + '</b></div>' +
+    '<div class="metric">Generated<b>' + esc(data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "-") + '</b></div>';
+
+  document.getElementById("blockers").innerHTML = '<b>Critical blockers</b>' + listBox(blockers, "No critical blockers returned.", true);
+  document.getElementById("warnings").innerHTML = '<b>Warnings</b>' + listBox(warnings, "No warnings returned.", false);
+
+  document.getElementById("details").innerHTML =
+    '<h3>Environment</h3>' +
+    table(["Item", "Status", "Value", "Note"], [
+      ["DATABASE_URL", env.databaseUrlSet ? pill("ok","SET") : pill("bad","MISSING"), env.databaseUrl || "-", "Must point to production database on Render."],
+      ["ADMIN_ORDER_TOKEN", env.adminOrderTokenSet ? pill("ok","SET") : pill("bad","MISSING"), env.adminOrderToken || "-", "Protects sensitive admin pages."],
+      ["PUBLIC_SITE_URL", env.publicSiteUrlSet ? pill("ok","SET") : pill("warn","NOT SET"), env.publicSiteUrl || "-", "Useful for production callback and public URL consistency."],
+      ["NODE_ENV", env.nodeEnv ? pill("info", env.nodeEnv) : pill("warn", "NOT SET"), env.nodeEnv || "-", "Should be production on Render."],
+      ["ADMIN_REGISTRATION_ENABLED", env.adminRegistrationEnabled === "true" ? pill("bad", "TRUE") : pill("ok", String(env.adminRegistrationEnabled || "false")), env.adminRegistrationEnabled || "not set", "Should not be true in production."],
+      ["M-PESA mode", env.mpesaMode ? pill("info", env.mpesaMode) : pill("warn", "NOT SET"), env.mpesaMode || "-", "Production/live requires confirmation guard."],
+      ["M-PESA production confirmed", env.mpesaProductionConfirmed ? pill("ok","TRUE") : pill("warn","FALSE"), String(env.mpesaProductionConfirmed), "Only true after live credentials are confirmed."]
+    ]) +
+    '<h3>Critical files</h3>' +
+    table(["File", "Status", "Why it matters"], files.map(f => [f.file, f.exists ? pill("ok","EXISTS") : pill(f.critical ? "bad" : "warn","MISSING"), f.note])) +
+    '<h3>Critical route patterns</h3>' +
+    table(["Pattern", "Status", "Note"], routes.map(r => [r.pattern, r.found ? pill("ok","FOUND") : pill(r.critical ? "bad" : "warn","MISSING"), r.note])) +
+    '<h3>Database counts</h3>' +
+    table(["Model", "Status", "Count", "Note"], db.map(d => [d.model, d.available ? pill("ok","AVAILABLE") : pill("warn","NOT FOUND"), d.count === null || d.count === undefined ? "-" : d.count, d.note || ""])) +
+    '<h3>Route order and 404 fallback</h3>' +
+    table(["Check", "Status", "Details"], [
+      ["Final fallback marker", order.fallbackFound ? pill("ok","FOUND") : pill("warn","NOT FOUND"), order.fallbackFound ? "Stage 32E fallback detected." : "Could not detect Stage 32E fallback marker."],
+      ["Routes after fallback", order.routesAfterFallback && order.routesAfterFallback.length ? pill("bad","FOUND") : pill("ok","NONE"), order.routesAfterFallback && order.routesAfterFallback.length ? order.routesAfterFallback.join(", ") : "No route declarations detected after final fallback."],
+      ["Stage 35A endpoint order", order.stage35aBeforeFallback ? pill("ok","BEFORE FALLBACK") : pill("warn","CHECK"), order.stage35aBeforeFallback ? "Endpoint should be reachable." : "Confirm endpoint is not after final fallback."]
+    ]) +
+    '<h3>Secret exposure scan</h3>' +
+    table(["File", "Status", "Matches"], secrets.map(s => [s.file, s.matches.length ? pill("bad","REVIEW") : pill("ok","CLEAR"), s.matches.join(", ") || "-"]));
+
+  document.getElementById("summaryCard").style.display = "block";
+  document.getElementById("blockerCard").style.display = "block";
+  document.getElementById("detailCard").style.display = "block";
+}
+function table(headers, rows){
+  return '<table><thead><tr>' + headers.map(h => '<th>' + esc(h) + '</th>').join("") + '</tr></thead><tbody>' +
+    rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join("") + '</tr>').join("") +
+    '</tbody></table>';
+}
+function buildGapReport(){
+  if (!lastAudit) return "";
+  const blockers = lastAudit.blockers || [];
+  const warnings = lastAudit.warnings || [];
+  return [
+    "SokoYetu Stage 35A Core Production Readiness Gap Report",
+    "Generated: " + (lastAudit.generatedAt || new Date().toISOString()),
+    "",
+    "Launch decision: " + (lastAudit.launchDecision || "UNKNOWN"),
+    "",
+    "Critical blockers:",
+    blockers.length ? blockers.map(x => "- " + x).join("\\n") : "- None returned",
+    "",
+    "Warnings:",
+    warnings.length ? warnings.map(x => "- " + x).join("\\n") : "- None returned",
+    "",
+    "Next action:",
+    blockers.length ? "Resolve blockers before launch or live payment testing." : warnings.length ? "Review warnings before wider launch." : "Proceed only to controlled testing and monitoring."
+  ].join("\\n");
+}
+async function copyReport(){
+  const text = buildGapReport();
+  if (!text) {
+    msg('<div class="err">Run the audit first.</div>');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    msg('<div class="ok">Gap report copied.</div>');
+  } catch {
+    msg('<div class="warnBox">Could not copy automatically. Select the report manually from the audit output.</div>');
+  }
+}
+document.getElementById("loadBtn").onclick = runAudit;
+document.getElementById("copyReportBtn").onclick = copyReport;
+</script>
+</body>
+</html>`, "utf8");
+
+// Patch server endpoint. Insert BEFORE Stage 32E final fallback when present.
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 35A: Core Production Readiness Audit API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 35A: Core Production Readiness Audit API
+// Read-only hard audit. Core readiness audit does not change orders, products, payments or schema.
+// ================================
+function requireStage35aCoreReadinessToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage35aMask(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 10) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+function stage35aRouteOrder(serverText) {
+  const fallbackIndex = serverText.indexOf("SokoYetu Stage 32E: Friendly Error Pages");
+  const stage35aIndex = serverText.indexOf("SokoYetu Stage 35A: Core Production Readiness Audit API");
+  const routePattern = /app\\.(get|post|put|patch|delete|use)\\s*\\(\\s*["']([^"']+)/g;
+  const routesAfterFallback = [];
+
+  if (fallbackIndex !== -1) {
+    let match;
+    while ((match = routePattern.exec(serverText))) {
+      if (match.index > fallbackIndex) routesAfterFallback.push(match[1].toUpperCase() + " " + match[2]);
+    }
+  }
+
+  return {
+    fallbackFound: fallbackIndex !== -1,
+    stage35aBeforeFallback: fallbackIndex === -1 || (stage35aIndex !== -1 && stage35aIndex < fallbackIndex),
+    routesAfterFallback,
+  };
+}
+
+async function stage35aSafeCount(modelName) {
+  try {
+    if (!global.prisma && typeof prisma === "undefined") {
+      return { model: modelName, available: false, count: null, note: "Prisma client variable not available." };
+    }
+
+    const client = typeof prisma !== "undefined" ? prisma : global.prisma;
+    const model = client && client[modelName];
+
+    if (!model || typeof model.count !== "function") {
+      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
+    }
+
+    const count = await model.count();
+    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
+  } catch (error) {
+    return { model: modelName, available: false, count: null, note: error.message };
+  }
+}
+
+async function stage35aDatabaseCounts() {
+  const models = ["user", "seller", "product", "order", "payment", "supportTicket", "supportRequest"];
+  const results = [];
+  for (const model of models) results.push(await stage35aSafeCount(model));
+  return results;
+}
+
+function stage35aFileChecks(rootDir) {
+  const files = [
+    { file: "index.html", critical: true, note: "Homepage must open." },
+    { file: "categories.html", critical: true, note: "Public product browsing must work." },
+    { file: "product-detail.html", critical: true, note: "Product detail flow must work." },
+    { file: "checkout.html", critical: true, note: "Checkout page must exist." },
+    { file: "track-order.html", critical: true, note: "Buyer order tracking must exist." },
+    { file: "admin-orders.html", critical: true, note: "Admin order monitoring must exist." },
+    { file: "admin-control.html", critical: true, note: "Central admin control must exist." },
+    { file: "admin-mpesa-readiness.html", critical: true, note: "M-PESA readiness must be reviewable." },
+    { file: "admin-mpesa-reconciliation.html", critical: true, note: "Payment/order reconciliation must exist." },
+    { file: "admin-mpesa-evidence.html", critical: false, note: "Evidence export is useful for launch audit." },
+    { file: "404.html", critical: false, note: "Friendly fallback should exist." },
+    { file: "500.html", critical: false, note: "Friendly server error page should exist." },
+    { file: "robots.txt", critical: false, note: "Admin/noindex controls should exist." },
+    { file: "sitemap.xml", critical: false, note: "Public SEO sitemap should exist." },
+  ];
+
+  return files.map((item) => ({
+    ...item,
+    exists: require("fs").existsSync(require("path").join(rootDir, item.file)),
+  }));
+}
+
+function stage35aRouteChecks(serverText) {
+  const routes = [
+    { pattern: "/api/health", critical: true, note: "API health check must exist." },
+    { pattern: "/api/products", critical: true, note: "Public product API must exist." },
+    { pattern: "/api/admin", critical: true, note: "Protected admin routes should exist." },
+    { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should be present." },
+    { pattern: "mpesa", critical: true, note: "M-PESA code or readiness references should exist." },
+    { pattern: "checkout", critical: true, note: "Checkout route/page references should exist." },
+    { pattern: "SokoYetu Stage 32E: Friendly Error Pages", critical: false, note: "Final friendly fallback should exist." },
+    { pattern: "SokoYetu Stage 33C: M-PESA Payment Reconciliation API", critical: false, note: "Payment reconciliation endpoint should exist if Stage 33C was applied." },
+    { pattern: "SokoYetu Stage 33D: M-PESA Evidence Export API", critical: false, note: "Evidence export endpoint should exist if Stage 33D was applied." },
+  ];
+
+  const lower = serverText.toLowerCase();
+
+  return routes.map((route) => ({
+    ...route,
+    found: route.pattern === "mpesa" || route.pattern === "checkout"
+      ? lower.includes(route.pattern.toLowerCase())
+      : serverText.includes(route.pattern),
+  }));
+}
+
+function stage35aSecretScan(rootDir) {
+  const files = ["index.html", "app.js", "public-nav.js", "checkout.html", "categories.html", "product-detail.html"];
+  const risky = ["MPESA_CONSUMER_SECRET", "MPESA_PASSKEY", "DATABASE_URL", "ADMIN_ORDER_TOKEN=", "sokoyetu_admin_orders_2026_change_this_secret"];
+  const results = [];
+
+  for (const file of files) {
+    const filePath = require("path").join(rootDir, file);
+    if (!require("fs").existsSync(filePath)) continue;
+    const text = require("fs").readFileSync(filePath, "utf8");
+    const matches = risky.filter((item) => text.includes(item));
+    results.push({ file, matches });
+  }
+
+  return results;
+}
+
+app.get("/api/admin/core-readiness/audit", async (req, res) => {
+  try {
+    if (!requireStage35aCoreReadinessToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const rootDir = __dirname;
+    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
+
+    const blockers = [];
+    const warnings = [];
+
+    const env = {
+      databaseUrlSet: Boolean(process.env.DATABASE_URL),
+      databaseUrl: process.env.DATABASE_URL ? stage35aMask(process.env.DATABASE_URL) : "",
+      adminOrderTokenSet: Boolean(process.env.ADMIN_ORDER_TOKEN),
+      adminOrderToken: process.env.ADMIN_ORDER_TOKEN ? stage35aMask(process.env.ADMIN_ORDER_TOKEN) : "",
+      publicSiteUrlSet: Boolean(process.env.PUBLIC_SITE_URL),
+      publicSiteUrl: process.env.PUBLIC_SITE_URL || "",
+      nodeEnv: process.env.NODE_ENV || "",
+      adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || "",
+      mpesaMode: process.env.MPESA_ENV || process.env.MPESA_MODE || "",
+      mpesaProductionConfirmed: String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true",
+    };
+
+    if (!env.databaseUrlSet) blockers.push("DATABASE_URL is missing.");
+    if (!env.adminOrderTokenSet) blockers.push("ADMIN_ORDER_TOKEN is missing.");
+    if (env.adminRegistrationEnabled === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before launch.");
+    if (env.nodeEnv && env.nodeEnv !== "production") warnings.push("NODE_ENV is not production. This can be acceptable locally but should be production on Render.");
+    if (!env.publicSiteUrlSet) warnings.push("PUBLIC_SITE_URL is not set.");
+    if (env.publicSiteUrl && !/SokoYetu Mtaani\\.co\\.ke/i.test(env.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use SokoYetu Mtaani.co.ke.");
+
+    const mpesaMode = String(env.mpesaMode || "").toLowerCase();
+    if ((mpesaMode === "production" || mpesaMode === "live") && !env.mpesaProductionConfirmed) {
+      blockers.push("M-PESA production/live mode appears requested but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+    }
+
+    const fileChecks = stage35aFileChecks(rootDir);
+    for (const file of fileChecks) {
+      if (!file.exists && file.critical) blockers.push("Critical file missing: " + file.file);
+      else if (!file.exists) warnings.push("Optional/readiness file missing: " + file.file);
+    }
+
+    const routeChecks = stage35aRouteChecks(serverText);
+    for (const route of routeChecks) {
+      if (!route.found && route.critical) blockers.push("Critical route/code pattern missing: " + route.pattern);
+      else if (!route.found) warnings.push("Optional route/code pattern missing: " + route.pattern);
+    }
+
+    const routeOrder = stage35aRouteOrder(serverText);
+    if (routeOrder.routesAfterFallback && routeOrder.routesAfterFallback.length) {
+      blockers.push("One or more routes appear after the final 404 fallback and may be unreachable: " + routeOrder.routesAfterFallback.join(", "));
+    }
+
+    const databaseCounts = await stage35aDatabaseCounts();
+    const productCount = databaseCounts.find((item) => item.model === "product");
+    const orderCount = databaseCounts.find((item) => item.model === "order");
+    const paymentCount = databaseCounts.find((item) => item.model === "payment");
+
+    if (productCount && productCount.available && productCount.count === 0) blockers.push("Product table has zero products. Buyers will not have products to purchase.");
+    if (productCount && !productCount.available) warnings.push("Could not verify Product model count.");
+    if (orderCount && !orderCount.available) warnings.push("Could not verify Order model count.");
+    if (paymentCount && !paymentCount.available) warnings.push("Could not verify Payment model count.");
+
+    const secretScan = stage35aSecretScan(rootDir);
+    for (const item of secretScan) {
+      if (item.matches.length) blockers.push("Potential secret exposure in public file " + item.file + ": " + item.matches.join(", "));
+    }
+
+    const launchDecision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "CONTROLLED_TESTING_OK";
+
+    return res.json({
+      message: "Core readiness audit completed.",
+      generatedAt: new Date().toISOString(),
+      launchDecision,
+      blockers,
+      warnings,
+      environment: env,
+      fileChecks,
+      routeChecks,
+      databaseCounts,
+      routeOrder,
+      secretScan,
+      note: "Read-only audit. No application data or settings were changed.",
+    });
+  } catch (error) {
+    console.error("Core readiness audit error:", error);
+    return res.status(500).json({
+      message: "Could not run core readiness audit.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const fallbackMarker = "// SokoYetu Stage 32E: Friendly Error Pages";
+  let insertIndex = server.indexOf(fallbackMarker);
+
+  if (insertIndex === -1) {
+    insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  }
+
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 35A core readiness endpoint to server.js.");
+} else {
+  console.log("Stage 35A endpoint already exists.");
+}
+
+// Add admin-control link.
+if (fs.existsSync(adminControlPath)) {
+  let control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-core-readiness.html")) {
+    const section = `
+  <section class="card">
+    <div class="head">Core production readiness</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-core-readiness.html">
+        <b>Core Production Readiness Audit</b>
+        <span>Run a hard audit of launch-critical files, routes, environment variables, database counts, route order and secret exposure.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+`;
+    if (control.includes("</main>")) control = control.replace("</main>", section + "\n</main>");
+    else control += section;
+    fs.writeFileSync(adminControlPath, control, "utf8");
+    console.log("Added core readiness audit link to admin-control.html.");
+  } else {
+    console.log("admin-control.html already links to admin-core-readiness.html.");
+  }
+}
+
+// Update robots.txt.
+let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, "utf8") : "User-agent: *\nAllow: /\n";
+if (!robots.includes("Disallow: /admin-core-readiness.html")) {
+  robots += "\nDisallow: /admin-core-readiness.html\n";
+  fs.writeFileSync(robotsPath, robots, "utf8");
+  console.log("Updated robots.txt to disallow admin-core-readiness.html.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE35A_CORE_READINESS_GUIDE.md"), `# SokoYetu Stage 35A: Core Production Readiness Audit and Critical Gap Report
+
+Stage 35A is a hard launch-readiness audit. It is read-only.
+
+## New page
+
+\`\`\`text
+/admin-core-readiness.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/core-readiness/audit
+\`\`\`
+
+## Token
+
+This page uses:
+
+\`\`\`env
+ADMIN_ORDER_TOKEN
+\`\`\`
+
+## What it checks
+
+\`\`\`text
+Critical public files
+Critical admin files
+Core route/code patterns
+Environment variables
+Admin registration exposure
+M-PESA production switch guard
+Database model counts where available
+Product count
+Order and payment model availability
+Routes declared after final 404 fallback
+Potential secret exposure in public files
+\`\`\`
+
+## Launch decision states
+
+\`\`\`text
+HOLD
+REVIEW
+CONTROLLED_TESTING_OK
+\`\`\`
+
+## Important note about 404 fallback
+
+After Stage 32E, the final 404 fallback must remain after all real routes. If any API or admin route is inserted after that fallback, Express may return 404 before reaching the route. Stage 35A checks this.
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+M-PESA callback logic
+database schema
+order logic
+product logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage35a:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/admin-core-readiness.html
+\`\`\`
+
+Paste \`ADMIN_ORDER_TOKEN\`, run the audit, and copy the gap report.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE35A_CRITICAL_GAP_REPORT_TEMPLATE.md"), `# Stage 35A: Critical Gap Report Template
+
+## Audit date
+
+\`\`\`text
+YYYY-MM-DD
+\`\`\`
+
+## Launch decision
+
+\`\`\`text
+HOLD / REVIEW / CONTROLLED_TESTING_OK
+\`\`\`
+
+## Critical blockers
+
+\`\`\`text
+List blockers here.
+\`\`\`
+
+## Warnings
+
+\`\`\`text
+List warnings here.
+\`\`\`
+
+## Core buyer flow checked
+
+- [ ] Homepage opens.
+- [ ] Categories page opens.
+- [ ] Product detail page opens.
+- [ ] Checkout page opens.
+- [ ] Track order page opens.
+- [ ] Support request page opens.
+
+## Core admin flow checked
+
+- [ ] Admin orders opens.
+- [ ] Admin product management opens.
+- [ ] M-PESA readiness opens.
+- [ ] M-PESA reconciliation opens.
+- [ ] Evidence export opens.
+- [ ] Launch war room opens.
+
+## Production safety checked
+
+- [ ] ADMIN_ORDER_TOKEN set.
+- [ ] DATABASE_URL set.
+- [ ] Admin registration locked.
+- [ ] M-PESA production guard reviewed.
+- [ ] No route appears after final 404 fallback.
+- [ ] No obvious secret exposure in public files.
+- [ ] Product table has products.
+- [ ] Order and payment models are reachable.
+
+## Decision
+
+\`\`\`text
+Write decision here.
+\`\`\`
+
+## Next action
+
+\`\`\`text
+Write next action here.
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 35A core production readiness audit installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage35a:check");
+console.log("node --check server.js");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-core-readiness.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js robots.txt admin-control.html admin-core-readiness.html scripts/check-stage35a-core-readiness.js STAGE35A_CORE_READINESS_GUIDE.md STAGE35A_CRITICAL_GAP_REPORT_TEMPLATE.md");
+console.log('git commit -m "Add core production readiness audit"');
+console.log("git push");
+

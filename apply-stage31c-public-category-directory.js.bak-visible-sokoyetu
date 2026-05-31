@@ -1,0 +1,416 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const indexPath = path.join(root, "index.html");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage31c-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(indexPath, "index");
+backup(sitemapPath, "sitemap");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage31c:check"] = "node scripts/check-stage31c-categories.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(root, "categories.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Browse SokoYetu products by category and discover marketplace items from Kenyan sellers.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browse SokoYetu Categories</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:28px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:32px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5;max-width:820px}
+    main{display:grid;gap:16px;padding:22px 0 42px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+    .category{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:9px;text-decoration:none;color:#111827;cursor:pointer}
+    .category:hover{outline:3px solid #86efac}
+    .category b{color:#064e3b;font-size:18px}
+    .category span{color:#475569;line-height:1.45}
+    .productGrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:14px}
+    .product{border:1px solid #e5e7eb;border-radius:18px;background:#fff;overflow:hidden;display:grid}
+    .product img,.noimg{width:100%;height:160px;object-fit:cover;background:#e5e7eb}
+    .noimg{display:grid;place-items:center;color:#64748b;font-weight:900}
+    .pbody{padding:12px;display:grid;gap:7px}
+    .pbody b{color:#111827}
+    .muted{color:#64748b;font-size:13px}
+    .price{font-weight:900;color:#064e3b}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .linkbtn,button{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button{background:#16a34a}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    input,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid,.productGrid{grid-template-columns:1fr}h1{font-size:27px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Browse SokoYetu Categories</h1>
+    <p>Explore products by category, find available items, and return to the shop when you are ready to buy.</p>
+  </div>
+</header>
+
+<main>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="linkbtn" href="/">← Back to shop</a>
+    <a class="linkbtn" href="/help-center.html">Help Center</a>
+    <a class="linkbtn" href="/track-order.html">Track Order</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Find products</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label><b>Search products</b></label>
+          <input id="searchBox" placeholder="Search by product name or category">
+        </div>
+        <div>
+          <label><b>Category</b></label>
+          <select id="categoryFilter">
+            <option value="">All categories</option>
+          </select>
+        </div>
+      </div>
+      <button id="applyBtn" type="button">Apply filter</button>
+      <div id="message" class="note">Loading products from SokoYetu...</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Category directory</div>
+    <div class="body">
+      <div id="categories" class="grid"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Products</div>
+    <div class="body">
+      <div id="products" class="productGrid"></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  SokoYetu · Browse categories · SokoYetu Mtaani@gmail.com
+</footer>
+
+<script>
+let allProducts = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function norm(value){ return String(value || "").trim() || "Other"; }
+
+async function loadProducts(){
+  const message = document.getElementById("message");
+  try {
+    const res = await fetch("/api/products", { credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Could not load products.");
+
+    const raw = Array.isArray(data) ? data : (data.products || data.data || []);
+    allProducts = raw.map(p => ({
+      id: p.id,
+      name: p.name || p.title || "Unnamed product",
+      description: p.description || "",
+      category: norm(p.category),
+      price: p.price || 0,
+      oldPrice: p.oldPrice || 0,
+      stock: p.stock ?? null,
+      imageUrl: p.imageUrl || p.image || p.photoUrl || ""
+    }));
+
+    populateCategoryFilter();
+    renderCategories();
+    renderProducts();
+    message.className = "note";
+    message.textContent = allProducts.length ? "Products loaded successfully." : "No products are available yet.";
+  } catch (error) {
+    message.className = "err";
+    message.textContent = error.message || "Could not load products.";
+  }
+}
+
+function grouped(){
+  const map = new Map();
+  for (const p of allProducts) {
+    const key = norm(p.category);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(p);
+  }
+  return Array.from(map.entries()).sort((a,b) => a[0].localeCompare(b[0]));
+}
+
+function populateCategoryFilter(){
+  const select = document.getElementById("categoryFilter");
+  const current = select.value;
+  const options = grouped().map(([cat, items]) => '<option value="' + esc(cat) + '">' + esc(cat) + ' (' + items.length + ')</option>').join("");
+  select.innerHTML = '<option value="">All categories</option>' + options;
+  select.value = current;
+}
+
+function renderCategories(){
+  const wrap = document.getElementById("categories");
+  const groups = grouped();
+
+  if (!groups.length) {
+    wrap.innerHTML = '<div class="note">No categories found yet.</div>';
+    return;
+  }
+
+  wrap.innerHTML = groups.map(([cat, items]) => {
+    const available = items.filter(p => p.stock === null || Number(p.stock) > 0).length;
+    return '<div class="category" onclick="selectCategory(\\'' + esc(cat).replace(/'/g,"&#39;") + '\\')">' +
+      '<b>' + esc(cat) + '</b>' +
+      '<span>' + items.length + ' product(s), ' + available + ' available.</span>' +
+      '<em class="pill">Browse category</em>' +
+    '</div>';
+  }).join("");
+}
+
+function currentFilteredProducts(){
+  const q = document.getElementById("searchBox").value.trim().toLowerCase();
+  const cat = document.getElementById("categoryFilter").value;
+  return allProducts.filter(p => {
+    const matchesQ = !q || (p.name + " " + p.category + " " + p.description).toLowerCase().includes(q);
+    const matchesCat = !cat || p.category === cat;
+    return matchesQ && matchesCat;
+  });
+}
+
+function renderProducts(){
+  const wrap = document.getElementById("products");
+  const list = currentFilteredProducts();
+
+  if (!list.length) {
+    wrap.innerHTML = '<div class="note">No products match this filter.</div>';
+    return;
+  }
+
+  wrap.innerHTML = list.map(p => {
+    const img = p.imageUrl
+      ? '<img src="' + esc(p.imageUrl) + '" alt="' + esc(p.name) + '">'
+      : '<div class="noimg">No image</div>';
+
+    const stockText = p.stock === null ? "Stock not shown" : (Number(p.stock) > 0 ? p.stock + " in stock" : "Out of stock");
+    const stockClass = p.stock !== null && Number(p.stock) <= 0 ? "pill warn" : "pill";
+
+    return '<article class="product">' +
+      img +
+      '<div class="pbody">' +
+        '<b>' + esc(p.name) + '</b>' +
+        '<span class="muted">' + esc(p.category) + '</span>' +
+        '<span class="price">' + money(p.price) + '</span>' +
+        '<span class="' + stockClass + '">' + esc(stockText) + '</span>' +
+        '<span class="muted">' + esc((p.description || "").slice(0, 100)) + (p.description && p.description.length > 100 ? "..." : "") + '</span>' +
+        '<a class="linkbtn" href="/#products">View in shop</a>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+}
+
+function selectCategory(cat){
+  document.getElementById("categoryFilter").value = cat;
+  renderProducts();
+  document.getElementById("products").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+document.getElementById("applyBtn").onclick = renderProducts;
+document.getElementById("searchBox").addEventListener("input", renderProducts);
+document.getElementById("categoryFilter").addEventListener("change", renderProducts);
+window.selectCategory = selectCategory;
+
+loadProducts();
+</script>
+</body>
+</html>`, "utf8");
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage31c-categories.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 31C Public Category Directory Check");
+console.log("-------------------------------------------------");
+
+let warnings = 0;
+
+const categoriesPath = path.join(root, "categories.html");
+if (!fs.existsSync(categoriesPath)) {
+  console.log("WARN: categories.html is missing.");
+  warnings += 1;
+} else {
+  const html = fs.readFileSync(categoriesPath, "utf8");
+  const required = ["/api/products", "categoryFilter", "searchBox", "Browse SokoYetu Categories"];
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN: categories.html missing:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: categories.html includes", item);
+    }
+  }
+}
+
+const sitemapPath = path.join(root, "sitemap.xml");
+if (fs.existsSync(sitemapPath)) {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  if (!sitemap.includes("/categories.html")) {
+    console.log("WARN: sitemap.xml does not include categories.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: sitemap.xml includes categories.html.");
+  }
+} else {
+  console.log("WARN: sitemap.xml is missing.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 31C category directory check passed.");
+`, "utf8");
+
+// Update sitemap.
+let sitemap = fs.existsSync(sitemapPath)
+  ? fs.readFileSync(sitemapPath, "utf8")
+  : `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/</loc>\n  </url>\n</urlset>\n`;
+
+if (!sitemap.includes("/categories.html")) {
+  const block = `\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/categories.html</loc>\n  </url>\n`;
+  if (sitemap.includes("</urlset>")) sitemap = sitemap.replace("</urlset>", block + "</urlset>");
+  else sitemap += block;
+  fs.writeFileSync(sitemapPath, sitemap, "utf8");
+  console.log("Added categories.html to sitemap.xml.");
+} else {
+  console.log("sitemap.xml already includes categories.html.");
+}
+
+// Add homepage link safely as floating/section block if index exists.
+if (fs.existsSync(indexPath)) {
+  let index = fs.readFileSync(indexPath, "utf8");
+  if (!index.includes("/categories.html")) {
+    const block = `
+<!-- SokoYetu Stage 31C: Public category directory link -->
+<div style="width:min(1120px,94vw);margin:18px auto;padding:15px;border:1px solid #bbf7d0;border-radius:20px;background:#f0fdf4;font-family:Arial,Helvetica,sans-serif">
+  <b style="color:#064e3b">Browse by category</b>
+  <p style="margin:6px 0 10px;color:#475569">Find products grouped by category and discover available items from sellers.</p>
+  <a href="/categories.html" style="display:inline-flex;background:#064e3b;color:white;text-decoration:none;border-radius:14px;padding:10px 13px;font-weight:900">Open Categories</a>
+</div>
+<!-- End SokoYetu Stage 31C -->
+`;
+    if (index.includes("</body>")) index = index.replace("</body>", block + "\n</body>");
+    else index += block;
+    fs.writeFileSync(indexPath, index, "utf8");
+    console.log("Added categories link to index.html.");
+  } else {
+    console.log("index.html already links to categories.html.");
+  }
+}
+
+fs.writeFileSync(path.join(root, "STAGE31C_PUBLIC_CATEGORY_DIRECTORY_GUIDE.md"), `# SokoYetu Stage 31C: Public Category Directory and Product Discovery
+
+Stage 31C adds a public product discovery page.
+
+## New page
+
+\`\`\`text
+/categories.html
+\`\`\`
+
+## What it does
+
+- Fetches products from \`/api/products\`
+- Groups products by category
+- Lets buyers search products
+- Lets buyers filter by category
+- Shows product image, price, stock and short description
+- Links buyers back to the shop
+
+## Updated files
+
+\`\`\`text
+package.json
+categories.html
+sitemap.xml
+index.html
+scripts/check-stage31c-categories.js
+STAGE31C_PUBLIC_CATEGORY_DIRECTORY_GUIDE.md
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage31c:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/categories.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 31C public category directory installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage31c:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/categories.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json index.html sitemap.xml scripts/check-stage31c-categories.js categories.html STAGE31C_PUBLIC_CATEGORY_DIRECTORY_GUIDE.md");
+console.log('git commit -m "Add public category directory"');
+console.log("git push");
+

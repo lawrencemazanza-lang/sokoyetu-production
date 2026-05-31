@@ -1,0 +1,87 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+const files = [
+  "index.html",
+  "contact-support.html",
+  "data-protection.html",
+  "faq.html",
+  "privacy-policy.html",
+  "returns-policy.html",
+  "seller-policy.html",
+  "terms-of-service.html",
+  "app.js"
+];
+
+const SUPPORT_EMAIL = "mysokoyetu@gmail.com";
+
+function backup(filePath) {
+  const backupPath = `${filePath}.backup-stage23-contact-cleanup-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+let changedFiles = 0;
+
+for (const file of files) {
+  const filePath = path.join(root, file);
+  if (!fs.existsSync(filePath)) {
+    console.log("Skipped missing file:", file);
+    continue;
+  }
+
+  let text = fs.readFileSync(filePath, "utf8");
+  const before = text;
+
+  text = text.replace(/lawrencemazanza@gmail\.com/g, SUPPORT_EMAIL);
+
+  text = text.replace(
+    /<p>Contact:\s*<a href="tel:0714565555">0714565555<\/a>\s*[^<]*\s*<a href="mailto:support@mysokoyetu\.co\.ke">support@mysokoyetu\.co\.ke<\/a>\s*[^<]*\s*Nairobi,\s*Kenya<\/p>/g,
+    `<p>Contact: <a href="mailto:${SUPPORT_EMAIL}">${SUPPORT_EMAIL}</a> · Nairobi, Kenya</p>`
+  );
+
+  text = text.replace(
+    /Contact:\s*0714565555\s*[·•\-|]*\s*support@mysokoyetu\.co\.ke\s*[·•\-|]*\s*Nairobi,\s*Kenya/g,
+    `Contact: ${SUPPORT_EMAIL} · Nairobi, Kenya`
+  );
+
+  text = text.replace(
+    /For returns support,\s*contact\s*0714565555\s*or\s*support@mysokoyetu\.co\.ke\s*with your order number\./gi,
+    `For returns support, contact ${SUPPORT_EMAIL} with your order number.`
+  );
+
+  text = text.replace(
+    /Phone:\s*0714565555<br>Email:\s*support@mysokoyetu\.co\.ke<br>Location:/g,
+    `Email: ${SUPPORT_EMAIL}<br>Location:`
+  );
+
+  text = text.replace(
+    /contact\s*0714565555\s*or\s*support@mysokoyetu\.co\.ke/gi,
+    `contact ${SUPPORT_EMAIL}`
+  );
+
+  if (text !== before) {
+    backup(filePath);
+    fs.writeFileSync(filePath, text, "utf8");
+    changedFiles += 1;
+    console.log("Updated:", file);
+  } else {
+    console.log("No visible contact cleanup needed:", file);
+  }
+}
+
+console.log("");
+console.log("SUCCESS: Stage 23 public contact cleanup completed.");
+console.log("Changed files:", changedFiles);
+console.log("");
+console.log("Now run these checks:");
+console.log('findstr /n /i /c:"mysokoyetu@gmail.com" *.html app.js server.js');
+console.log('findstr /n /i /c:"Contact: <a href=\\"tel:0714565555\\"" *.html app.js server.js');
+console.log('findstr /n /i /c:"For returns support, contact 0714565555" *.html app.js server.js');
+console.log("");
+console.log("If the checks are clean, run:");
+console.log("git add index.html contact-support.html data-protection.html faq.html privacy-policy.html returns-policy.html seller-policy.html terms-of-service.html app.js");
+console.log('git commit -m "Clean public contact details"');
+console.log("git push");

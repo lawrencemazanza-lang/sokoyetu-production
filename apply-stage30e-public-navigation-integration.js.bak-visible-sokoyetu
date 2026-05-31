@@ -1,0 +1,303 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const indexPath = path.join(root, "index.html");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+if (!fs.existsSync(packagePath) || !fs.existsSync(indexPath)) {
+  console.error("ERROR: package.json or index.html was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage30e-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(indexPath, "index");
+backup(sitemapPath, "sitemap");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage30e:check"] = "node scripts/check-stage30e-public-navigation.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const helpBlock = `
+<!-- SokoYetu Stage 30E: Public customer service shortcuts -->
+<style id="sy-stage30e-help-style">
+  .sy-stage30e-helpbar{
+    position:fixed;
+    right:18px;
+    bottom:18px;
+    z-index:9999;
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    font-family:Arial,Helvetica,sans-serif;
+  }
+  .sy-stage30e-helpbar a{
+    background:#064e3b;
+    color:#fff;
+    text-decoration:none;
+    border-radius:999px;
+    padding:11px 14px;
+    font-weight:900;
+    box-shadow:0 14px 34px rgba(15,23,42,.22);
+    border:1px solid rgba(255,255,255,.18);
+    font-size:14px;
+  }
+  .sy-stage30e-helpbar a.secondary{
+    background:#16a34a;
+  }
+  .sy-stage30e-helpbar a.tertiary{
+    background:#111827;
+  }
+  .sy-stage30e-footerlinks{
+    width:min(1120px,94vw);
+    margin:22px auto;
+    padding:16px;
+    border:1px solid #bbf7d0;
+    border-radius:22px;
+    background:#f0fdf4;
+    color:#064e3b;
+    font-family:Arial,Helvetica,sans-serif;
+  }
+  .sy-stage30e-footerlinks b{
+    display:block;
+    margin-bottom:8px;
+  }
+  .sy-stage30e-footerlinks .links{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+  }
+  .sy-stage30e-footerlinks a{
+    color:#064e3b;
+    font-weight:900;
+    text-decoration:none;
+    border-bottom:2px solid #16a34a;
+  }
+  @media(max-width:760px){
+    .sy-stage30e-helpbar{
+      left:12px;
+      right:12px;
+      bottom:12px;
+      flex-direction:row;
+      justify-content:center;
+      flex-wrap:wrap;
+    }
+    .sy-stage30e-helpbar a{
+      font-size:12px;
+      padding:10px 11px;
+    }
+    body{padding-bottom:84px;}
+  }
+</style>
+
+<div class="sy-stage30e-footerlinks" id="syCustomerServiceLinks">
+  <b>Customer service</b>
+  <div class="links">
+    <a href="/help-center.html">Help Center</a>
+    <a href="/track-order.html">Track Order</a>
+    <a href="/support-request.html">Submit Support Request</a>
+    <a href="/returns-policy.html">Returns and Refunds</a>
+    <a href="/contact-support.html">Contact Support</a>
+  </div>
+</div>
+
+<div class="sy-stage30e-helpbar" aria-label="Customer service shortcuts">
+  <a href="/help-center.html">Help Center</a>
+  <a class="secondary" href="/track-order.html">Track Order</a>
+  <a class="tertiary" href="/support-request.html">Support</a>
+</div>
+<!-- End SokoYetu Stage 30E -->
+`;
+
+let index = fs.readFileSync(indexPath, "utf8");
+
+if (!index.includes("SokoYetu Stage 30E: Public customer service shortcuts")) {
+  if (index.includes("</body>")) {
+    index = index.replace("</body>", helpBlock + "\n</body>");
+  } else {
+    index += helpBlock;
+  }
+  fs.writeFileSync(indexPath, index, "utf8");
+  console.log("Added public customer service links to index.html.");
+} else {
+  console.log("index.html already has Stage 30E customer service links.");
+}
+
+function ensureSitemapUrl(sitemap, url) {
+  if (sitemap.includes(url)) return sitemap;
+  const block = `\n  <url>\n    <loc>${url}</loc>\n  </url>\n`;
+  if (sitemap.includes("</urlset>")) {
+    return sitemap.replace("</urlset>", block + "</urlset>");
+  }
+  return sitemap + block;
+}
+
+const publicUrls = [
+  "https://www.mysokoyetu.co.ke/help-center.html",
+  "https://www.mysokoyetu.co.ke/track-order.html",
+  "https://www.mysokoyetu.co.ke/support-request.html",
+  "https://www.mysokoyetu.co.ke/contact-support.html",
+  "https://www.mysokoyetu.co.ke/returns-policy.html",
+  "https://www.mysokoyetu.co.ke/faq.html"
+];
+
+let sitemap = fs.existsSync(sitemapPath)
+  ? fs.readFileSync(sitemapPath, "utf8")
+  : `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/</loc>\n  </url>\n</urlset>\n`;
+
+for (const url of publicUrls) {
+  sitemap = ensureSitemapUrl(sitemap, url);
+}
+
+fs.writeFileSync(sitemapPath, sitemap, "utf8");
+console.log("Public customer service URLs confirmed in sitemap.xml.");
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage30e-public-navigation.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 30E Public Navigation Integration Check");
+console.log("-----------------------------------------------------");
+
+let warnings = 0;
+
+const indexPath = path.join(root, "index.html");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+const requiredLinks = [
+  "/help-center.html",
+  "/track-order.html",
+  "/support-request.html",
+  "/returns-policy.html",
+  "/contact-support.html"
+];
+
+if (!fs.existsSync(indexPath)) {
+  console.log("WARN: index.html is missing.");
+  warnings += 1;
+} else {
+  const index = fs.readFileSync(indexPath, "utf8");
+  for (const link of requiredLinks) {
+    if (!index.includes(link)) {
+      console.log("WARN: index.html missing customer service link:", link);
+      warnings += 1;
+    } else {
+      console.log("OK: index.html includes", link);
+    }
+  }
+}
+
+if (!fs.existsSync(sitemapPath)) {
+  console.log("WARN: sitemap.xml is missing.");
+  warnings += 1;
+} else {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  const requiredSitemap = [
+    "/help-center.html",
+    "/track-order.html",
+    "/support-request.html",
+    "/contact-support.html",
+    "/returns-policy.html",
+    "/faq.html"
+  ];
+
+  for (const link of requiredSitemap) {
+    if (!sitemap.includes(link)) {
+      console.log("WARN: sitemap.xml missing:", link);
+      warnings += 1;
+    } else {
+      console.log("OK: sitemap.xml includes", link);
+    }
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 30E public navigation integration check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE30E_PUBLIC_NAVIGATION_INTEGRATION_GUIDE.md"), `# SokoYetu Stage 30E: Public Navigation and Customer Service Link Integration
+
+Stage 30E makes the public customer service pages easier to find.
+
+## What changed
+
+The homepage now includes customer service shortcuts to:
+
+\`\`\`text
+/help-center.html
+/track-order.html
+/support-request.html
+/returns-policy.html
+/contact-support.html
+\`\`\`
+
+The sitemap also confirms public service pages including:
+
+\`\`\`text
+/help-center.html
+/track-order.html
+/support-request.html
+/contact-support.html
+/returns-policy.html
+/faq.html
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+admin tokens
+database schema
+product import
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage30e:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/
+http://localhost:5173/help-center.html
+http://localhost:5173/track-order.html
+http://localhost:5173/support-request.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 30E public navigation integration installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage30e:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json index.html sitemap.xml scripts/check-stage30e-public-navigation.js STAGE30E_PUBLIC_NAVIGATION_INTEGRATION_GUIDE.md");
+console.log('git commit -m "Add public customer service navigation"');
+console.log("git push");

@@ -1,0 +1,239 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+const checkoutPath = path.join(root, "checkout.html");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let app = fs.readFileSync(appPath, "utf8");
+
+if (app.includes("SokoYetu Stage 20P: Hard Reset Checkout JavaScript")) {
+  console.log("No change needed. Stage 20P is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20p-hard-reset-checkout-js-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+// Remove every heavy checkout/cart patch that was appended after Stage 20B.
+// These patches caused browser freezes, stuck loading modals, and repeated mutation/event conflicts.
+const possibleStartMarkers = [
+  "// ================================\n// SokoYetu Stage 20B:",
+  "// SokoYetu Stage 20B:",
+  "// ================================\r\n// SokoYetu Stage 20B:",
+  "SokoYetu Stage 20B: Deployed Cart Product ID Fix",
+  "SokoYetu Stage 20F: Render Cart Sync Fix",
+  "SokoYetu Stage 20G: Cart Modal Stability Fix",
+  "SokoYetu Stage 20I: Customer Cart and Checkout Panel",
+  "SokoYetu Stage 20J: Green Checkout and Robust Product ID Fix",
+  "SokoYetu Stage 20K: Stop Payment Button Product ID Error",
+  "SokoYetu Stage 20L: Payment Button Isolation Fix",
+  "SokoYetu Stage 20M Dedicated Checkout Launcher",
+  "SokoYetu Stage 20N: Force Dedicated Checkout Page",
+  "SokoYetu Stage 20O: Clean Checkout Recovery"
+];
+
+let firstIndex = -1;
+let matchedMarker = "";
+
+for (const marker of possibleStartMarkers) {
+  const idx = app.indexOf(marker);
+  if (idx !== -1 && (firstIndex === -1 || idx < firstIndex)) {
+    firstIndex = idx;
+    matchedMarker = marker;
+  }
+}
+
+if (firstIndex !== -1) {
+  let cutIndex = app.lastIndexOf("// ================================", firstIndex);
+  if (cutIndex === -1) cutIndex = firstIndex;
+
+  app = app.slice(0, cutIndex).trimEnd() + "\n\n";
+  console.log("Removed appended checkout patches starting at marker:", matchedMarker);
+} else {
+  console.log("No Stage 20B+ marker found. Appending safe checkout recovery only.");
+}
+
+// Keep only one safe lightweight checkout launcher.
+// It does NOT use MutationObserver, repeated intervals, modal rewriting, renderApp, or cart interception loops.
+app += `
+
+// ================================
+// SokoYetu Stage 20P: Hard Reset Checkout JavaScript
+// Lightweight recovery after cart/checkout modal conflicts.
+// Sends checkout/cart navigation to checkout.html without heavy observers or modal sync.
+// ================================
+(function initStage20PHardResetCheckoutJavaScript() {
+  if (window.__sokoyetuStage20PInstalled) return;
+  window.__sokoyetuStage20PInstalled = true;
+
+  function goToCheckout(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.location.href = "/checkout.html";
+  }
+
+  function ensureCheckoutButton() {
+    if (!document.body) return;
+
+    // Remove old modal elements if they exist.
+    var oldBackdrop = document.getElementById("syCustomerCartBackdrop");
+    if (oldBackdrop) oldBackdrop.remove();
+
+    var oldLauncher = document.getElementById("syCustomerCartLauncher");
+    if (oldLauncher) oldLauncher.remove();
+
+    if (!document.getElementById("syStage20PCheckoutStyle")) {
+      var style = document.createElement("style");
+      style.id = "syStage20PCheckoutStyle";
+      style.textContent =
+        "#syStage20PCheckoutBtn{position:fixed;right:18px;bottom:22px;z-index:19000;border:none;border-radius:999px;background:linear-gradient(135deg,#16a34a,#064e3b);color:#fff;font-weight:900;padding:13px 17px;box-shadow:0 18px 45px rgba(15,23,42,.28);cursor:pointer}" +
+        "#syCustomerCartBackdrop,.sy-customer-cart-backdrop,#syCustomerCartLauncher{display:none!important;visibility:hidden!important;pointer-events:none!important}" +
+        "@media(max-width:720px){#syStage20PCheckoutBtn{right:10px;bottom:14px;padding:11px 13px;font-size:13px}}";
+      document.head.appendChild(style);
+    }
+
+    var button = document.getElementById("syStage20PCheckoutBtn");
+    if (!button) {
+      button = document.createElement("button");
+      button.id = "syStage20PCheckoutBtn";
+      button.type = "button";
+      button.textContent = "✅ Secure Checkout";
+      button.addEventListener("click", goToCheckout);
+      document.body.appendChild(button);
+    }
+  }
+
+  function isCheckoutClick(element) {
+    if (!element) return false;
+
+    var text = String(element.textContent || "").toLowerCase().trim();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    if (text.includes("add to cart")) return false;
+    if (text.includes("send m-pesa")) return false;
+    if (text.includes("stk push")) return false;
+
+    return (
+      id === "systage20pcheckoutbtn" ||
+      text === "cart" ||
+      text.includes("cart / checkout") ||
+      text.includes("secure checkout") ||
+      text.includes("view cart") ||
+      text === "checkout" ||
+      className.includes("checkout")
+    );
+  }
+
+  document.addEventListener("click", function (event) {
+    var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+    if (!clicked || !isCheckoutClick(clicked)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    window.location.href = "/checkout.html";
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", ensureCheckoutButton);
+
+  if (document.readyState !== "loading") {
+    ensureCheckoutButton();
+  }
+})();
+`;
+
+fs.writeFileSync(appPath, app, "utf8");
+
+// Recreate a clean dedicated checkout page every time for consistency.
+fs.writeFileSync(checkoutPath, `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Secure Checkout</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:#f0fdf4; color:#111827; }
+    header { background:linear-gradient(135deg,#064e3b,#16a34a); color:white; padding:22px; }
+    header div, main { width:min(980px,94vw); margin:0 auto; }
+    h1 { margin:0; font-size:26px; }
+    header p { margin:6px 0 0; color:#dcfce7; }
+    main { display:grid; gap:16px; padding:20px 0 34px; }
+    .card { background:white; border:1px solid #bbf7d0; border-radius:22px; box-shadow:0 18px 42px rgba(15,23,42,.08); overflow:hidden; }
+    .head { background:#dcfce7; color:#064e3b; padding:16px 18px; font-weight:900; border-bottom:1px solid #bbf7d0; }
+    .body { padding:16px; display:grid; gap:12px; }
+    .row { display:grid; grid-template-columns:70px 1fr auto; align-items:center; gap:12px; border:1px solid #dcfce7; background:#f0fdf4; border-radius:16px; padding:10px; }
+    .row img { width:70px; height:70px; border-radius:14px; object-fit:cover; background:#e5e7eb; }
+    .title { font-weight:900; }
+    .meta { color:#64748b; font-size:13px; margin-top:4px; }
+    .price { font-weight:900; color:#047857; text-align:right; }
+    .summary { display:grid; gap:8px; background:#f0fdf4; border:1px solid #bbf7d0; border-radius:16px; padding:14px; }
+    .line { display:flex; justify-content:space-between; gap:12px; }
+    .line b { color:#064e3b; }
+    form { display:grid; gap:10px; }
+    label { font-weight:900; color:#064e3b; }
+    input, textarea { width:100%; border:1px solid #86efac; border-radius:14px; padding:12px; font:inherit; background:#fff; }
+    textarea { min-height:86px; resize:vertical; }
+    button, .back { border:none; border-radius:14px; padding:12px 15px; font-weight:900; cursor:pointer; text-decoration:none; display:inline-flex; justify-content:center; align-items:center; gap:6px; }
+    button { background:#16a34a; color:#fff; }
+    button:disabled { opacity:.65; cursor:wait; }
+    .back { background:#064e3b; color:#fff; width:fit-content; }
+    .msg { border-radius:14px; padding:12px; font-weight:800; line-height:1.5; }
+    .ok { background:#dcfce7; color:#166534; border:1px solid #86efac; }
+    .err { background:#fef2f2; color:#b91c1c; border:1px solid #fecaca; }
+    .empty { border:1px dashed #86efac; background:#f0fdf4; color:#166534; border-radius:16px; padding:16px; font-weight:800; }
+    @media(max-width:720px){ .row{grid-template-columns:54px 1fr;} .row img{width:54px;height:54px;} .price{grid-column:2;text-align:left;} }
+  </style>
+</head>
+<body>
+  <header><div><h1>SokoYetu Secure Checkout</h1><p>Green M-PESA checkout · Real Daraja STK Push</p></div></header>
+  <main>
+    <a class="back" href="/">← Back to shop</a>
+    <section class="card"><div class="head">Your cart</div><div class="body" id="cartBody"><div class="empty">Loading cart...</div></div></section>
+    <section class="card"><div class="head">M-PESA payment details</div><div class="body">
+      <form id="checkoutForm">
+        <label for="phone">M-PESA phone number</label>
+        <input id="phone" placeholder="254708374149" required>
+        <label for="deliveryAddress">Delivery address</label>
+        <textarea id="deliveryAddress" placeholder="Example: Nairobi CBD, Moi Avenue" required></textarea>
+        <button id="payBtn" type="submit">Send M-PESA STK Push</button>
+        <div id="message"></div>
+      </form>
+    </div></section>
+  </main>
+  <script>
+    const cartBody=document.getElementById("cartBody"),form=document.getElementById("checkoutForm"),message=document.getElementById("message"),payBtn=document.getElementById("payBtn");let latestCart=[];
+    function esc(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+    function money(v){return "KES "+Number(v||0).toLocaleString("en-KE")}
+    function productOf(i){return i.product||i.Product||i}
+    function qtyOf(i){return Number(i.quantity||i.qty||i.count||1)||1}
+    function normalize(data){const raw=(Array.isArray(data)&&data)||data.cart||data.items||data.cartItems||data.data||[];if(!Array.isArray(raw))return[];return raw.map(i=>{const p=productOf(i),id=Number(i.productId||p.id||i.id),q=qtyOf(i),price=Number(p.price||i.price||0);return{productId:id,name:p.name||i.name||"Product",price,quantity:q,imageUrl:p.imageUrl||i.imageUrl||""}}).filter(i=>i.productId>0)}
+    async function fetchJson(url,opt={}){const r=await fetch(url,{credentials:"include",headers:{"Accept":"application/json","Content-Type":"application/json",...(opt.headers||{})},...opt});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.message||"Request failed.");return d}
+    async function loadCart(){try{const d=await fetchJson("/api/cart");latestCart=normalize(d);if(!latestCart.length){cartBody.innerHTML="<div class='empty'>Your cart is empty. Go back to the shop and add a product first.</div>";payBtn.disabled=true;return}payBtn.disabled=false;const rows=latestCart.map(i=>"<article class='row'>"+(i.imageUrl?"<img src='"+esc(i.imageUrl)+"' alt=''>":"<img alt=''>")+"<div><div class='title'>"+esc(i.name)+"</div><div class='meta'>Quantity: "+i.quantity+" · Product ID: "+i.productId+"</div></div><div class='price'>"+money(i.price*i.quantity)+"</div></article>").join("");const total=latestCart.reduce((s,i)=>s+i.price*i.quantity,0);cartBody.innerHTML=rows+"<div class='summary'><div class='line'><span>Subtotal</span><b>"+money(total)+"</b></div><div class='line'><span>Delivery</span><b>"+(total>=10000?"Free":"To be confirmed")+"</b></div><div class='line'><span>Total</span><b>"+money(total)+"</b></div></div>"}catch(e){cartBody.innerHTML="<div class='msg err'>"+esc(e.message)+"</div>";payBtn.disabled=true}}
+    form.addEventListener("submit",async e=>{e.preventDefault();const phone=document.getElementById("phone").value.trim(),deliveryAddress=document.getElementById("deliveryAddress").value.trim();if(!phone){message.innerHTML="<div class='msg err'>M-PESA phone number is required.</div>";return}if(!deliveryAddress){message.innerHTML="<div class='msg err'>Delivery address is required.</div>";return}try{payBtn.disabled=true;message.innerHTML="<div class='msg ok'>Creating order and sending M-PESA STK Push...</div>";const od=await fetchJson("/api/orders",{method:"POST",body:JSON.stringify({phone,deliveryAddress})});const order=od.order||od;if(!order.id)throw new Error("Order was created but no order ID was returned.");const sd=await fetchJson("/api/payments/mpesa/stk-push",{method:"POST",body:JSON.stringify({orderId:order.id,phone})});message.innerHTML="<div class='msg ok'><b>M-PESA STK Push sent.</b><br>Check the customer phone, enter the M-PESA PIN, then wait for payment confirmation."+(sd.checkoutRequestId?"<br><small>Checkout Request ID: "+esc(sd.checkoutRequestId)+"</small>":"")+"</div>"}catch(e){message.innerHTML="<div class='msg err'><b>Checkout could not continue.</b><br>"+esc(e.message||"Please check Daraja settings and try again.")+"</div>"}finally{payBtn.disabled=false}});
+    loadCart();
+  </script>
+</body>
+</html>`, "utf8");
+
+console.log("");
+console.log("SUCCESS: Stage 20P hard reset checkout JavaScript installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Then open http://localhost:5173/?v=20p and http://localhost:5173/checkout.html?v=20p");
+console.log("");
+console.log("If it works:");
+console.log("git add app.js checkout.html");
+console.log("git commit -m \"Hard reset checkout JavaScript\"");
+console.log("git push");

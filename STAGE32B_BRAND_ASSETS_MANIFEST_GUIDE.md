@@ -1,4 +1,4 @@
-# SokoYetu Stage 32B: Brand Assets, Favicon and Web App Manifest
+﻿# SokoYetu Mtaani Stage 32B: Brand Assets, Favicon and Web App Manifest
 
 Stage 32B gives the public site stronger browser and sharing identity.
 
@@ -6,8 +6,8 @@ Stage 32B gives the public site stronger browser and sharing identity.
 
 ```text
 favicon.svg
-sokoyetu-icon.svg
-sokoyetu-share.svg
+SokoYetu Mtaani-icon.svg
+SokoYetu Mtaani-share.svg
 site.webmanifest
 scripts/check-stage32b-brand-assets.js
 STAGE32B_BRAND_ASSETS_MANIFEST_GUIDE.md
@@ -60,3 +60,4 @@ http://localhost:5173/favicon.svg
 http://localhost:5173/site.webmanifest
 http://localhost:5173/
 ```
+

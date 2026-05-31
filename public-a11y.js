@@ -1,6 +1,6 @@
-(function(){
-  if (window.__SOKOYETU_A11Y__) return;
-  window.__SOKOYETU_A11Y__ = true;
+﻿(function(){
+  if (window.__sokoyetu_A11Y__) return;
+  window.__sokoyetu_A11Y__ = true;
 
   function ready(fn){
     if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
@@ -36,7 +36,7 @@
           var title = parent.querySelector("h1,h2,h3,b,.title");
           if (title) nearby = title.textContent.trim();
         }
-        img.setAttribute("alt", nearby || "SokoYetu image " + (index + 1));
+        img.setAttribute("alt", nearby || "SokoYetu Mtaani image " + (index + 1));
       }
     });
   }
@@ -75,8 +75,8 @@
       if (!text || text.length > 60) return;
       live.textContent = text;
       live.classList.add("show");
-      clearTimeout(window.__SOKOYETU_A11Y_TIMER__);
-      window.__SOKOYETU_A11Y_TIMER__ = setTimeout(function(){
+      clearTimeout(window.__sokoyetu_A11Y_TIMER__);
+      window.__sokoyetu_A11Y_TIMER__ = setTimeout(function(){
         live.classList.remove("show");
       }, 1200);
     });
@@ -102,3 +102,5 @@
     addLiveRegion();
   });
 })();
+
+

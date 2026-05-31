@@ -1,15 +1,15 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 31E Seller Storefronts Check");
+console.log("SokoYetu Mtaani Stage 31E Seller Storefronts Check");
 console.log("------------------------------------------");
 
 let warnings = 0;
 
 const files = [
-  ["seller-stores.html", ["/api/products", "SokoYetu Seller Stores", "/seller-store.html?sellerId="]],
+  ["seller-stores.html", ["/api/products", "SokoYetu Mtaani Seller Stores", "/seller-store.html?sellerId="]],
   ["seller-store.html", ["/api/products", "Seller Store", "/product-detail.html?id="]],
 ];
 
@@ -51,3 +51,4 @@ if (fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 31E seller storefronts check passed.");
+

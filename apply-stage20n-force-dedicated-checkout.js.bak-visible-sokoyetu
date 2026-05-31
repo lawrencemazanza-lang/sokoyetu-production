@@ -1,0 +1,178 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+const checkoutPath = path.join(root, "checkout.html");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+if (!fs.existsSync(checkoutPath)) {
+  console.error("ERROR: checkout.html was not found. Run Stage 20M first, then run this patch.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20N: Force Dedicated Checkout Page")) {
+  console.log("No change needed. Stage 20N is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20n-force-dedicated-checkout-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+const patch = `
+
+// ================================
+// SokoYetu Stage 20N: Force Dedicated Checkout Page
+// Hides the old stuck Cart and Checkout modal and routes checkout actions to /checkout.html.
+// ================================
+(function initStage20NForceDedicatedCheckoutPage() {
+  if (window.__sokoyetuStage20NInstalled) return;
+  window.__sokoyetuStage20NInstalled = true;
+
+  function goCheckout() {
+    window.location.href = "/checkout.html";
+  }
+
+  function ensureStyle() {
+    if (document.getElementById("syStage20NForceCheckoutStyle")) return;
+
+    var style = document.createElement("style");
+    style.id = "syStage20NForceCheckoutStyle";
+    style.textContent =
+      "#syCustomerCartBackdrop,.sy-customer-cart-backdrop{display:none!important;visibility:hidden!important;pointer-events:none!important}" +
+      "#syCustomerCartLauncher{display:none!important;visibility:hidden!important;pointer-events:none!important}" +
+      "#syDedicatedCheckoutLauncher{display:inline-flex!important;visibility:visible!important;pointer-events:auto!important;position:fixed!important;right:18px!important;bottom:22px!important;z-index:19000!important;border:none!important;border-radius:999px!important;background:linear-gradient(135deg,#16a34a,#064e3b)!important;color:#fff!important;font-weight:900!important;padding:13px 17px!important;box-shadow:0 18px 45px rgba(15,23,42,.28)!important;cursor:pointer!important}" +
+      "@media(max-width:720px){#syDedicatedCheckoutLauncher{right:10px!important;bottom:14px!important;padding:11px 13px!important;font-size:13px!important}}";
+    document.head.appendChild(style);
+  }
+
+  function ensureLauncher() {
+    ensureStyle();
+
+    var oldLauncher = document.getElementById("syCustomerCartLauncher");
+    if (oldLauncher) {
+      oldLauncher.style.display = "none";
+      oldLauncher.style.visibility = "hidden";
+      oldLauncher.style.pointerEvents = "none";
+      oldLauncher.setAttribute("aria-hidden", "true");
+    }
+
+    var oldBackdrop = document.getElementById("syCustomerCartBackdrop");
+    if (oldBackdrop) {
+      oldBackdrop.style.display = "none";
+      oldBackdrop.style.visibility = "hidden";
+      oldBackdrop.style.pointerEvents = "none";
+      oldBackdrop.setAttribute("aria-hidden", "true");
+    }
+
+    var launcher = document.getElementById("syDedicatedCheckoutLauncher");
+    if (!launcher) {
+      launcher = document.createElement("button");
+      launcher.id = "syDedicatedCheckoutLauncher";
+      launcher.type = "button";
+      document.body.appendChild(launcher);
+    }
+
+    launcher.textContent = "✅ Secure Checkout";
+    launcher.onclick = function (event) {
+      event.preventDefault();
+      event.stopPropagation();
+      goCheckout();
+    };
+  }
+
+  function isCheckoutButton(element) {
+    if (!element) return false;
+
+    var text = String(element.textContent || "").toLowerCase().trim();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    if (text.includes("add to cart")) return false;
+    if (text.includes("send m-pesa")) return false;
+    if (text.includes("stk push")) return false;
+    if (id === "sydirectmpesapaybtn") return false;
+    if (id === "syrefreshcartbtn") return false;
+
+    return (
+      id === "sydedicatedcheckoutlauncher" ||
+      id === "sycustomercartlauncher" ||
+      text === "cart" ||
+      text.includes("cart / checkout") ||
+      text.includes("secure checkout") ||
+      text.includes("view cart") ||
+      text === "checkout" ||
+      className.includes("checkout")
+    );
+  }
+
+  // Replace the exposed old open function with redirect.
+  window.sokoyetuOpenCustomerCartCheckout = goCheckout;
+
+  document.addEventListener("click", function (event) {
+    var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+    if (!clicked || !isCheckoutButton(clicked)) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    goCheckout();
+  }, true);
+
+  function cleanupOldModal() {
+    ensureLauncher();
+
+    var oldBackdrop = document.getElementById("syCustomerCartBackdrop");
+    if (oldBackdrop) {
+      oldBackdrop.style.display = "none";
+      oldBackdrop.style.visibility = "hidden";
+      oldBackdrop.style.pointerEvents = "none";
+    }
+
+    Array.from(document.querySelectorAll("body > div, body > section, body > aside")).forEach(function (node) {
+      if (node.id === "syDedicatedCheckoutLauncher") return;
+      var text = String(node.textContent || "").toLowerCase();
+      if (text.includes("cart and checkout") && text.includes("loading cart")) {
+        node.style.display = "none";
+        node.style.visibility = "hidden";
+        node.style.pointerEvents = "none";
+      }
+    });
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    cleanupOldModal();
+    setInterval(cleanupOldModal, 800);
+  });
+
+  if (document.readyState !== "loading") {
+    cleanupOldModal();
+    setInterval(cleanupOldModal, 800);
+  }
+
+  var observer = new MutationObserver(cleanupOldModal);
+  if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+})();
+`;
+
+code += patch;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20N force dedicated checkout page installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally: Add product to cart, then click Secure Checkout or go to /checkout.html.");
+console.log("");
+console.log("If it works:");
+console.log("git add app.js checkout.html");
+console.log("git commit -m \"Force checkout to dedicated checkout page\"");
+console.log("git push");

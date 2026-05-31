@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 20 Deployment Readiness Check");
+console.log("SokoYetu Mtaani Stage 20 Deployment Readiness Check");
 console.log("-------------------------------------------");
 
 let ok = true;
@@ -77,3 +77,4 @@ if (warnings.length) {
 
 console.log(ok ? "Deployment readiness check passed for core required values." : "Deployment readiness check found issues.");
 process.exit(ok ? 0 : 1);
+

@@ -1,0 +1,324 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage30d-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(sitemapPath, "sitemap");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage30d:check"] = "node scripts/check-stage30d-help-center.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(root, "help-center.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Help Center</title>
+  <meta name="description" content="SokoYetu customer help center for order tracking, support requests, returns, refunds, account help and marketplace policies.">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:28px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:32px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5;max-width:760px}
+    main{display:grid;gap:16px;padding:22px 0 40px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:9px;text-decoration:none;color:#111827;min-height:132px}
+    .tile:hover{outline:3px solid #86efac}
+    .tile b{color:#064e3b;font-size:17px}
+    .tile span{color:#475569;line-height:1.45}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    details{border:1px solid #e5e7eb;background:#f8fafc;border-radius:16px;padding:12px}
+    summary{font-weight:900;color:#064e3b;cursor:pointer}
+    details p{line-height:1.55;color:#475569}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:27px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Help Center</h1>
+    <p>Find help with order tracking, payment issues, delivery questions, returns, refunds, seller support and marketplace policies.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Quick customer actions</div>
+    <div class="body grid">
+      <a class="tile" href="/track-order.html">
+        <b>Track an order</b>
+        <span>Use your order ID and checkout phone number to check payment, delivery and tracking status.</span>
+        <em class="pill">Order ID + phone</em>
+      </a>
+      <a class="tile" href="/support-request.html">
+        <b>Submit support request</b>
+        <span>Report delivery, payment, product, cancellation or refund issues linked to an order.</span>
+        <em class="pill">Customer support</em>
+      </a>
+      <a class="tile" href="/returns-policy.html">
+        <b>Returns and refunds</b>
+        <span>Read the basic return, refund and order issue process before submitting a request.</span>
+        <em class="pill warn">Policy</em>
+      </a>
+      <a class="tile" href="/contact-support.html">
+        <b>Contact support</b>
+        <span>Find SokoYetu support contact details for customer, order and seller enquiries.</span>
+        <em class="pill">Support</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Marketplace help topics</div>
+    <div class="body grid">
+      <a class="tile" href="/faq.html">
+        <b>Frequently asked questions</b>
+        <span>Answers to common questions about buying, checkout, delivery and account use.</span>
+        <em class="pill">FAQ</em>
+      </a>
+      <a class="tile" href="/seller-policy.html">
+        <b>Seller policy</b>
+        <span>Understand seller responsibilities, listing quality, fulfilment and product accuracy.</span>
+        <em class="pill">Sellers</em>
+      </a>
+      <a class="tile" href="/privacy-policy.html">
+        <b>Privacy policy</b>
+        <span>Learn how customer and order information is handled on SokoYetu.</span>
+        <em class="pill">Privacy</em>
+      </a>
+      <a class="tile" href="/terms-of-service.html">
+        <b>Terms of service</b>
+        <span>Read the rules for using the SokoYetu marketplace.</span>
+        <em class="pill">Terms</em>
+      </a>
+      <a class="tile" href="/data-protection.html">
+        <b>Data protection</b>
+        <span>Review customer data handling and protection commitments.</span>
+        <em class="pill">Data</em>
+      </a>
+      <a class="tile" href="/checkout.html">
+        <b>Secure checkout</b>
+        <span>Return to checkout if you already have items in your cart.</span>
+        <em class="pill">Checkout</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Common questions</div>
+    <div class="body">
+      <details>
+        <summary>How do I track my order?</summary>
+        <p>Open the order tracking page and enter your order ID together with the phone number used at checkout. This helps protect customer privacy.</p>
+      </details>
+      <details>
+        <summary>What should I do if M-PESA payment fails?</summary>
+        <p>Confirm that your M-PESA line has enough balance, then retry checkout. If the issue continues, submit a support request with your order number and phone number.</p>
+      </details>
+      <details>
+        <summary>How do I request a refund?</summary>
+        <p>Use the support request page and choose refund request. Include your order ID, checkout phone number and a clear explanation of the issue.</p>
+      </details>
+      <details>
+        <summary>Can sellers publish products automatically?</summary>
+        <p>During soft launch, seller and product approval should remain under admin review so that product details, images, availability and delivery readiness are checked.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Support note</div>
+    <div class="body">
+      <div class="note">For order help, always include your order number and the phone number used at checkout. For general support, contact mysokoyetu@gmail.com.</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  SokoYetu · Nairobi, Kenya · mysokoyetu@gmail.com
+</footer>
+</body>
+</html>`, "utf8");
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage30d-help-center.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 30D Public Help Center Check");
+console.log("------------------------------------------");
+
+let warnings = 0;
+
+const helpPath = path.join(root, "help-center.html");
+if (!fs.existsSync(helpPath)) {
+  console.log("WARN: help-center.html is missing.");
+  warnings += 1;
+} else {
+  const html = fs.readFileSync(helpPath, "utf8");
+  const required = [
+    "/track-order.html",
+    "/support-request.html",
+    "/returns-policy.html",
+    "/contact-support.html",
+    "/faq.html",
+    "/privacy-policy.html",
+    "/terms-of-service.html"
+  ];
+
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN: help-center.html missing link:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: help-center.html links", item);
+    }
+  }
+}
+
+const sitemapPath = path.join(root, "sitemap.xml");
+if (fs.existsSync(sitemapPath)) {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  if (!sitemap.includes("/help-center.html")) {
+    console.log("WARN: sitemap.xml does not include help-center.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: sitemap.xml includes help-center.html.");
+  }
+} else {
+  console.log("WARN: sitemap.xml is missing.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 30D help center check passed.");
+`, "utf8");
+
+// Update sitemap if present.
+if (fs.existsSync(sitemapPath)) {
+  let sitemap = fs.readFileSync(sitemapPath, "utf8");
+  if (!sitemap.includes("/help-center.html")) {
+    const urlBlock = `\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/help-center.html</loc>\n  </url>\n`;
+    if (sitemap.includes("</urlset>")) {
+      sitemap = sitemap.replace("</urlset>", urlBlock + "</urlset>");
+    } else {
+      sitemap += urlBlock;
+    }
+    fs.writeFileSync(sitemapPath, sitemap, "utf8");
+    console.log("Added help-center.html to sitemap.xml.");
+  } else {
+    console.log("sitemap.xml already includes help-center.html.");
+  }
+} else {
+  fs.writeFileSync(sitemapPath, `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/</loc>\n  </url>\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/help-center.html</loc>\n  </url>\n</urlset>\n`, "utf8");
+  console.log("Created sitemap.xml with help-center.html.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE30D_PUBLIC_HELP_CENTER_GUIDE.md"), `# SokoYetu Stage 30D: Public Help Center and Customer Service Hub
+
+Stage 30D adds a public customer help center.
+
+## New page
+
+\`\`\`text
+/help-center.html
+\`\`\`
+
+## Purpose
+
+The help center gives customers one clear place to access:
+
+\`\`\`text
+/track-order.html
+/support-request.html
+/returns-policy.html
+/contact-support.html
+/faq.html
+/seller-policy.html
+/privacy-policy.html
+/terms-of-service.html
+/data-protection.html
+/checkout.html
+\`\`\`
+
+## Sitemap
+
+\`sitemap.xml\` is updated to include:
+
+\`\`\`text
+https://www.mysokoyetu.co.ke/help-center.html
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+admin tokens
+database schema
+product import
+seller verification logic
+support queue logic
+LiveKit
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage30d:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/help-center.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 30D public help center installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage30d:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/help-center.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json sitemap.xml scripts/check-stage30d-help-center.js help-center.html STAGE30D_PUBLIC_HELP_CENTER_GUIDE.md");
+console.log('git commit -m "Add public help center"');
+console.log("git push");

@@ -1,6 +1,6 @@
-# SokoYetu Stage 15B: Automatic M-PESA Callback Database Update
+﻿# SokoYetu Mtaani Stage 15B: Automatic M-PESA Callback Database Update
 
-Your STK Push already works. Stage 15B confirms that the callback updates SokoYetu automatically.
+Your STK Push already works. Stage 15B confirms that the callback updates SokoYetu Mtaani automatically.
 
 ## What this patch adds
 
@@ -14,7 +14,7 @@ npm run mpesa:poll
 
 ## Test 1: Prove your callback code updates PostgreSQL
 
-1. Start SokoYetu:
+1. Start SokoYetu Mtaani:
 
 ```cmd
 npm run dev
@@ -40,13 +40,13 @@ Order paymentStatus: PAID
 Order orderStatus: PAYMENT_CONFIRMED
 ```
 
-This proves your SokoYetu callback route works locally.
+This proves your SokoYetu Mtaani callback route works locally.
 
 ## Test 2: Real Safaricom callback
 
-For real automatic update, MPESA_CALLBACK_URL must point to SokoYetu, not Webhook.site.
+For real automatic update, MPESA_CALLBACK_URL must point to SokoYetu Mtaani, not Webhook.site.
 
-Webhook.site proves Safaricom can send a callback, but it cannot update your SokoYetu database.
+Webhook.site proves Safaricom can send a callback, but it cannot update your SokoYetu Mtaani database.
 
 You need:
 
@@ -72,7 +72,7 @@ Then use the generated HTTPS trycloudflare.com URL as:
 MPESA_CALLBACK_URL="https://something.trycloudflare.com/api/payments/mpesa/callback"
 ```
 
-Restart SokoYetu after changing .env.
+Restart SokoYetu Mtaani after changing .env.
 
 Then run:
 
@@ -81,4 +81,5 @@ npm run mpesa:stk
 npm run mpesa:poll
 ```
 
-If Safaricom sends the callback to SokoYetu, the poll should eventually show PAID or FAILED.
+If Safaricom sends the callback to SokoYetu Mtaani, the poll should eventually show PAID or FAILED.
+

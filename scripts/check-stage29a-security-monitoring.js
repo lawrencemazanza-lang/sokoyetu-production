@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 29A Security and Monitoring Check");
+console.log("SokoYetu Mtaani Stage 29A Security and Monitoring Check");
 console.log("-----------------------------------------------");
 
 let warnings = 0;
@@ -45,3 +45,4 @@ console.log("- STAGE29A_SECURITY_MONITORING_GUIDE.md");
 console.log("- STAGE29A_LAUNCH_RISK_REGISTER.md");
 console.log("");
 console.log("Warnings:", warnings);
+

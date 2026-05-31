@@ -1,4 +1,4 @@
-# SokoYetu Stage 34C: Public How It Works and Delivery Information Hub
+﻿# SokoYetu Mtaani Stage 34C: Public How It Works and Delivery Information Hub
 
 Stage 34C adds public guidance pages for the buyer journey and delivery expectations.
 
@@ -66,3 +66,4 @@ Open:
 http://localhost:5173/how-it-works.html
 http://localhost:5173/delivery-info.html
 ```
+

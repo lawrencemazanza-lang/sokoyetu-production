@@ -1,8 +1,8 @@
-{
+﻿{
   "name": "sokoyetu-elite-jumia-inspired",
   "version": "4.0.0",
   "private": true,
-  "description": "SokoYetu modern Kenyan marketplace prototype with Jumia-style homepage organization, role-based dashboards, live deals, live sellers and AI commerce tools.",
+  "description": "SokoYetu Mtaani modern Kenyan marketplace prototype with Jumia-style homepage organization, role-based dashboards, live deals, live sellers and AI commerce tools.",
   "scripts": {
     "dev": "node server.js",
     "start": "node server.js",
@@ -68,10 +68,16 @@
     "stage35b:check": "node scripts/check-stage35b-route-order.js",
     "stage35c:check": "node scripts/check-stage35c-buyer-smoke.js",
     "stage36a:check": "node scripts/check-stage36a-self-pickup.js",
-    "stage36b:check": "node scripts/check-stage36b-checkout-routing.js"
+    "stage36b:check": "node scripts/check-stage36b-checkout-routing.js",
+    "stage37a:check": "node scripts/check-stage37a-ux-whatsapp-manual-mpesa.js",
+    "stage37b:check": "node scripts/check-stage37b-marketplace-redesign.js",
+    "stage37c:check": "node scripts/check-stage37c-homepage-redesign.js",
+    "stage37d:check": "node scripts/check-stage37d-jumia-style-homepage.js",
+    "stage37e:check": "node scripts/check-stage37e-flashsale-first.js",
+    "stage37f:check": "node scripts/check-stage37f-flashsale-themes-logo.js"
   },
   "keywords": [
-    "sokoyetu",
+    "SokoYetu Mtaani",
     "marketplace",
     "ecommerce",
     "kenya",
@@ -101,3 +107,4 @@
     "node": ">=20 <25"
   }
 }
+

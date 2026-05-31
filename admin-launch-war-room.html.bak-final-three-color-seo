@@ -1,0 +1,391 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Launch War Room</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1260px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:92px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .danger{background:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:7px;text-decoration:none;color:#111827}
+    .tile b{color:#064e3b}
+    .tile span{color:#475569;line-height:1.45}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .info{background:#dbeafe;color:#1e40af}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .checkitem{border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:flex-start}
+    .checkitem input{width:auto;min-height:auto;margin-top:3px}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Launch War Room</h1>
+    <p>Central launch-day operations page for health checks, M-PESA monitoring, order/support monitoring, checklist tracking and launch log exports.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/">Open public shop</a>
+    <a class="linkbtn secondary" href="/admin-launch.html">Launch readiness</a>
+    <a class="linkbtn secondary" href="/admin-system-health.html">System health</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Launch status</div>
+    <div class="body">
+      <div class="grid" id="statusMetrics">
+        <div class="metric">Checks run<b>0</b></div>
+      </div>
+      <div class="actions">
+        <button id="runHealthBtn" type="button">Run public health checks</button>
+        <button id="clearHealthBtn" class="secondary" type="button">Clear results</button>
+      </div>
+      <div id="healthMessage" class="note">Run checks before launch, during first transactions, and after deployment changes.</div>
+      <table>
+        <thead><tr><th>Area</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody id="healthRows"><tr><td colspan="4">No checks run yet.</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Operations links</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-orders.html"><b>Admin Orders</b><span>Monitor new orders, payment status and fulfilment status.</span><em class="pill">orders</em></a>
+      <a class="tile" href="/admin-support.html"><b>Support Queue</b><span>Watch customer tickets during launch and after first payments.</span><em class="pill">support</em></a>
+      <a class="tile" href="/admin-mpesa-readiness.html"><b>M-PESA Readiness</b><span>Review credentials, callback and production readiness blockers.</span><em class="pill warn">M-PESA</em></a>
+      <a class="tile" href="/admin-mpesa-env-guard.html"><b>M-PESA Environment Guard</b><span>Check production confirmation and variable mapping.</span><em class="pill warn">guard</em></a>
+      <a class="tile" href="/admin-mpesa-reconciliation.html"><b>M-PESA Reconciliation</b><span>Compare payments to orders and check receipts.</span><em class="pill warn">reconcile</em></a>
+      <a class="tile" href="/admin-mpesa-evidence.html"><b>M-PESA Evidence Export</b><span>Export payment evidence for audit and disputes.</span><em class="pill warn">evidence</em></a>
+      <a class="tile" href="/admin-mpesa-live-test.html"><b>Live Test Runbook</b><span>Track first live payment checklist and manual test log.</span><em class="pill info">runbook</em></a>
+      <a class="tile" href="/admin-mpesa-incident.html"><b>Incident Response</b><span>Use rollback checklist and escalation templates if a payment issue appears.</span><em class="pill bad">incident</em></a>
+      <a class="tile" href="/admin-public-audit.html"><b>Public QA Audit</b><span>Check public pages, assets, manifest, sitemap and product API.</span><em class="pill">QA</em></a>
+      <a class="tile" href="/admin-accessibility-audit.html"><b>Accessibility Audit</b><span>Check accessibility and mobile usability signals.</span><em class="pill">mobile</em></a>
+      <a class="tile" href="/admin-backup.html"><b>Backup Tools</b><span>Check backup/export availability before major changes.</span><em class="pill">backup</em></a>
+      <a class="tile" href="/track-order.html"><b>Track Order</b><span>Open customer-facing order tracking page.</span><em class="pill">customer</em></a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Launch checklist</div>
+    <div class="body">
+      <div class="warnBox">This checklist is stored in this browser using localStorage only. It does not change server settings or database records.</div>
+      <div id="launchChecklist"></div>
+      <div class="actions">
+        <button id="saveChecklistBtn" type="button">Save checklist</button>
+        <button id="clearChecklistBtn" class="danger" type="button">Clear checklist</button>
+      </div>
+      <div id="checklistMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Launch log</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Log type</label>
+          <select id="logType">
+            <option value="deployment">Deployment</option>
+            <option value="health-check">Health check</option>
+            <option value="first-order">First order</option>
+            <option value="payment-test">Payment test</option>
+            <option value="support">Support note</option>
+            <option value="issue">Issue</option>
+            <option value="decision">Decision</option>
+            <option value="rollback">Rollback note</option>
+          </select>
+        </div>
+        <div>
+          <label>Severity</label>
+          <select id="severity">
+            <option value="info">info</option>
+            <option value="review">review</option>
+            <option value="warning">warning</option>
+            <option value="critical">critical</option>
+          </select>
+        </div>
+        <div>
+          <label>Owner</label>
+          <input id="owner" placeholder="Who is responsible?">
+        </div>
+        <div>
+          <label>Reference</label>
+          <input id="reference" placeholder="Order ID, payment ID, ticket, deployment">
+        </div>
+      </div>
+      <label>Notes</label>
+      <textarea id="notes" placeholder="What happened, what was checked, decision taken, and next action."></textarea>
+      <div class="actions">
+        <button id="addLogBtn" type="button">Add launch log</button>
+        <button id="exportCsvBtn" class="secondary" type="button">Export CSV</button>
+        <button id="exportJsonBtn" class="secondary" type="button">Export JSON</button>
+        <button id="clearLogsBtn" class="danger" type="button">Clear logs</button>
+      </div>
+      <div id="logMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Saved launch logs</div>
+    <div class="body">
+      <div id="logSummary" class="grid"></div>
+      <table>
+        <thead><tr><th>Date/time</th><th>Type</th><th>Severity</th><th>Owner</th><th>Reference</th><th>Notes</th></tr></thead>
+        <tbody id="logRows"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const CHECK_KEY = "sokoyetu_stage34a_launch_checklist";
+const LOG_KEY = "sokoyetu_stage34a_launch_logs";
+
+const launchItems = [
+  "Latest commit deployed on Render.",
+  "Public homepage opens on production domain.",
+  "Categories page opens and product cards load.",
+  "Product detail page opens from category cards.",
+  "Seller stores page opens.",
+  "Help Center opens.",
+  "Track Order page opens.",
+  "Support Request page opens.",
+  "Admin orders page opens.",
+  "Support queue page opens.",
+  "M-PESA readiness page reviewed.",
+  "M-PESA environment guard reviewed.",
+  "M-PESA reconciliation page reviewed.",
+  "M-PESA evidence export tested.",
+  "M-PESA live test runbook ready.",
+  "M-PESA incident response page ready.",
+  "Public QA audit run.",
+  "Accessibility audit run.",
+  "Backup/export checked.",
+  "One person assigned to monitor support.",
+  "One person assigned to monitor Render logs.",
+  "One person assigned to verify first order.",
+  "Decision made: launch, hold, or rollback."
+];
+
+const healthChecks = [
+  { area:"API health", url:"/api/health", type:"json" },
+  { area:"Homepage", url:"/", type:"html" },
+  { area:"Categories", url:"/categories.html", type:"html" },
+  { area:"Seller stores", url:"/seller-stores.html", type:"html" },
+  { area:"Help Center", url:"/help-center.html", type:"html" },
+  { area:"Track order", url:"/track-order.html", type:"html" },
+  { area:"Support request", url:"/support-request.html", type:"html" },
+  { area:"Checkout", url:"/checkout.html", type:"html" },
+  { area:"Product API", url:"/api/products", type:"json" },
+  { area:"Manifest", url:"/site.webmanifest", type:"json" },
+  { area:"Sitemap", url:"/sitemap.xml", type:"text" }
+];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(id, html){ document.getElementById(id).innerHTML = html; }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "bad" ? "pill bad" : kind === "warn" ? "pill warn" : "pill info";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+function getChecks(){
+  try { return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveChecks(items){ localStorage.setItem(CHECK_KEY, JSON.stringify(items)); }
+function renderChecklist(){
+  const checks = getChecks();
+  document.getElementById("launchChecklist").innerHTML = launchItems.map((text, i) => {
+    const id = "launch-check-" + i;
+    return '<label class="checkitem" for="' + id + '"><input type="checkbox" id="' + id + '" ' + (checks[i] ? "checked" : "") + '><span>' + esc(text) + '</span></label>';
+  }).join("");
+}
+function collectChecklist(){
+  const checks = {};
+  launchItems.forEach((_, i) => checks[i] = document.getElementById("launch-check-" + i).checked);
+  return checks;
+}
+async function runOne(check){
+  const start = performance.now();
+  try {
+    const response = await fetch(check.url, { credentials:"include", cache:"no-store" });
+    const text = await response.text();
+    let ok = response.ok;
+    let note = "HTTP " + response.status + " · " + Math.round(performance.now() - start) + " ms";
+    if (check.type === "json") {
+      try { JSON.parse(text); }
+      catch { ok = false; note += " · invalid JSON"; }
+    }
+    if (check.type === "html" && !text.toLowerCase().includes("<html")) {
+      ok = false;
+      note += " · not clearly HTML";
+    }
+    return { ...check, ok, note };
+  } catch (error) {
+    return { ...check, ok:false, note:error.message || "Fetch failed" };
+  }
+}
+async function runHealth(){
+  msg("healthMessage", '<div class="note">Running launch health checks...</div>');
+  const rows = [];
+  for (const check of healthChecks) {
+    rows.push(await runOne(check));
+    renderHealth(rows);
+  }
+  const pass = rows.filter(r => r.ok).length;
+  const fail = rows.length - pass;
+  document.getElementById("statusMetrics").innerHTML =
+    '<div class="metric">Checks run<b>' + rows.length + '</b></div>' +
+    '<div class="metric">Passed<b>' + pass + '</b></div>' +
+    '<div class="metric">Failed<b>' + fail + '</b></div>' +
+    '<div class="metric">Last run<b>' + esc(new Date().toLocaleTimeString()) + '</b></div>';
+  if (fail) msg("healthMessage", '<div class="err">Some launch checks failed. Review before continuing.</div>');
+  else msg("healthMessage", '<div class="ok">Launch health checks passed from this browser session.</div>');
+}
+function renderHealth(rows){
+  document.getElementById("healthRows").innerHTML = rows.length ? rows.map(r => {
+    return '<tr><td>' + esc(r.area) + '</td><td><a href="' + esc(r.url) + '" target="_blank">' + esc(r.url) + '</a></td><td>' + (r.ok ? pill("ok","OK") : pill("bad","FAIL")) + '</td><td>' + esc(r.note) + '</td></tr>';
+  }).join("") : '<tr><td colspan="4">No checks run yet.</td></tr>';
+}
+function getLogs(){
+  try { return JSON.parse(localStorage.getItem(LOG_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveLogs(items){ localStorage.setItem(LOG_KEY, JSON.stringify(items)); }
+function addLog(){
+  const logs = getLogs();
+  const entry = {
+    createdAt: new Date().toISOString(),
+    logType: document.getElementById("logType").value,
+    severity: document.getElementById("severity").value,
+    owner: document.getElementById("owner").value.trim(),
+    reference: document.getElementById("reference").value.trim(),
+    notes: document.getElementById("notes").value.trim()
+  };
+  if (!entry.owner || !entry.notes) {
+    msg("logMessage", '<div class="err">Owner and notes are required.</div>');
+    return;
+  }
+  logs.unshift(entry);
+  saveLogs(logs);
+  renderLogs();
+  msg("logMessage", '<div class="ok">Launch log saved in this browser.</div>');
+}
+function renderLogs(){
+  const logs = getLogs();
+  const critical = logs.filter(x => x.severity === "critical").length;
+  const review = logs.filter(x => x.severity === "review" || x.severity === "warning").length;
+  document.getElementById("logSummary").innerHTML =
+    '<div class="metric">Logs saved<b>' + logs.length + '</b></div>' +
+    '<div class="metric">Critical<b>' + critical + '</b></div>' +
+    '<div class="metric">Review/warning<b>' + review + '</b></div>' +
+    '<div class="metric">Latest<b>' + esc(logs[0] ? new Date(logs[0].createdAt).toLocaleTimeString() : "-") + '</b></div>';
+  document.getElementById("logRows").innerHTML = logs.length ? logs.map(l => {
+    const kind = l.severity === "critical" ? "bad" : l.severity === "warning" || l.severity === "review" ? "warn" : "ok";
+    return '<tr><td>' + esc(new Date(l.createdAt).toLocaleString()) + '</td><td>' + esc(l.logType) + '</td><td>' + pill(kind, l.severity) + '</td><td>' + esc(l.owner) + '</td><td>' + esc(l.reference || "-") + '</td><td>' + esc(l.notes) + '</td></tr>';
+  }).join("") : '<tr><td colspan="6">No launch logs saved yet.</td></tr>';
+}
+function csvEscape(value){
+  const text = String(value ?? "");
+  if (/[",\r\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+function exportFile(format){
+  const logs = getLogs();
+  if (!logs.length) {
+    msg("logMessage", '<div class="err">No launch logs to export.</div>');
+    return;
+  }
+  const stamp = new Date().toISOString().slice(0,10);
+  let blob;
+  let filename;
+  if (format === "json") {
+    blob = new Blob([JSON.stringify({ generatedAt:new Date().toISOString(), logs }, null, 2)], { type:"application/json" });
+    filename = "sokoyetu-launch-war-room-log-" + stamp + ".json";
+  } else {
+    const headers = Object.keys(logs[0]);
+    const csv = headers.join(",") + "\n" + logs.map(row => headers.map(h => csvEscape(row[h])).join(",")).join("\n");
+    blob = new Blob([csv], { type:"text/csv" });
+    filename = "sokoyetu-launch-war-room-log-" + stamp + ".csv";
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  msg("logMessage", '<div class="ok">Export started: ' + esc(filename) + '</div>');
+}
+document.getElementById("runHealthBtn").onclick = runHealth;
+document.getElementById("clearHealthBtn").onclick = () => {
+  renderHealth([]);
+  document.getElementById("statusMetrics").innerHTML = '<div class="metric">Checks run<b>0</b></div>';
+  msg("healthMessage", '<div class="note">Results cleared.</div>');
+};
+document.getElementById("saveChecklistBtn").onclick = () => {
+  saveChecks(collectChecklist());
+  msg("checklistMessage", '<div class="ok">Launch checklist saved in this browser.</div>');
+};
+document.getElementById("clearChecklistBtn").onclick = () => {
+  if (!confirm("Clear launch checklist?")) return;
+  localStorage.removeItem(CHECK_KEY);
+  renderChecklist();
+  msg("checklistMessage", '<div class="ok">Launch checklist cleared.</div>');
+};
+document.getElementById("addLogBtn").onclick = addLog;
+document.getElementById("exportCsvBtn").onclick = () => exportFile("csv");
+document.getElementById("exportJsonBtn").onclick = () => exportFile("json");
+document.getElementById("clearLogsBtn").onclick = () => {
+  if (!confirm("Clear all launch logs from this browser?")) return;
+  localStorage.removeItem(LOG_KEY);
+  renderLogs();
+  msg("logMessage", '<div class="ok">Launch logs cleared.</div>');
+};
+renderChecklist();
+renderLogs();
+</script>
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+
+

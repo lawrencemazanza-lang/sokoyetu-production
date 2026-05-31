@@ -1,0 +1,184 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Mtaani Stage 32A SEO start -->
+  <title>SokoYetu Mtaani Help Center</title>
+  <meta name="description" content="Get help with SokoYetu Mtaani order tracking, support requests, returns, refunds, customer service and marketplace policies.">
+  <link rel="canonical" href="https://www.mySokoYetu Mtaani.co.ke/help-center.html">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="SokoYetu Mtaani Help Center">
+  <meta property="og:description" content="Get help with SokoYetu Mtaani order tracking, support requests, returns, refunds, customer service and marketplace policies.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mySokoYetu Mtaani.co.ke/help-center.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SokoYetu Mtaani Help Center">
+  <meta name="twitter:description" content="Get help with SokoYetu Mtaani order tracking, support requests, returns, refunds, customer service and marketplace policies.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Mtaani Stage 32A SEO end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:28px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:32px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5;max-width:760px}
+    main{display:grid;gap:16px;padding:22px 0 40px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:9px;text-decoration:none;color:#111827;min-height:132px}
+    .tile:hover{outline:3px solid #86efac}
+    .tile b{color:#064e3b;font-size:17px}
+    .tile span{color:#475569;line-height:1.45}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    details{border:1px solid #e5e7eb;background:#f8fafc;border-radius:16px;padding:12px}
+    summary{font-weight:900;color:#064e3b;cursor:pointer}
+    details p{line-height:1.55;color:#475569}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:27px}}
+  </style>
+  <link rel="stylesheet" href="/public-nav.css">
+
+  
+
+  <!-- SokoYetu Mtaani Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Mtaani Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-a11y.css">
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+  <link rel="stylesheet" href="/sokoyetu-search-logo-refine.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Help Center</h1>
+    <p>Find help with order tracking, payment issues, delivery questions, returns, refunds, seller support and marketplace policies.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Quick customer actions</div>
+    <div class="body grid">
+      <a class="tile" href="/track-order.html">
+        <b>Track an order</b>
+        <span>Use your order ID and checkout phone number to check payment, delivery and tracking status.</span>
+        <em class="pill">Order ID + phone</em>
+      </a>
+      <a class="tile" href="/support-request.html">
+        <b>Submit support request</b>
+        <span>Report delivery, payment, product, cancellation or refund issues linked to an order.</span>
+        <em class="pill">Customer support</em>
+      </a>
+      <a class="tile" href="/returns-policy.html">
+        <b>Returns and refunds</b>
+        <span>Read the basic return, refund and order issue process before submitting a request.</span>
+        <em class="pill warn">Policy</em>
+      </a>
+      <a class="tile" href="/contact-support.html">
+        <b>Contact support</b>
+        <span>Find SokoYetu Mtaani support contact details for customer, order and seller enquiries.</span>
+        <em class="pill">Support</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Marketplace help topics</div>
+    <div class="body grid">
+      <a class="tile" href="/faq.html">
+        <b>Frequently asked questions</b>
+        <span>Answers to common questions about buying, checkout, delivery and account use.</span>
+        <em class="pill">FAQ</em>
+      </a>
+      <a class="tile" href="/seller-policy.html">
+        <b>Seller policy</b>
+        <span>Understand seller responsibilities, listing quality, fulfilment and product accuracy.</span>
+        <em class="pill">Sellers</em>
+      </a>
+      <a class="tile" href="/privacy-policy.html">
+        <b>Privacy policy</b>
+        <span>Learn how customer and order information is handled on SokoYetu Mtaani.</span>
+        <em class="pill">Privacy</em>
+      </a>
+      <a class="tile" href="/terms-of-service.html">
+        <b>Terms of service</b>
+        <span>Read the rules for using the SokoYetu Mtaani marketplace.</span>
+        <em class="pill">Terms</em>
+      </a>
+      <a class="tile" href="/data-protection.html">
+        <b>Data protection</b>
+        <span>Review customer data handling and protection commitments.</span>
+        <em class="pill">Data</em>
+      </a>
+      <a class="tile" href="/checkout.html">
+        <b>Secure checkout</b>
+        <span>Return to checkout if you already have items in your cart.</span>
+        <em class="pill">Checkout</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Common questions</div>
+    <div class="body">
+      <details>
+        <summary>How do I track my order?</summary>
+        <p>Open the order tracking page and enter your order ID together with the phone number used at checkout. This helps protect customer privacy.</p>
+      </details>
+      <details>
+        <summary>What should I do if M-PESA payment fails?</summary>
+        <p>Confirm that your M-PESA line has enough balance, then retry checkout. If the issue continues, submit a support request with your order number and phone number.</p>
+      </details>
+      <details>
+        <summary>How do I request a refund?</summary>
+        <p>Use the support request page and choose refund request. Include your order ID, checkout phone number and a clear explanation of the issue.</p>
+      </details>
+      <details>
+        <summary>Can sellers publish products automatically?</summary>
+        <p>During soft launch, seller and product approval should remain under admin review so that product details, images, availability and delivery readiness are checked.</p>
+      </details>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Support note</div>
+    <div class="body">
+      <div class="note">For order help, always include your order number and the phone number used at checkout. For general support, contact SokoYetu Mtaani@gmail.com.</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  SokoYetu Mtaani · Nairobi, Kenya · SokoYetu Mtaani@gmail.com
+</footer>
+  <script src="/public-nav.js" defer></script>
+  <script src="/public-a11y.js" defer></script>
+  <script src="/sokoyetu-final-seo.js" defer></script>
+  <script src="/sokoyetu-search-logo-refine.js" defer></script>
+</body>
+</html>
+
+
+
+
+
+

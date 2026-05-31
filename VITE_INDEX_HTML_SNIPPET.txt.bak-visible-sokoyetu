@@ -1,0 +1,14 @@
+<!-- Use this in index.html inside <head> if your project uses React/Vite or plain HTML -->
+
+<title>SokoYetu Mtaani | Online Shopping & Marketplace in Kenya</title>
+<meta name="description" content="Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.">
+<link rel="canonical" href="https://www.mysokoyetu.co.ke/">
+<meta property="og:site_name" content="SokoYetu Mtaani">
+<meta property="og:title" content="SokoYetu Mtaani | Online Shopping & Marketplace in Kenya">
+<meta property="og:description" content="Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.">
+<meta property="og:url" content="https://www.mysokoyetu.co.ke/">
+<meta property="og:type" content="website">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="SokoYetu Mtaani | Online Shopping & Marketplace in Kenya">
+<meta name="twitter:description" content="Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.">
+<link rel="manifest" href="/site.webmanifest">

@@ -1,0 +1,447 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage29a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage29a:check"] = "node scripts/check-stage29a-security-monitoring.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage29a-security-monitoring.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 29A Security and Monitoring Check");
+console.log("-----------------------------------------------");
+
+let warnings = 0;
+
+function check(key, opts = {}) {
+  const value = process.env[key];
+  if (!value) {
+    console.log("WARN:", key, "is not set.");
+    warnings += 1;
+    return;
+  }
+  console.log("OK:", key, "=", opts.secret ? value.slice(0, 4) + "...hidden" : value);
+}
+
+check("PUBLIC_SITE_URL");
+check("BUSINESS_NAME");
+check("SUPPORT_EMAIL");
+check("DATABASE_URL", { secret: true });
+check("ADMIN_ORDER_TOKEN", { secret: true });
+check("JWT_SECRET", { secret: true });
+check("UPLOAD_MODE");
+check("MPESA_MODE");
+check("MPESA_ENV");
+check("MPESA_CALLBACK_URL");
+
+if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
+  console.log("WARN: ADMIN_REGISTRATION_ENABLED should be false for launch.");
+  warnings += 1;
+} else {
+  console.log("OK: ADMIN_REGISTRATION_ENABLED is not publicly open.");
+}
+
+if (process.env.MPESA_ENV === "sandbox") {
+  console.log("WARN: MPESA_ENV is sandbox. This is fine for testing, but real launch needs production Daraja credentials.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Review:");
+console.log("- admin-system-health.html");
+console.log("- STAGE29A_SECURITY_MONITORING_GUIDE.md");
+console.log("- STAGE29A_LAUNCH_RISK_REGISTER.md");
+console.log("");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-system-health.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Admin System Health</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1200px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:24px;color:#064e3b;margin-top:4px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Admin System Health</h1>
+    <p>Protected soft-launch checklist for platform stability, security flags and core data health.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Access</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load system health</button>
+      </div>
+      <div class="note">This page does not expose secrets. It only shows configuration flags, counts and launch warnings.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">System health summary</div>
+    <div class="body" id="result"></div>
+  </section>
+
+  <section class="card">
+    <div class="head">Manual launch checklist</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Area</th><th>Check</th><th>Status to confirm manually</th></tr></thead>
+        <tbody>
+          <tr><td>Domain</td><td>www.SokoYetu Mtaani.co.ke opens with HTTPS</td><td>Confirmed in browser</td></tr>
+          <tr><td>Payments</td><td>M-PESA sandbox works; production credentials pending</td><td>Do not switch production until Safaricom credentials are ready</td></tr>
+          <tr><td>Admin</td><td>Admin registration locked</td><td>ADMIN_REGISTRATION_ENABLED should not be true</td></tr>
+          <tr><td>Orders</td><td>Admin can view orders and update status</td><td>Test admin-orders.html</td></tr>
+          <tr><td>Support</td><td>Customer support and admin support queue work</td><td>Test support-request.html and admin-support.html</td></tr>
+          <tr><td>Email</td><td>Forwarding works for support@, orders@ and admin@</td><td>Pending Truehost completion if not yet active</td></tr>
+          <tr><td>Backups</td><td>Database provider backup/export route is known</td><td>Confirm Neon/Postgres backup access</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pill(value, bad=false, warn=false){
+  return '<span class="pill ' + (bad ? "bad" : warn ? "warn" : "") + '">' + esc(value) + '</span>';
+}
+async function loadHealth(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading system health...</div>');
+  try {
+    const response = await fetch("/api/admin/system-health", {
+      headers: {"x-admin-order-token": token()},
+      credentials: "include"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not load health data.");
+    renderHealth(data);
+    msg('<div class="ok">System health loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load system health.") + '</div>');
+  }
+}
+function renderHealth(data){
+  const result = document.getElementById("result");
+  const metrics = data.metrics || {};
+  const config = data.config || {};
+  const warnings = data.warnings || [];
+
+  const warningHtml = warnings.length
+    ? '<div class="warnBox"><b>Warnings</b><br>' + warnings.map(w => '• ' + esc(w)).join('<br>') + '</div>'
+    : '<div class="ok"><b>No blocking system warnings returned by the health endpoint.</b></div>';
+
+  result.innerHTML =
+    warningHtml +
+    '<div class="grid">' +
+      '<div class="metric">Users<b>' + esc(metrics.users ?? 0) + '</b></div>' +
+      '<div class="metric">Sellers<b>' + esc(metrics.sellers ?? 0) + '</b></div>' +
+      '<div class="metric">Products<b>' + esc(metrics.products ?? 0) + '</b></div>' +
+      '<div class="metric">Orders<b>' + esc(metrics.orders ?? 0) + '</b></div>' +
+      '<div class="metric">Payments<b>' + esc(metrics.payments ?? 0) + '</b></div>' +
+      '<div class="metric">Support notes<b>' + esc(metrics.supportNotes ?? 0) + '</b></div>' +
+    '</div>' +
+    '<div><b>Configuration flags</b><br>' +
+      pill("Database: " + (config.databaseConnected ? "connected" : "not connected"), !config.databaseConnected) +
+      pill("Site: " + (config.publicSiteUrl || "not set"), !config.publicSiteUrl) +
+      pill("Support: " + (config.supportEmail || "not set"), !config.supportEmail) +
+      pill("M-PESA: " + (config.mpesaMode || "-") + " / " + (config.mpesaEnv || "-"), false, config.mpesaEnv === "sandbox") +
+      pill("Upload: " + (config.uploadMode || "-")) +
+      pill("Admin registration: " + (config.adminRegistrationEnabled || "not set"), config.adminRegistrationEnabled === "true") +
+    '</div>' +
+    '<div><b>Recent orders</b><table><thead><tr><th>ID</th><th>Status</th><th>Payment</th><th>Total</th><th>Created</th></tr></thead><tbody>' +
+      (data.recentOrders || []).map(o => '<tr><td>#' + esc(o.id) + '</td><td>' + esc(o.orderStatus) + '</td><td>' + esc(o.paymentStatus) + '</td><td>KES ' + Number(o.totalAmount || 0).toLocaleString("en-KE") + '</td><td>' + esc(o.createdAt ? new Date(o.createdAt).toLocaleString() : "-") + '</td></tr>').join("") +
+    '</tbody></table></div>';
+
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("loadBtn").onclick = loadHealth;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 29A: Admin System Health API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 29A: Admin System Health API
+// Protected by ADMIN_ORDER_TOKEN. Does not expose secret values.
+// ================================
+function requireAdminSystemHealthToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/system-health", async (req, res) => {
+  try {
+    if (!requireAdminSystemHealthToken(req, res)) return;
+
+    const warnings = [];
+    let databaseConnected = true;
+
+    let users = 0;
+    let sellers = 0;
+    let products = 0;
+    let orders = 0;
+    let payments = 0;
+    let supportNotes = 0;
+    let recentOrders = [];
+
+    try {
+      users = await prisma.user.count();
+      sellers = await prisma.user.count({ where: { role: "seller" } });
+      products = await prisma.product.count();
+      orders = await prisma.order.count();
+      payments = await prisma.payment.count();
+      supportNotes = await prisma.deliveryTracking.count({
+        where: {
+          status: {
+            in: [
+              "CUSTOMER_SUPPORT_REQUESTED",
+              "REFUND_REQUESTED",
+              "SUPPORT_CONTACTED_CUSTOMER",
+              "SUPPORT_CONTACTED_SELLER",
+              "SUPPORT_RESOLVED",
+              "REFUND_UNDER_REVIEW",
+              "ORDER_CANCELLED_BY_SUPPORT",
+            ],
+          },
+        },
+      });
+
+      recentOrders = await prisma.order.findMany({
+        orderBy: { id: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          totalAmount: true,
+          paymentStatus: true,
+          orderStatus: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      databaseConnected = false;
+      warnings.push("Database query failed: " + error.message);
+    }
+
+    if (!process.env.PUBLIC_SITE_URL) warnings.push("PUBLIC_SITE_URL is not set.");
+    if (!process.env.SUPPORT_EMAIL) warnings.push("SUPPORT_EMAIL is not set.");
+    if (!process.env.BUSINESS_NAME) warnings.push("BUSINESS_NAME is not set.");
+    if (process.env.ADMIN_REGISTRATION_ENABLED === "true") warnings.push("ADMIN_REGISTRATION_ENABLED is true. Public admin registration should be locked.");
+    if (process.env.MPESA_ENV === "sandbox") warnings.push("M-PESA is still in sandbox mode. This is safe for testing but not for real customer payments.");
+    if (!process.env.MPESA_CALLBACK_URL) warnings.push("MPESA_CALLBACK_URL is not set.");
+    if (process.env.UPLOAD_MODE && process.env.UPLOAD_MODE !== "cloudinary") warnings.push("UPLOAD_MODE is not cloudinary.");
+
+    return res.json({
+      message: "System health loaded.",
+      generatedAt: new Date().toISOString(),
+      config: {
+        databaseConnected,
+        publicSiteUrl: process.env.PUBLIC_SITE_URL || null,
+        supportEmail: process.env.SUPPORT_EMAIL || null,
+        businessName: process.env.BUSINESS_NAME || null,
+        mpesaMode: process.env.MPESA_MODE || null,
+        mpesaEnv: process.env.MPESA_ENV || null,
+        uploadMode: process.env.UPLOAD_MODE || null,
+        adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || null,
+      },
+      metrics: {
+        users,
+        sellers,
+        products,
+        orders,
+        payments,
+        supportNotes,
+      },
+      recentOrders,
+      warnings,
+    });
+  } catch (error) {
+    console.error("System health error:", error);
+    return res.status(500).json({
+      message: "Could not load system health.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 29A system health endpoint to server.js.");
+} else {
+  console.log("Stage 29A endpoint already exists.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE29A_SECURITY_MONITORING_GUIDE.md"), `# SokoYetu Stage 29A: Security, Backup and Monitoring Review
+
+Stage 29A adds a protected admin system health page.
+
+## New page
+
+\`\`\`text
+/admin-system-health.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/system-health
+\`\`\`
+
+## Token
+
+This page reuses:
+
+\`\`\`env
+ADMIN_ORDER_TOKEN
+\`\`\`
+
+## What it checks
+
+- Database query health
+- User count
+- Seller count
+- Product count
+- Order count
+- Payment count
+- Support queue note count
+- Recent orders
+- Public site URL
+- Support email
+- M-PESA mode and environment
+- Upload mode
+- Admin registration flag
+
+## What it does not expose
+
+It does not return secret environment variable values such as database passwords, JWT secrets, M-PESA keys, Cloudinary secrets or admin tokens.
+
+## Launch rule
+
+If M-PESA is still in sandbox, the site is suitable for testing and soft-launch rehearsal but not for real public payments.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE29A_LAUNCH_RISK_REGISTER.md"), `# SokoYetu Stage 29A: Launch Risk Register
+
+| Risk | Impact | Control |
+|---|---|---|
+| M-PESA remains in sandbox | Real customers cannot pay properly | Keep testing only until production Daraja credentials are issued |
+| Email forwarding not active | Customer messages may be missed | Confirm support@, orders@ and admin@ forwarding |
+| Admin token leaked | Unauthorized access to admin pages | Use strong unique tokens and rotate immediately if exposed |
+| Database unavailable | Orders and products cannot load | Monitor Render logs and database provider status |
+| Seller not verified | Poor quality or fraudulent listings | Use seller verification dashboard and manual approval |
+| Refund requests missed | Customer trust damage | Use support queue daily |
+| Product images missing | Poor catalogue trust | Require seller photos or approved supplier images |
+| Admin registration open | Unauthorized admin accounts | Keep ADMIN_REGISTRATION_ENABLED false |
+| Production M-PESA switched too early | Failed live payments | Only switch after Safaricom production credentials are confirmed |
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 29A security and monitoring installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage29a:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-system-health.html");
+console.log("Use the same ADMIN_ORDER_TOKEN used for admin-orders.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage29a-security-monitoring.js admin-system-health.html STAGE29A_SECURITY_MONITORING_GUIDE.md STAGE29A_LAUNCH_RISK_REGISTER.md");
+console.log('git commit -m "Add system health and launch monitoring"');
+console.log("git push");
+

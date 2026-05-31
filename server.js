@@ -1,4 +1,4 @@
-const express = require("express");
+﻿const express = require("express");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const { AccessToken } = require("livekit-server-sdk");
@@ -16,7 +16,7 @@ require("dotenv").config();
 const app = express();
 
 // ================================
-// SokoYetu Stage 35C Repair: Early Buyer Journey Smoke Test API
+// SokoYetu Mtaani Stage 35C Repair: Early Buyer Journey Smoke Test API
 // Registered early so /api/admin/buyer-journey-smoke is not swallowed by static/index fallback.
 // Read-only. Does not create orders, trigger M-PESA, edit products, modify payments or change schema.
 // ================================
@@ -223,7 +223,7 @@ app.get("/api/admin/buyer-journey-smoke", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 35A Repair: Early Core Readiness Audit API
+// SokoYetu Mtaani Stage 35A Repair: Early Core Readiness Audit API
 // Registered early so /api/admin/core-readiness/audit is not swallowed by static/index fallback.
 // Read-only. Does not change orders, products, payments, sellers, support tickets or schema.
 // ================================
@@ -282,9 +282,9 @@ function stage35aEarlyRouteChecks(serverText) {
     ["ADMIN_ORDER_TOKEN", true, "Admin token protection should be present."],
     ["mpesa", true, "M-PESA code or readiness references should exist."],
     ["checkout", true, "Checkout route/page references should exist."],
-    ["SokoYetu Stage 32E: Friendly Error Pages", false, "Final friendly fallback should exist."],
-    ["SokoYetu Stage 33C: M-PESA Payment Reconciliation API", false, "Payment reconciliation endpoint should exist if Stage 33C was applied."],
-    ["SokoYetu Stage 33D: M-PESA Evidence Export API", false, "Evidence export endpoint should exist if Stage 33D was applied."]
+    ["SokoYetu Mtaani Stage 32E: Friendly Error Pages", false, "Final friendly fallback should exist."],
+    ["SokoYetu Mtaani Stage 33C: M-PESA Payment Reconciliation API", false, "Payment reconciliation endpoint should exist if Stage 33C was applied."],
+    ["SokoYetu Mtaani Stage 33D: M-PESA Evidence Export API", false, "Evidence export endpoint should exist if Stage 33D was applied."]
   ];
   const lower = serverText.toLowerCase();
   return checks.map(([pattern, critical, note]) => ({
@@ -294,8 +294,8 @@ function stage35aEarlyRouteChecks(serverText) {
 }
 
 function stage35aEarlyRouteOrder(serverText) {
-  const fallbackIndex = serverText.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
-  const earlyIndex = serverText.indexOf("SokoYetu Stage 35A Repair: Early Core Readiness Audit API");
+  const fallbackIndex = serverText.lastIndexOf("SokoYetu Mtaani Stage 32E: Friendly Error Pages");
+  const earlyIndex = serverText.indexOf("SokoYetu Mtaani Stage 35A Repair: Early Core Readiness Audit API");
   const routePattern = /app\.(get|post|put|patch|delete|use)\s*\(\s*["']([^"']+)/g;
   const routesAfterFallback = [];
   let match;
@@ -376,7 +376,7 @@ app.get("/api/admin/core-readiness/audit", async (req, res) => {
     if (environment.adminRegistrationEnabled === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before launch.");
     if (environment.nodeEnv && environment.nodeEnv !== "production") warnings.push("NODE_ENV is not production locally; Render should use production.");
     if (!environment.publicSiteUrlSet) warnings.push("PUBLIC_SITE_URL is not set.");
-    if (environment.publicSiteUrl && !/mysokoyetu\.co\.ke/i.test(environment.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use mysokoyetu.co.ke.");
+    if (environment.publicSiteUrl && !/SokoYetu Mtaani\.co\.ke/i.test(environment.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use SokoYetu Mtaani.co.ke.");
 
     const mpesaMode = String(environment.mpesaMode || "").toLowerCase();
     if ((mpesaMode === "production" || mpesaMode === "live") && !environment.mpesaProductionConfirmed) {
@@ -441,7 +441,7 @@ app.get("/api/admin/core-readiness/audit", async (req, res) => {
 
 
 /* ================================
-   SokoYetu Stage 19: Security Hardening
+   SokoYetu Mtaani Stage 19: Security Hardening
    Adds HTTP security headers, safer cookies, rate limits, request limits and role-abuse protection.
    ================================ */
 
@@ -632,7 +632,7 @@ function requireRole(...allowedRoles) {
 app.get("/api/health", (req, res) => {
   res.json({
     status: "OK",
-    message: "SokoYetu backend is running.",
+    message: "SokoYetu Mtaani backend is running.",
   });
 });
 
@@ -1203,7 +1203,7 @@ app.delete("/api/cart", requireAuth, requireRole("buyer"), async (req, res) => {
 
 app.post("/api/orders", requireAuth, requireRole("buyer"), async (req, res) => {
   try {
-    // SokoYetu Stage 36A: Self-pickup checkout support
+    // SokoYetu Mtaani Stage 36A: Self-pickup checkout support
     const { phone } = req.body;
     const requestedDeliveryMethod = String(req.body.deliveryMethod || req.body.fulfillmentMethod || "DELIVERY").toUpperCase();
     const isSelfPickup = ["SELF_PICKUP", "SELF-PICKUP", "PICKUP", "COLLECTION"].includes(requestedDeliveryMethod);
@@ -1343,7 +1343,7 @@ app.get("/api/orders/:id", requireAuth, requireRole("buyer"), async (req, res) =
   }
 });
 // ================================
-// SokoYetu Step 6: M-PESA STK Push Routes
+// SokoYetu Mtaani Step 6: M-PESA STK Push Routes
 // Paste this code in server.js ABOVE the final app.use((req, res) => {...}) fallback.
 // This uses your existing Prisma models: Order and Payment.
 // ================================
@@ -1459,8 +1459,8 @@ app.post("/api/payments/mpesa/stk-push", requireAuth, requireRole("buyer"), asyn
     const shortcode = process.env.MPESA_SHORTCODE;
     const passkey = process.env.MPESA_PASSKEY;
     const callbackUrl = process.env.MPESA_CALLBACK_URL;
-    const accountReference = `SokoYetu-${order.id}`;
-    const transactionDescription = `Payment for SokoYetu order ${order.id}`;
+    const accountReference = `sokoyetu-${order.id}`;
+    const transactionDescription = `Payment for SokoYetu Mtaani order ${order.id}`;
 
     // DEMO MODE:
     // This lets you test the website flow without real Safaricom credentials.
@@ -1711,7 +1711,7 @@ app.get("/api/payments/:orderId/status", requireAuth, requireRole("buyer"), asyn
 
 
 // ================================
-// SokoYetu Step 8: Seller Dashboard Backend
+// SokoYetu Mtaani Step 8: Seller Dashboard Backend
 // These routes are protected. Only signed-in sellers can access them.
 // Paste location: above the final app.use fallback.
 // ================================
@@ -1960,7 +1960,7 @@ app.patch("/api/seller/orders/:id/status", requireAuth, requireRole("seller"), a
 
 
 // ================================
-// SokoYetu Step 9: Admin Dashboard Backend
+// SokoYetu Mtaani Step 9: Admin Dashboard Backend
 // These routes are protected. Only signed-in admins can access them.
 // Paste location: above the final app.use fallback.
 // ================================
@@ -2420,7 +2420,7 @@ app.post("/api/admin/import-wholesale-product", requireAuth, requireRole("admin"
     });
 
     res.status(201).json({
-      message: "Wholesaler product imported to SokoYetu wall successfully.",
+      message: "Wholesaler product imported to SokoYetu Mtaani wall successfully.",
       product,
       pricing: {
         wholesalePrice: sourceProduct.wholesalePrice,
@@ -2440,7 +2440,7 @@ app.post("/api/admin/import-wholesale-product", requireAuth, requireRole("admin"
 
 
 // ================================
-// SokoYetu Stage 16: Hybrid Local and Cloudinary Product Image Storage
+// SokoYetu Mtaani Stage 16: Hybrid Local and Cloudinary Product Image Storage
 // Keeps local uploads for development and uses Cloudinary when UPLOAD_MODE=cloudinary.
 // Existing frontend forms still work because the same routes return imageUrl.
 // ================================
@@ -2506,7 +2506,7 @@ const productImageUpload = multer({
   },
 });
 
-function uploadBufferToCloudinary(file, folder = "sokoyetu/products") {
+function uploadBufferToCloudinary(file, folder = "SokoYetu Mtaani/products") {
   return new Promise((resolve, reject) => {
     if (!file || !file.buffer) {
       return reject(new Error("No image buffer found for Cloudinary upload."));
@@ -2632,7 +2632,7 @@ app.patch(
 
 
 // ================================
-// SokoYetu Stage 17: LiveKit Livestreaming Backend
+// SokoYetu Mtaani Stage 17: LiveKit Livestreaming Backend
 // Adds real livestream sessions and server-generated LiveKit tokens.
 // ================================
 
@@ -2795,7 +2795,7 @@ app.use((req, res) => {
 
 
 // ================================
-// SokoYetu Stage 26B: Admin Order Tracking API
+// SokoYetu Mtaani Stage 26B: Admin Order Tracking API
 // Protected by ADMIN_ORDER_TOKEN. Does not change checkout or M-PESA STK Push flow.
 // ================================
 function requireAdminOrderToken(req, res) {
@@ -2898,7 +2898,7 @@ app.post("/api/admin/orders/:id/status", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 27B: Seller Verification Dashboard API
+// SokoYetu Mtaani Stage 27B: Seller Verification Dashboard API
 // Protected by SELLER_VERIFICATION_TOKEN. No schema migration in this safe version.
 // ================================
 function requireSellerVerificationToken(req, res) {
@@ -3069,7 +3069,7 @@ app.post("/api/admin/sellers/:id/verification-note", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 27C: Persistent Seller Verification API
+// SokoYetu Mtaani Stage 27C: Persistent Seller Verification API
 // Requires SellerVerification Prisma model and SELLER_VERIFICATION_TOKEN.
 // ================================
 function requirePersistentSellerVerificationToken(req, res) {
@@ -3264,7 +3264,7 @@ app.post("/api/admin/sellers/:id/persistent-verification", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 28A: Customer Order Tracking API
+// SokoYetu Mtaani Stage 28A: Customer Order Tracking API
 // Public lookup protected by order ID + matching phone number.
 // Does not change checkout or payment flow.
 // ================================
@@ -3360,7 +3360,7 @@ app.post("/api/orders/track", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 28B: Customer Support Request API
+// SokoYetu Mtaani Stage 28B: Customer Support Request API
 // Public request protected by order ID + matching checkout/payment phone.
 // Uses DeliveryTracking so no database migration is needed.
 // ================================
@@ -3466,7 +3466,7 @@ app.post("/api/orders/support-request", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 28C: Admin Support Queue API
+// SokoYetu Mtaani Stage 28C: Admin Support Queue API
 // Protected by ADMIN_ORDER_TOKEN. Uses existing DeliveryTracking model.
 // ================================
 function requireAdminSupportQueueToken(req, res) {
@@ -3638,7 +3638,7 @@ app.post("/api/admin/support-queue/:trackingId/action", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 29A: Admin System Health API
+// SokoYetu Mtaani Stage 29A: Admin System Health API
 // Protected by ADMIN_ORDER_TOKEN. Does not expose secret values.
 // ================================
 function requireAdminSystemHealthToken(req, res) {
@@ -3755,7 +3755,7 @@ app.get("/api/admin/system-health", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 29B: Admin Backup Export API
+// SokoYetu Mtaani Stage 29B: Admin Backup Export API
 // Protected by ADMIN_ORDER_TOKEN. Exports operational data without exposing secrets.
 // ================================
 function requireAdminBackupToken(req, res) {
@@ -3983,7 +3983,7 @@ app.get("/api/admin/export/:type", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 30A: Soft Launch Readiness API
+// SokoYetu Mtaani Stage 30A: Soft Launch Readiness API
 // Protected by ADMIN_ORDER_TOKEN. Final go/no-go operational view.
 // ================================
 function requireSoftLaunchToken(req, res) {
@@ -4053,7 +4053,7 @@ app.get("/api/admin/launch-readiness", async (req, res) => {
     if (products === 0) warnings.push("No products found. Add launch products before inviting buyers.");
     if (sellers === 0) warnings.push("No seller accounts found. Add or verify sellers before marketplace launch.");
 
-    const base = process.env.PUBLIC_SITE_URL || "https://www.mysokoyetu.co.ke";
+    const base = process.env.PUBLIC_SITE_URL || "https://www.mySokoYetu Mtaani.co.ke";
     const links = [
       { label: "Public site", url: base },
       { label: "Checkout", url: base + "/checkout.html" },
@@ -4103,7 +4103,7 @@ app.get("/api/admin/launch-readiness", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 31A: Product Catalogue Audit API
+// SokoYetu Mtaani Stage 31A: Product Catalogue Audit API
 // Protected by ADMIN_ORDER_TOKEN. Read-only catalogue quality review.
 // ================================
 function requireCatalogAuditToken(req, res) {
@@ -4265,7 +4265,7 @@ app.get("/api/admin/catalog-audit", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 31B: Admin Product Editor API
+// SokoYetu Mtaani Stage 31B: Admin Product Editor API
 // Protected by ADMIN_ORDER_TOKEN. Updates only existing Product fields.
 // ================================
 function requireProductEditorToken(req, res) {
@@ -4433,10 +4433,10 @@ app.post("/api/admin/products/:id/update", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 35A: Core Production Readiness Audit API
+// SokoYetu Mtaani Stage 35A: Core Production Readiness Audit API
 // Read-only hard audit. Core readiness audit does not change orders, products, payments or schema.
 // ================================
-// SokoYetu Stage 33A: Production M-PESA Readiness API
+// SokoYetu Mtaani Stage 33A: Production M-PESA Readiness API
 // Read-only. Does not switch M-PESA environment or alter checkout logic.
 // ================================
 function requireMpesaReadinessToken(req, res) {
@@ -4552,8 +4552,8 @@ app.get("/api/admin/mpesa-production-readiness", async (req, res) => {
       blockers.push("Callback URL must use HTTPS for production.");
     }
 
-    if (callbackUrl && !/mysokoyetu\.co\.ke/i.test(callbackUrl)) {
-      warnings.push("Callback URL does not appear to use mysokoyetu.co.ke. Confirm it points to the Render production domain.");
+    if (callbackUrl && !/SokoYetu Mtaani\.co\.ke/i.test(callbackUrl)) {
+      warnings.push("Callback URL does not appear to use SokoYetu Mtaani.co.ke. Confirm it points to the Render production domain.");
     }
 
     if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
@@ -4613,7 +4613,7 @@ app.get("/api/admin/mpesa-production-readiness", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 33B: M-PESA Environment Mapping and Guard API
+// SokoYetu Mtaani Stage 33B: M-PESA Environment Mapping and Guard API
 // Read-only. M-PESA production guard only; does not alter payment logic.
 // ================================
 function requireMpesaEnvGuardToken(req, res) {
@@ -4734,8 +4734,8 @@ app.get("/api/admin/mpesa-env-guard", async (req, res) => {
       blockers.push("Production callback URL must use HTTPS.");
     }
 
-    if (callback && !/mysokoyetu\.co\.ke/i.test(callback)) {
-      warnings.push("Callback URL does not appear to use mysokoyetu.co.ke. Confirm it points to the Render production domain.");
+    if (callback && !/SokoYetu Mtaani\.co\.ke/i.test(callback)) {
+      warnings.push("Callback URL does not appear to use SokoYetu Mtaani.co.ke. Confirm it points to the Render production domain.");
     }
 
     const referencedMpesaKeys = mpesaKeys.map((key) => {
@@ -4770,7 +4770,7 @@ app.get("/api/admin/mpesa-env-guard", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 33C: M-PESA Payment Reconciliation API
+// SokoYetu Mtaani Stage 33C: M-PESA Payment Reconciliation API
 // Read-only payment/order evidence review. Does not change payment logic.
 // ================================
 function requireMpesaReconciliationToken(req, res) {
@@ -4943,7 +4943,7 @@ app.get("/api/admin/mpesa-reconciliation", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 33D: M-PESA Evidence Export API
+// SokoYetu Mtaani Stage 33D: M-PESA Evidence Export API
 // Read-only evidence export. Does not update payments or orders.
 // ================================
 function requireMpesaEvidenceToken(req, res) {
@@ -5154,8 +5154,8 @@ function stage35aMask(value) {
 }
 
 function stage35aRouteOrder(serverText) {
-  const fallbackIndex = serverText.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
-  const stage35aIndex = serverText.indexOf("SokoYetu Stage 35A: Core Production Readiness Audit API");
+  const fallbackIndex = serverText.lastIndexOf("SokoYetu Mtaani Stage 32E: Friendly Error Pages");
+  const stage35aIndex = serverText.indexOf("SokoYetu Mtaani Stage 35A: Core Production Readiness Audit API");
   const routePattern = /app\.(get|post|put|patch|delete|use)\s*\(\s*["']([^"']+)/g;
   const routesAfterFallback = [];
 
@@ -5232,9 +5232,9 @@ function stage35aRouteChecks(serverText) {
     { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should be present." },
     { pattern: "mpesa", critical: true, note: "M-PESA code or readiness references should exist." },
     { pattern: "checkout", critical: true, note: "Checkout route/page references should exist." },
-    { pattern: "SokoYetu Stage 32E: Friendly Error Pages", critical: false, note: "Final friendly fallback should exist." },
-    { pattern: "SokoYetu Stage 33C: M-PESA Payment Reconciliation API", critical: false, note: "Payment reconciliation endpoint should exist if Stage 33C was applied." },
-    { pattern: "SokoYetu Stage 33D: M-PESA Evidence Export API", critical: false, note: "Evidence export endpoint should exist if Stage 33D was applied." },
+    { pattern: "SokoYetu Mtaani Stage 32E: Friendly Error Pages", critical: false, note: "Final friendly fallback should exist." },
+    { pattern: "SokoYetu Mtaani Stage 33C: M-PESA Payment Reconciliation API", critical: false, note: "Payment reconciliation endpoint should exist if Stage 33C was applied." },
+    { pattern: "SokoYetu Mtaani Stage 33D: M-PESA Evidence Export API", critical: false, note: "Evidence export endpoint should exist if Stage 33D was applied." },
   ];
 
   const lower = serverText.toLowerCase();
@@ -5293,7 +5293,7 @@ app.get("/api/admin/core-readiness/audit", async (req, res) => {
     if (env.adminRegistrationEnabled === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Lock admin registration before launch.");
     if (env.nodeEnv && env.nodeEnv !== "production") warnings.push("NODE_ENV is not production. This can be acceptable locally but should be production on Render.");
     if (!env.publicSiteUrlSet) warnings.push("PUBLIC_SITE_URL is not set.");
-    if (env.publicSiteUrl && !/mysokoyetu\.co\.ke/i.test(env.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use mysokoyetu.co.ke.");
+    if (env.publicSiteUrl && !/SokoYetu Mtaani\.co\.ke/i.test(env.publicSiteUrl)) warnings.push("PUBLIC_SITE_URL does not appear to use SokoYetu Mtaani.co.ke.");
 
     const mpesaMode = String(env.mpesaMode || "").toLowerCase();
     if ((mpesaMode === "production" || mpesaMode === "live") && !env.mpesaProductionConfirmed) {
@@ -5360,7 +5360,7 @@ app.get("/api/admin/core-readiness/audit", async (req, res) => {
 
 
 // ================================
-// SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API
+// SokoYetu Mtaani Stage 35C: Controlled Buyer Journey Smoke Test API
 // Read-only buyer journey smoke test. Does not create orders or trigger payments.
 // ================================
 function requireStage35cBuyerSmokeToken(req, res) {
@@ -5562,7 +5562,7 @@ app.get("/api/admin/buyer-journey-smoke", async (req, res) => {
   }
 });
 
-// SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
+// SokoYetu Mtaani Stage 32E: Friendly Error Pages and Public Recovery Flow
 // Final fallback only. Does not affect existing defined routes.
 // ================================
 app.use((req, res, next) => {
@@ -5597,7 +5597,10 @@ app.use((err, req, res, next) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`SokoYetu full-stack server running at http://localhost:${PORT}/`);
+  console.log(`SokoYetu Mtaani full-stack server running at http://localhost:${PORT}/`);
   console.log(`API health check: http://localhost:${PORT}/api/health`);
   console.log("Press Ctrl + C to stop the server.");
 });
+
+
+

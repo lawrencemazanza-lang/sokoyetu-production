@@ -1,0 +1,139 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20E Fixed: Remove Old M-PESA Demo Modal After Real STK")) {
+  console.log("No change needed. Stage 20E fixed patch is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20e-fixed-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+let changes = 0;
+
+// Remove old direct reopening of the old demo modal inside the Stage 20D checkout function.
+const oldModalPatterns = [
+  `        if (typeof openModal === "function") {
+          openModal("mpesaModal");
+        }`,
+  `if (typeof openModal === "function") {
+          openModal("mpesaModal");
+        }`,
+  `openModal("mpesaModal");`
+];
+
+const stage20dMarker = "SokoYetu Stage 20D: Checkout Real STK Push Fix";
+const stage20dIndex = code.indexOf(stage20dMarker);
+
+if (stage20dIndex !== -1) {
+  for (const pattern of oldModalPatterns) {
+    const relativeIndex = code.slice(stage20dIndex).indexOf(pattern);
+    if (relativeIndex !== -1) {
+      const absoluteIndex = stage20dIndex + relativeIndex;
+      code =
+        code.slice(0, absoluteIndex) +
+        "/* Stage 20E fixed: old M-PESA demo modal suppressed after real STK Push */" +
+        code.slice(absoluteIndex + pattern.length);
+      changes += 1;
+      break;
+    }
+  }
+}
+
+// Add a safe runtime guard using normal string concatenation only.
+const guard = '\n\n' +
+'// ================================\n' +
+'// SokoYetu Stage 20E Fixed: Remove Old M-PESA Demo Modal After Real STK\n' +
+'// Prevents the old "M-PESA checkout demo" modal from appearing after real Daraja STK Push.\n' +
+'// ================================\n' +
+'(function initStage20EFixedRemoveOldMpesaDemoModal() {\n' +
+'  var recentRealStkCheckout = false;\n' +
+'\n' +
+'  if (window.__sokoyetuStage20EFixedInstalled) return;\n' +
+'  window.__sokoyetuStage20EFixedInstalled = true;\n' +
+'\n' +
+'  var originalFetch = window.fetch ? window.fetch.bind(window) : null;\n' +
+'\n' +
+'  if (originalFetch) {\n' +
+'    window.fetch = async function stage20EFixedFetch(input, init) {\n' +
+'      var url = typeof input === "string" ? input : input && input.url;\n' +
+'      var response = await originalFetch(input, init);\n' +
+'\n' +
+'      try {\n' +
+'        if (url && String(url).includes("/api/payments/mpesa/stk-push") && response.ok) {\n' +
+'          recentRealStkCheckout = true;\n' +
+'          window.__sokoyetuRecentRealStkCheckout = true;\n' +
+'\n' +
+'          setTimeout(function () {\n' +
+'            recentRealStkCheckout = false;\n' +
+'            window.__sokoyetuRecentRealStkCheckout = false;\n' +
+'          }, 120000);\n' +
+'        }\n' +
+'      } catch (error) {}\n' +
+'\n' +
+'      return response;\n' +
+'    };\n' +
+'  }\n' +
+'\n' +
+'  function isOldMpesaDemoModal(id) {\n' +
+'    return id === "mpesaModal" || id === "checkoutModal" || id === "paymentModal";\n' +
+'  }\n' +
+'\n' +
+'  function wrapOpenModalIfAvailable() {\n' +
+'    if (typeof window.openModal === "function" && !window.openModal.__stage20EFixedWrapped) {\n' +
+'      var originalOpenModal = window.openModal;\n' +
+'\n' +
+'      window.openModal = function stage20EFixedOpenModal(id) {\n' +
+'        if ((recentRealStkCheckout || window.__sokoyetuRecentRealStkCheckout) && isOldMpesaDemoModal(id)) {\n' +
+'          console.log("Stage 20E fixed blocked old M-PESA demo modal after real STK Push:", id);\n' +
+'          return;\n' +
+'        }\n' +
+'\n' +
+'        return originalOpenModal.apply(this, arguments);\n' +
+'      };\n' +
+'\n' +
+'      window.openModal.__stage20EFixedWrapped = true;\n' +
+'      return true;\n' +
+'    }\n' +
+'\n' +
+'    return false;\n' +
+'  }\n' +
+'\n' +
+'  var attempts = 0;\n' +
+'  var timer = setInterval(function () {\n' +
+'    attempts += 1;\n' +
+'    if (wrapOpenModalIfAvailable() || attempts > 40) {\n' +
+'      clearInterval(timer);\n' +
+'    }\n' +
+'  }, 250);\n' +
+'\n' +
+'  document.addEventListener("DOMContentLoaded", function () {\n' +
+'    wrapOpenModalIfAvailable();\n' +
+'  });\n' +
+'})();\n';
+
+code += guard;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20E fixed old M-PESA demo modal suppression installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("Direct modal reopen removals:", changes);
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test checkout locally.");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Remove old M-PESA demo modal after real STK\"");
+console.log("git push");

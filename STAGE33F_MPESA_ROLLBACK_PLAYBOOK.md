@@ -1,4 +1,4 @@
-# Stage 33F: M-PESA Rollback Playbook
+﻿# Stage 33F: M-PESA Rollback Playbook
 
 Use this if a live M-PESA test or early production payment creates unresolved risk.
 
@@ -32,10 +32,10 @@ Pause live payment exposure if any of the following occur:
 ```text
 Hello,
 
-Thank you for contacting SokoYetu. We are reviewing your M-PESA payment/order issue. Please do not make another payment while we verify the transaction. If you have an M-PESA confirmation message, keep it safely. We will check the payment receipt, order status and reconciliation record, then update you.
+Thank you for contacting SokoYetu Mtaani. We are reviewing your M-PESA payment/order issue. Please do not make another payment while we verify the transaction. If you have an M-PESA confirmation message, keep it safely. We will check the payment receipt, order status and reconciliation record, then update you.
 
 Regards,
-SokoYetu Support
+SokoYetu Mtaani Support
 ```
 
 ## Safaricom/Daraja follow-up evidence
@@ -55,3 +55,4 @@ Transaction date and time
 Observed issue
 Render log excerpt if available
 ```
+

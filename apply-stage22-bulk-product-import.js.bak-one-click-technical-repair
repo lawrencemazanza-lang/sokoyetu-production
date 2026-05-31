@@ -1,0 +1,231 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu Mtaani project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage22-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage22:check"] = "node scripts/check-stage22-import.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage22-import.js"), `require("dotenv").config();
+
+console.log("SokoYetu Mtaani Stage 22 Bulk Product Import Check");
+console.log("------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.BULK_IMPORT_TOKEN) {
+  console.log("WARN: BULK_IMPORT_TOKEN is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: BULK_IMPORT_TOKEN =", process.env.BULK_IMPORT_TOKEN.slice(0, 4) + "...hidden");
+}
+
+console.log("OK: bulk-import.html should be available after deployment.");
+console.log("OK: product-import-template.csv should be available after deployment.");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "product-import-template.csv"), `name,description,category,price,oldPrice,stock,imageUrl,sku,sellerEmail,status
+Samsung Galaxy A54 5G,"Modern 5G smartphone with bright display, reliable battery life and strong everyday performance.",Phones & Tablets,42000,49000,25,,PHN-A54-001,seller@SokoYetu Mtaani.co.ke,active
+Kenyan Coffee Blend 500g,"Premium Kenyan coffee blend with rich aroma and smooth taste for daily home or office use.",Groceries,1200,1500,120,,GRC-COF-001,seller@SokoYetu Mtaani.co.ke,active
+African Print Ankara Dress,"Elegant African print dress suitable for casual wear, events and modern cultural styling.",Fashion,3500,4500,35,,FSH-ANK-001,seller@SokoYetu Mtaani.co.ke,active
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "bulk-import.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Bulk Product Import</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:22px}header .wrap,main{width:min(1180px,94vw);margin:0 auto}h1{margin:0;font-size:28px}header p{margin:7px 0 0;color:#dcfce7}main{display:grid;gap:16px;padding:18px 0 34px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}.head{padding:15px 18px;background:#ecfdf5;color:#064e3b;font-weight:900;border-bottom:1px solid #bbf7d0}.body{padding:16px;display:grid;gap:12px}label{font-weight:900;color:#064e3b}input,textarea,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}textarea{min-height:120px;resize:vertical;font-family:Consolas,monospace}.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.actions{display:flex;flex-wrap:wrap;gap:10px}button,.linkbtn{border:none;border-radius:14px;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;gap:6px}button{background:#16a34a;color:#fff}button.secondary{background:#111827}.linkbtn{background:#064e3b;color:#fff;width:fit-content}.note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}.err{background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:16px;padding:12px}.ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px}.tablewrap{overflow:auto;max-height:560px;border:1px solid #e5e7eb;border-radius:16px}table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}th{background:#f1f5f9;position:sticky;top:0}.pill{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;background:#dcfce7;color:#166534}.bad{background:#fee2e2;color:#991b1b}.small{color:#64748b;font-size:12px}@media(max-width:800px){.grid{grid-template-columns:1fr}table{min-width:900px}}
+  </style>
+</head>
+<body>
+<header><div class="wrap"><h1>SokoYetu Mtaani Bulk Product Import</h1><p>Upload CSV, generate draft descriptions, use safe category placeholders and verify before publishing.</p></div></header>
+<main>
+<a class="linkbtn" href="/">← Back to shop</a>
+<section class="card"><div class="head">1. Import settings</div><div class="body"><div class="grid"><div><label>Bulk import token</label><input id="token" type="password" placeholder="Paste BULK_IMPORT_TOKEN"></div><div><label>Default status</label><select id="defaultStatus"><option value="active">active</option><option value="draft">draft</option></select></div></div><div class="note">Use supplier-approved images or category placeholders. Do not automatically copy random product photos from other websites.</div></div></section>
+<section class="card"><div class="head">2. Upload or paste product CSV</div><div class="body"><input id="csvFile" type="file" accept=".csv,text/csv"><textarea id="csvText" placeholder="Paste CSV here or upload product-import-template.csv"></textarea><div class="actions"><button id="loadTemplate" class="secondary" type="button">Load example template</button><button id="parseBtn" type="button">Preview products</button><button id="generateDescriptions" type="button">Generate missing descriptions</button><button id="applyPlaceholders" class="secondary" type="button">Apply category placeholders</button></div></div></section>
+<section class="card"><div class="head">3. Review before import</div><div class="body"><div id="summary" class="note">No products loaded yet.</div><div class="tablewrap"><table><thead><tr><th>Use</th><th>Name</th><th>Description</th><th>Category</th><th>Price</th><th>Old Price</th><th>Stock</th><th>Image URL</th><th>SKU</th><th>Status</th></tr></thead><tbody id="previewBody"><tr><td colspan="10">Preview will appear here.</td></tr></tbody></table></div><div class="actions"><button id="importBtn" type="button">Import approved products</button><button id="downloadCleanCsv" class="secondary" type="button">Download cleaned CSV</button></div><div id="result"></div></div></section>
+</main>
+<script>
+const placeholders={"phones":"/assets/phone.svg","phones & tablets":"/assets/phone.svg","computing":"/assets/laptop.svg","electronics":"/assets/speaker.svg","fashion":"/assets/sneaker.svg","groceries":"/assets/groceries.svg","beauty":"/assets/beauty.svg","beauty & health":"/assets/beauty.svg","home":"/assets/furniture.svg","home & garden":"/assets/furniture.svg","appliances":"/assets/appliance.svg"};
+let products=[];
+const exampleCsv=\`name,description,category,price,oldPrice,stock,imageUrl,sku,sellerEmail,status
+Samsung Galaxy A54 5G,"Modern 5G smartphone with bright display, reliable battery life and strong everyday performance.",Phones & Tablets,42000,49000,25,,PHN-A54-001,seller@SokoYetu Mtaani.co.ke,active
+Kenyan Coffee Blend 500g,"Premium Kenyan coffee blend with rich aroma and smooth taste for daily home or office use.",Groceries,1200,1500,120,,GRC-COF-001,seller@SokoYetu Mtaani.co.ke,active\`;
+function esc(v){return String(v||"").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;")}
+function splitLine(line){const out=[];let cur="",q=false;for(let i=0;i<line.length;i++){const c=line[i],n=line[i+1];if(c=='"'&&q&&n=='"'){cur+='"';i++;continue}if(c=='"'){q=!q;continue}if(c==","&&!q){out.push(cur);cur="";continue}cur+=c}out.push(cur);return out.map(x=>x.trim())}
+function parseCsv(text){const lines=String(text||"").split(/\\r?\\n/).map(l=>l.trim()).filter(Boolean);if(!lines.length)return[];const headers=splitLine(lines[0]);return lines.slice(1).map((line,i)=>{const vals=splitLine(line),r={approved:true,rowNumber:i+2};headers.forEach((h,j)=>r[h]=vals[j]||"");r.name=r.name||r.productName||"";r.description=r.description||"";r.category=r.category||"General";r.price=Number(r.price||0);r.oldPrice=r.oldPrice?Number(r.oldPrice):"";r.stock=Number(r.stock||0);r.imageUrl=r.imageUrl||r.image||"";r.sku=r.sku||"";r.sellerEmail=r.sellerEmail||"";r.status=r.status||document.getElementById("defaultStatus").value||"active";return r})}
+function desc(p){const n=p.name||"This product",c=p.category||"General",l=(n+" "+c).toLowerCase();if(l.includes("phone")||l.includes("galaxy"))return n+" is a smartphone option for communication, browsing, photography and mobile payments. Admin should verify supplier specifications before publishing.";if(l.includes("laptop")||l.includes("computer"))return n+" is suitable for work, study, business tasks and entertainment. Confirm processor, memory, storage and warranty details before publishing.";if(l.includes("coffee")||l.includes("tea")||l.includes("honey")||l.includes("groceries"))return n+" is a grocery product prepared for everyday household use. Confirm weight, ingredients and expiry details before publishing.";if(l.includes("dress")||l.includes("shoe")||l.includes("fashion"))return n+" is a fashion product for everyday style and comfort. Confirm size, colour, material and care details before publishing.";return n+" is listed under "+c+". Review supplier details, product features, warranty information and images before publishing."}
+function placeholder(c){const k=String(c||"").toLowerCase().trim();return placeholders[k]||placeholders[k.split(" ")[0]]||"/assets/groceries.svg"}
+function render(){const body=document.getElementById("previewBody"),sum=document.getElementById("summary");if(!products.length){body.innerHTML='<tr><td colspan="10">Preview will appear here.</td></tr>';sum.textContent="No products loaded yet.";return}let valid=0,invalid=0;body.innerHTML=products.map((p,i)=>{const e=[];if(!p.name)e.push("Missing name");if(!p.category)e.push("Missing category");if(!p.price||p.price<=0)e.push("Invalid price");if(p.stock<0)e.push("Invalid stock");e.length?invalid++:valid++;const badge=e.length?'<span class="pill bad">'+e.join(", ")+'</span>':'<span class="pill">Ready</span>';return '<tr><td><input type="checkbox" data-field="approved" data-index="'+i+'" '+(p.approved?"checked":"")+'><br>'+badge+'</td><td><input data-field="name" data-index="'+i+'" value="'+esc(p.name)+'"></td><td><textarea data-field="description" data-index="'+i+'">'+esc(p.description)+'</textarea></td><td><input data-field="category" data-index="'+i+'" value="'+esc(p.category)+'"></td><td><input type="number" data-field="price" data-index="'+i+'" value="'+esc(p.price)+'"></td><td><input type="number" data-field="oldPrice" data-index="'+i+'" value="'+esc(p.oldPrice)+'"></td><td><input type="number" data-field="stock" data-index="'+i+'" value="'+esc(p.stock)+'"></td><td><input data-field="imageUrl" data-index="'+i+'" value="'+esc(p.imageUrl)+'"><div class="small">'+(p.imageUrl?esc(p.imageUrl):"No image yet")+'</div></td><td><input data-field="sku" data-index="'+i+'" value="'+esc(p.sku)+'"></td><td><select data-field="status" data-index="'+i+'"><option value="active" '+(p.status==="active"?"selected":"")+'>active</option><option value="draft" '+(p.status==="draft"?"selected":"")+'>draft</option></select></td></tr>'}).join("");sum.innerHTML="<b>"+products.length+"</b> products loaded. <b>"+valid+"</b> ready, <b>"+invalid+"</b> need fixing.";body.querySelectorAll("input,textarea,select").forEach(el=>{el.addEventListener("input",ev=>{const i=Number(ev.target.dataset.index),f=ev.target.dataset.field;if(f==="approved")products[i][f]=ev.target.checked;else if(["price","oldPrice","stock"].includes(f))products[i][f]=ev.target.value===""?"":Number(ev.target.value);else products[i][f]=ev.target.value});el.addEventListener("change",ev=>{const i=Number(ev.target.dataset.index),f=ev.target.dataset.field;if(f==="approved")products[i][f]=ev.target.checked;else products[i][f]=ev.target.value})})}
+function approved(){return products.filter(p=>p.approved&&p.name&&p.category&&Number(p.price)>0&&Number(p.stock)>=0)}
+function toCsv(rows){const h=["name","description","category","price","oldPrice","stock","imageUrl","sku","sellerEmail","status"];const e=v=>{const t=String(v??"");return t.includes(",")||t.includes('"')||t.includes("\\n")?'"'+t.replace(/"/g,'""')+'"':t};return [h.join(",")].concat(rows.map(r=>h.map(x=>e(r[x])).join(","))).join("\\n")}
+document.getElementById("csvFile").addEventListener("change",async e=>{const f=e.target.files[0];if(f)document.getElementById("csvText").value=await f.text()});
+document.getElementById("loadTemplate").onclick=()=>document.getElementById("csvText").value=exampleCsv;
+document.getElementById("parseBtn").onclick=()=>{products=parseCsv(document.getElementById("csvText").value);render()};
+document.getElementById("generateDescriptions").onclick=()=>{products=products.map(p=>{if(!p.description)p.description=desc(p);return p});render()};
+document.getElementById("applyPlaceholders").onclick=()=>{products=products.map(p=>{if(!p.imageUrl)p.imageUrl=placeholder(p.category);return p});render()};
+document.getElementById("downloadCleanCsv").onclick=()=>{const blob=new Blob([toCsv(approved())],{type:"text/csv"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="SokoYetu Mtaani-clean-products.csv";a.click();URL.revokeObjectURL(url)};
+document.getElementById("importBtn").onclick=async()=>{const token=document.getElementById("token").value.trim(),result=document.getElementById("result"),payload=approved();if(!token){result.innerHTML='<div class="err">Bulk import token is required.</div>';return}if(!payload.length){result.innerHTML='<div class="err">No approved valid products to import.</div>';return}try{result.innerHTML='<div class="note">Importing '+payload.length+' products...</div>';const response=await fetch("/api/admin/products/bulk-import",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json","x-import-token":token},body:JSON.stringify({products:payload})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.message||"Import failed.");result.innerHTML='<div class="ok"><b>Import completed.</b><br>Created: '+data.created+'<br>Updated: '+data.updated+'<br>Skipped: '+data.skipped+'</div>'}catch(e){result.innerHTML='<div class="err">'+esc(e.message||"Import failed.")+'</div>'}};
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Mtaani Stage 22: Bulk Product Import API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Mtaani Stage 22: Bulk Product Import API
+// Protected by BULK_IMPORT_TOKEN. Admin must verify listings before import.
+// ================================
+app.post("/api/admin/products/bulk-import", async (req, res) => {
+  try {
+    const configuredToken = process.env.BULK_IMPORT_TOKEN;
+    const providedToken = req.headers["x-import-token"];
+
+    if (!configuredToken) {
+      return res.status(500).json({ message: "BULK_IMPORT_TOKEN is not configured on the server." });
+    }
+
+    if (!providedToken || providedToken !== configuredToken) {
+      return res.status(403).json({ message: "Invalid bulk import token." });
+    }
+
+    const products = Array.isArray(req.body?.products) ? req.body.products : [];
+
+    if (!products.length) {
+      return res.status(400).json({ message: "No products were provided for import." });
+    }
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    const results = [];
+
+    for (const raw of products) {
+      const name = String(raw.name || "").trim();
+      const description = String(raw.description || "").trim();
+      const category = String(raw.category || "General").trim();
+      const price = Number(raw.price || 0);
+      const oldPrice = raw.oldPrice === "" || raw.oldPrice === null || raw.oldPrice === undefined ? null : Number(raw.oldPrice);
+      const stock = Number(raw.stock || 0);
+      const imageUrl = String(raw.imageUrl || "").trim();
+
+      if (!name || !category || !price || price <= 0 || stock < 0) {
+        skipped += 1;
+        results.push({ name, status: "skipped", reason: "Missing required product fields." });
+        continue;
+      }
+
+      const data = {
+        name,
+        description: description || \`\${name} listed under \${category}. Product details should be verified by admin before public promotion.\`,
+        category,
+        price,
+        oldPrice,
+        stock,
+        imageUrl,
+        importedByAdmin: true,
+      };
+
+      const existing = await prisma.product.findFirst({ where: { name } });
+
+      if (existing) {
+        await prisma.product.update({ where: { id: existing.id }, data });
+        updated += 1;
+        results.push({ name, status: "updated", id: existing.id });
+      } else {
+        const product = await prisma.product.create({ data });
+        created += 1;
+        results.push({ name, status: "created", id: product.id });
+      }
+    }
+
+    return res.json({ message: "Bulk product import completed.", created, updated, skipped, results });
+  } catch (error) {
+    console.error("Bulk product import error:", error);
+    return res.status(500).json({ message: "Bulk product import failed.", details: error.message });
+  }
+});
+`;
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  else server += endpoint;
+  fs.writeFileSync(serverPath, server, "utf8");
+}
+
+fs.writeFileSync(path.join(root, "STAGE22_BULK_PRODUCT_IMPORT_GUIDE.md"), `# SokoYetu Mtaani Stage 22: Bulk Product Import and AI-Assisted Verification
+
+Stage 22 lets admins import many products from CSV instead of adding one product at a time.
+
+## New files
+
+- bulk-import.html
+- product-import-template.csv
+- scripts/check-stage22-import.js
+- API endpoint: POST /api/admin/products/bulk-import
+
+## Required environment variable
+
+Add this to local .env and Render Environment Variables:
+
+\`\`\`env
+BULK_IMPORT_TOKEN=SokoYetu Mtaani_bulk_import_2026_change_this_secret
+\`\`\`
+
+Use a different secret in production.
+
+## Workflow
+
+1. Open /bulk-import.html
+2. Upload or paste CSV
+3. Preview products
+4. Generate missing descriptions
+5. Apply category placeholder images if needed
+6. Edit and approve products
+7. Enter the bulk import token
+8. Import approved products
+9. Verify /api/products
+
+## Image policy
+
+Use seller-uploaded, supplier-approved, manufacturer-allowed, licensed, or placeholder images. Do not automatically copy random marketplace images without permission.
+`, "utf8");
+
+console.log("");
+console.log("SUCCESS: Stage 22 bulk product import installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage22:check");
+console.log("Add BULK_IMPORT_TOKEN to .env and Render before importing.");
+console.log("git add package.json server.js bulk-import.html product-import-template.csv scripts/check-stage22-import.js STAGE22_BULK_PRODUCT_IMPORT_GUIDE.md");
+console.log('git commit -m "Add bulk product import and verification"');
+console.log("git push");
+
+

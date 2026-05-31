@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 30B Admin Control Center Check");
+console.log("SokoYetu Mtaani Stage 30B Admin Control Center Check");
 console.log("--------------------------------------------");
 
 let warnings = 0;
@@ -28,3 +28,4 @@ if (!process.env.SELLER_VERIFICATION_TOKEN) {
 
 console.log("OK: admin-control.html should be available after server restart/deployment.");
 console.log("Warnings:", warnings);
+

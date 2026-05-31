@@ -1,0 +1,88 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Mtaani Stage 32A SEO and Social Metadata Check");
+console.log("-----------------------------------------------");
+
+let warnings = 0;
+
+const pages = [
+  "index.html",
+  "categories.html",
+  "product-detail.html",
+  "seller-stores.html",
+  "seller-store.html",
+  "help-center.html",
+  "track-order.html",
+  "support-request.html",
+  "contact-support.html",
+  "faq.html",
+  "returns-policy.html",
+  "privacy-policy.html",
+  "terms-of-service.html",
+  "data-protection.html",
+  "seller-policy.html"
+];
+
+for (const page of pages) {
+  const filePath = path.join(root, page);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", page, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+  const required = [
+    "SokoYetu Mtaani Stage 32A SEO start",
+    'name="description"',
+    'rel="canonical"',
+    'property="og:title"',
+    'property="og:description"',
+    'property="og:url"',
+    'name="twitter:card"',
+    'name="theme-color"'
+  ];
+
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN:", page, "missing:", item);
+      warnings += 1;
+    }
+  }
+
+  if (required.every((item) => html.includes(item))) {
+    console.log("OK:", page, "has SEO/social metadata.");
+  }
+}
+
+const sitemapPath = path.join(root, "sitemap.xml");
+if (!fs.existsSync(sitemapPath)) {
+  console.log("WARN: sitemap.xml is missing.");
+  warnings += 1;
+} else {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  for (const page of pages) {
+    const pathPart = page === "index.html" ? "/" : "/" + page;
+    if (!sitemap.includes(pathPart)) {
+      console.log("WARN: sitemap.xml may be missing:", pathPart);
+      warnings += 1;
+    }
+  }
+  console.log("OK: sitemap.xml checked.");
+}
+
+const structured = path.join(root, "SokoYetu Mtaani-structured-data.json");
+if (!fs.existsSync(structured)) {
+  console.log("WARN: SokoYetu Mtaani-structured-data.json is missing.");
+  warnings += 1;
+} else {
+  console.log("OK: structured data JSON exists.");
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 32A SEO/social metadata check passed.");
+

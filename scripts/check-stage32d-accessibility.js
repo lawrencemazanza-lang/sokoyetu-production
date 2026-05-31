@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 32D Accessibility and Mobile Polish Check");
+console.log("SokoYetu Mtaani Stage 32D Accessibility and Mobile Polish Check");
 console.log("--------------------------------------------------------");
 
 let warnings = 0;
@@ -92,3 +92,4 @@ if (fs.existsSync(adminControlPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 32D accessibility/mobile polish check passed.");
+

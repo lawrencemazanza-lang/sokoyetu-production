@@ -1,4 +1,4 @@
-# SokoYetu Stage 32D: Accessibility and Mobile Usability Polish
+﻿# SokoYetu Mtaani Stage 32D: Accessibility and Mobile Usability Polish
 
 Stage 32D adds shared accessibility and mobile usability improvements.
 
@@ -97,3 +97,4 @@ http://localhost:5173/admin-accessibility-audit.html
 ```
 
 Then click **Run accessibility audit**.
+

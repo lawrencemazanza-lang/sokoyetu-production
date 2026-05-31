@@ -1,4 +1,4 @@
-# SokoYetu Stage 30E: Public Navigation and Customer Service Link Integration
+﻿# SokoYetu Mtaani Stage 30E: Public Navigation and Customer Service Link Integration
 
 Stage 30E makes the public customer service pages easier to find.
 
@@ -56,3 +56,4 @@ http://localhost:5173/help-center.html
 http://localhost:5173/track-order.html
 http://localhost:5173/support-request.html
 ```
+

@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 33C M-PESA Reconciliation Check");
+console.log("SokoYetu Mtaani Stage 33C M-PESA Reconciliation Check");
 console.log("----------------------------------------------");
 
 let warnings = 0;
@@ -42,7 +42,7 @@ const serverPath = path.join(root, "server.js");
 if (fs.existsSync(serverPath)) {
   const server = fs.readFileSync(serverPath, "utf8");
   const requiredServer = [
-    "SokoYetu Stage 33C: M-PESA Payment Reconciliation API",
+    "SokoYetu Mtaani Stage 33C: M-PESA Payment Reconciliation API",
     "/api/admin/mpesa-reconciliation",
     "amountMismatch",
     "missingReceipt"
@@ -61,3 +61,4 @@ if (fs.existsSync(serverPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 33C M-PESA reconciliation check passed.");
+

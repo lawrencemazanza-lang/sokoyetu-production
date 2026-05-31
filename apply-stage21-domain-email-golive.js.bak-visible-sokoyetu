@@ -1,0 +1,490 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const indexPath = path.join(root, "index.html");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+console.log("Starting SokoYetu Stage 21 domain, email and go-live cleanup...");
+
+function backup(filePath, label) {
+  if (fs.existsSync(filePath)) {
+    const backupPath = `${filePath}.backup-stage21-${label}-${Date.now()}`;
+    fs.copyFileSync(filePath, backupPath);
+    console.log("Backup created:", path.basename(backupPath));
+  }
+}
+
+// 1. Update package scripts.
+backup(packagePath, "package");
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage21:check"] = "node scripts/check-stage21-golive.js";
+pkg.scripts["golive:check"] = "node scripts/check-stage21-golive.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+console.log("Updated package.json with Stage 21 check scripts.");
+
+// 2. Create scripts/check-stage21-golive.js.
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage21-golive.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 21 Go-Live Readiness Check");
+console.log("----------------------------------------");
+
+let blocking = 0;
+let warnings = 0;
+
+function present(key, options = {}) {
+  const value = process.env[key];
+
+  if (!value) {
+    const level = options.required ? "MISSING" : "WARN";
+    console.log(level + ":", key);
+    if (options.required) blocking += 1;
+    else warnings += 1;
+    return "";
+  }
+
+  if (options.secret) {
+    console.log("OK:", key, "=", value.slice(0, 4) + "...hidden");
+  } else {
+    console.log("OK:", key, "=", value);
+  }
+
+  return value;
+}
+
+const publicSiteUrl = present("PUBLIC_SITE_URL");
+const supportEmail = present("SUPPORT_EMAIL");
+present("BUSINESS_NAME");
+
+present("DATABASE_URL", { required: true, secret: true });
+present("JWT_SECRET", { required: true, secret: true });
+present("UPLOAD_MODE", { required: true });
+present("CLOUDINARY_CLOUD_NAME", { required: true });
+present("CLOUDINARY_API_KEY", { required: true, secret: true });
+present("CLOUDINARY_API_SECRET", { required: true, secret: true });
+
+present("MPESA_MODE", { required: true });
+present("MPESA_ENV", { required: true });
+present("MPESA_SHORTCODE", { required: true });
+present("MPESA_TRANSACTION_TYPE", { required: true });
+present("MPESA_CONSUMER_KEY", { required: true, secret: true });
+present("MPESA_CONSUMER_SECRET", { required: true, secret: true });
+present("MPESA_PASSKEY", { required: true, secret: true });
+present("MPESA_CALLBACK_URL", { required: true });
+
+present("LIVEKIT_URL", { required: true });
+present("LIVEKIT_API_KEY", { required: true, secret: true });
+present("LIVEKIT_API_SECRET", { required: true, secret: true });
+
+if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
+  console.log("MISSING/UNSAFE: ADMIN_REGISTRATION_ENABLED should be false before public launch.");
+  blocking += 1;
+} else {
+  console.log("OK: ADMIN_REGISTRATION_ENABLED is not publicly open.");
+}
+
+if (process.env.MPESA_ENV === "sandbox") {
+  console.log("WARN: MPESA_ENV is sandbox. This is fine for testing, but real launch needs production credentials.");
+  warnings += 1;
+}
+
+if (process.env.MPESA_CALLBACK_URL && process.env.MPESA_CALLBACK_URL.includes("trycloudflare")) {
+  console.log("WARN: MPESA_CALLBACK_URL still uses trycloudflare. Use the Render/custom domain callback before launch.");
+  warnings += 1;
+}
+
+if (process.env.MPESA_CALLBACK_URL && process.env.MPESA_CALLBACK_URL.includes("ngrok")) {
+  console.log("WARN: MPESA_CALLBACK_URL still uses ngrok. Use the Render/custom domain callback before launch.");
+  warnings += 1;
+}
+
+if (publicSiteUrl && publicSiteUrl.includes("localhost")) {
+  console.log("WARN: PUBLIC_SITE_URL should not be localhost for launch.");
+  warnings += 1;
+}
+
+if (supportEmail && !supportEmail.includes("@")) {
+  console.log("WARN: SUPPORT_EMAIL does not look like an email address.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Blocking issues:", blocking);
+console.log("Warnings:", warnings);
+
+if (blocking > 0) {
+  console.log("Go-live check failed. Fix blocking issues first.");
+  process.exit(1);
+}
+
+console.log("Core go-live check passed. Review warnings before public launch.");
+`, "utf8");
+
+console.log("Created scripts/check-stage21-golive.js.");
+
+// 3. Create public SEO starter files.
+const defaultSiteUrl = "https://sokoyetu-production-1.onrender.com";
+
+fs.writeFileSync(path.join(root, "robots.txt"), `User-agent: *
+Allow: /
+
+Sitemap: ${defaultSiteUrl}/sitemap.xml
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "sitemap.xml"), `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>${defaultSiteUrl}/</loc>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>${defaultSiteUrl}/checkout.html</loc>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>${defaultSiteUrl}/privacy-policy.html</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${defaultSiteUrl}/terms-of-service.html</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${defaultSiteUrl}/returns-policy.html</loc>
+    <priority>0.5</priority>
+  </url>
+  <url>
+    <loc>${defaultSiteUrl}/contact-support.html</loc>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>${defaultSiteUrl}/faq.html</loc>
+    <priority>0.6</priority>
+  </url>
+</urlset>
+`, "utf8");
+
+console.log("Created robots.txt and sitemap.xml starter files.");
+
+// 4. Add safe meta tags to index.html if available.
+if (fs.existsSync(indexPath)) {
+  backup(indexPath, "index");
+  let index = fs.readFileSync(indexPath, "utf8");
+  let changed = false;
+
+  if (!index.includes('name="description"')) {
+    index = index.replace(
+      /<head[^>]*>/i,
+      (match) => `${match}
+  <meta name="description" content="SokoYetu is a Kenyan e-commerce marketplace for products, sellers, live shopping and M-PESA checkout.">`
+    );
+    changed = true;
+  }
+
+  if (!index.includes('property="og:title"')) {
+    index = index.replace(
+      /<head[^>]*>/i,
+      (match) => `${match}
+  <meta property="og:title" content="SokoYetu - Kenyan Online Marketplace">
+  <meta property="og:description" content="Shop products, discover sellers and checkout securely with M-PESA.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="${defaultSiteUrl}/">`
+    );
+    changed = true;
+  }
+
+  if (!index.includes('name="theme-color"')) {
+    index = index.replace(
+      /<head[^>]*>/i,
+      (match) => `${match}
+  <meta name="theme-color" content="#16a34a">`
+    );
+    changed = true;
+  }
+
+  if (changed) {
+    fs.writeFileSync(indexPath, index, "utf8");
+    console.log("Added basic SEO/social meta tags to index.html.");
+  } else {
+    console.log("index.html already has basic meta tags.");
+  }
+} else {
+  console.log("index.html not found, skipped meta tags.");
+}
+
+// 5. Create production env example.
+fs.writeFileSync(path.join(root, ".env.stage21-golive.example"), `# SokoYetu Stage 21 public launch settings
+# Add these to Render Environment Variables when ready.
+
+PUBLIC_SITE_URL="https://sokoyetu-production-1.onrender.com"
+BUSINESS_NAME="SokoYetu"
+SUPPORT_EMAIL="support@sokoyetu.co.ke"
+
+# Update these when you connect a real domain:
+# PUBLIC_SITE_URL="https://www.sokoyetu.co.ke"
+# MPESA_CALLBACK_URL="https://www.sokoyetu.co.ke/api/payments/mpesa/callback"
+`, "utf8");
+
+// 6. Domain and email guide.
+fs.writeFileSync(path.join(root, "STAGE21_DOMAIN_EMAIL_GOLIVE_GUIDE.md"), `# SokoYetu Stage 21: Domain, Business Email and Go-Live Guide
+
+Stage 21 prepares the live SokoYetu deployment for public use.
+
+This stage does not change cart, checkout, M-PESA, database, Cloudinary or LiveKit logic.
+
+## 1. Choose the public domain
+
+Recommended options:
+
+\`\`\`text
+sokoyetu.co.ke
+www.sokoyetu.co.ke
+shop.sokoyetu.co.ke
+\`\`\`
+
+For launch, using \`www.sokoyetu.co.ke\` or \`shop.sokoyetu.co.ke\` is usually simpler because subdomains use CNAME records cleanly.
+
+## 2. Add the custom domain in Render
+
+Go to:
+
+\`\`\`text
+Render Dashboard → sokoyetu-production-1 → Settings → Custom Domains
+\`\`\`
+
+Add the domain, for example:
+
+\`\`\`text
+www.sokoyetu.co.ke
+\`\`\`
+
+Render will show DNS records to add at your domain provider.
+
+## 3. Configure DNS
+
+At your domain registrar or DNS provider:
+
+For a subdomain such as \`www\`:
+
+\`\`\`text
+Type: CNAME
+Name/Host: www
+Value/Target: sokoyetu-production-1.onrender.com
+\`\`\`
+
+For root/apex domain \`sokoyetu.co.ke\`, follow the exact records Render gives you. If your DNS provider supports CNAME flattening, ALIAS or ANAME, use the option recommended by your provider and Render.
+
+Remove conflicting old A, AAAA or CNAME records for the same host before verifying.
+
+## 4. Verify domain in Render
+
+After DNS is added:
+
+\`\`\`text
+Render → Custom Domains → Verify
+\`\`\`
+
+DNS can take minutes or longer to propagate. Once verified, Render provisions TLS/HTTPS.
+
+## 5. Update environment variables after domain works
+
+In Render environment variables, add or update:
+
+\`\`\`env
+PUBLIC_SITE_URL=https://www.sokoyetu.co.ke
+SUPPORT_EMAIL=support@sokoyetu.co.ke
+BUSINESS_NAME=SokoYetu
+MPESA_CALLBACK_URL=https://www.sokoyetu.co.ke/api/payments/mpesa/callback
+\`\`\`
+
+Then redeploy.
+
+## 6. Business email
+
+Create at least:
+
+\`\`\`text
+support@sokoyetu.co.ke
+orders@sokoyetu.co.ke
+admin@sokoyetu.co.ke
+\`\`\`
+
+Possible providers:
+
+\`\`\`text
+Google Workspace
+Zoho Mail
+Microsoft 365
+Namecheap Private Email
+Your domain registrar email service
+\`\`\`
+
+After choosing a provider, add the provider's MX records in your DNS dashboard.
+
+## 7. Customer-facing cleanup
+
+Check these pages:
+
+\`\`\`text
+/
+checkout.html
+privacy-policy.html
+terms-of-service.html
+returns-policy.html
+seller-policy.html
+contact-support.html
+faq.html
+data-protection.html
+\`\`\`
+
+Remove any visible words such as:
+
+\`\`\`text
+demo
+test
+placeholder
+sandbox
+fake
+coming soon
+\`\`\`
+
+Keep sandbox wording only inside admin/internal documentation, not customer screens.
+
+## 8. M-PESA production note
+
+Current app works with Daraja sandbox. Public commercial launch needs:
+
+\`\`\`text
+Production Daraja app
+Production consumer key and secret
+Production shortcode
+Production passkey
+Approved business PayBill or Till
+Correct callback URL using the final domain
+\`\`\`
+
+Do not process real customer orders using sandbox credentials.
+
+## 9. Final command
+
+Run locally:
+
+\`\`\`cmd
+npm run stage21:check
+\`\`\`
+
+Warnings are acceptable while preparing. Blocking issues must be fixed before public launch.
+`, "utf8");
+
+// 7. Checklist.
+fs.writeFileSync(path.join(root, "STAGE21_GO_LIVE_CHECKLIST.md"), `# SokoYetu Stage 21 Go-Live Checklist
+
+## Deployment
+
+- [ ] Render service is live.
+- [ ] Latest GitHub commit is deployed.
+- [ ] /api/health works.
+- [ ] /api/products works.
+- [ ] /checkout.html works.
+- [ ] Neon database is connected.
+- [ ] Products are seeded or imported.
+- [ ] Build command is normal: npm install && npx prisma generate && npx prisma migrate deploy.
+
+## Domain
+
+- [ ] Domain purchased.
+- [ ] Domain added in Render Custom Domains.
+- [ ] DNS records added.
+- [ ] Domain verified in Render.
+- [ ] HTTPS certificate active.
+- [ ] PUBLIC_SITE_URL updated in Render.
+- [ ] MPESA_CALLBACK_URL updated to the final domain callback.
+- [ ] robots.txt and sitemap.xml updated to the final domain.
+
+## Business Email
+
+- [ ] support@ domain email created.
+- [ ] orders@ domain email created.
+- [ ] admin@ domain email created.
+- [ ] MX records added.
+- [ ] Test email sent and received.
+- [ ] Contact page updated with support email.
+- [ ] Email password and recovery secured.
+
+## Customer Experience
+
+- [ ] Home page loads quickly.
+- [ ] Mobile layout checked.
+- [ ] Product cards display images and prices.
+- [ ] Add to cart works.
+- [ ] Secure Checkout works.
+- [ ] M-PESA STK Push sends.
+- [ ] Failed payments show a clear message.
+- [ ] Successful payment callback updates order status.
+- [ ] Track order flow works.
+- [ ] Seller Studio works.
+- [ ] Admin AI Suite works.
+- [ ] LiveKit livestream works.
+
+## Legal and trust
+
+- [ ] Terms of Service reviewed.
+- [ ] Privacy Policy reviewed.
+- [ ] Returns Policy reviewed.
+- [ ] Seller Policy reviewed.
+- [ ] Data Protection page reviewed.
+- [ ] Contact/support page reviewed.
+- [ ] Remove visible demo/test/sandbox wording from customer pages.
+
+## Security
+
+- [ ] ADMIN_REGISTRATION_ENABLED=false.
+- [ ] JWT_SECRET is long and private.
+- [ ] .env is not committed to GitHub.
+- [ ] Daraja credentials are private.
+- [ ] Cloudinary API secret is private.
+- [ ] LiveKit API secret is private.
+- [ ] Test users removed or passwords changed.
+- [ ] Admin password changed.
+- [ ] Backups planned.
+
+## Production M-PESA
+
+- [ ] Business PayBill or Till ready.
+- [ ] Production Daraja app approved.
+- [ ] Production shortcode added.
+- [ ] Production passkey added.
+- [ ] Production consumer key and secret added.
+- [ ] Production callback URL verified.
+- [ ] Low-value real payment tested.
+- [ ] Refund/dispute process documented.
+
+## Final decision
+
+- [ ] Internal testing passed.
+- [ ] Mobile testing passed.
+- [ ] Payment testing passed.
+- [ ] Support email works.
+- [ ] Domain works.
+- [ ] Ready for soft launch.
+`, "utf8");
+
+console.log("Created Stage 21 guides and checklist.");
+
+console.log("");
+console.log("SUCCESS: Stage 21 domain, email and go-live cleanup installed.");
+console.log("");
+console.log("Next commands:");
+console.log("npm run stage21:check");
+console.log("git add package.json index.html robots.txt sitemap.xml scripts/check-stage21-golive.js .env.stage21-golive.example STAGE21_DOMAIN_EMAIL_GOLIVE_GUIDE.md STAGE21_GO_LIVE_CHECKLIST.md");
+console.log('git commit -m "Add domain email and go live checklist"');
+console.log("git push");

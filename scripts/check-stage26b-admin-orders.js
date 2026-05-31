@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 26B Admin Order Tracking Check");
+console.log("SokoYetu Mtaani Stage 26B Admin Order Tracking Check");
 console.log("--------------------------------------------");
 
 let warnings = 0;
@@ -15,3 +15,4 @@ if (!process.env.ADMIN_ORDER_TOKEN) {
 console.log("OK: admin-orders.html should be available after server restart/deployment.");
 console.log("OK: /api/admin/orders/ops should be available after server restart/deployment.");
 console.log("Warnings:", warnings);
+

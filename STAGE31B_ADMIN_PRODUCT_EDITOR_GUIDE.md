@@ -1,4 +1,4 @@
-# SokoYetu Stage 31B: Admin Product Correction and Listing Editor
+﻿# SokoYetu Mtaani Stage 31B: Admin Product Correction and Listing Editor
 
 Stage 31B adds a protected admin product editor.
 
@@ -62,3 +62,4 @@ support queue logic
 LiveKit
 payment logic
 ```
+

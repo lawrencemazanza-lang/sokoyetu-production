@@ -1,0 +1,720 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+const robotsPath = path.join(root, "robots.txt");
+const adminControlPath = path.join(root, "admin-control.html");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage33b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+backup(robotsPath, "robots");
+backup(adminControlPath, "admin-control");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage33b:check"] = "node scripts/check-stage33b-mpesa-env-guard.js";
+pkg.scripts["mpesa:env-map"] = "node scripts/mpesa-env-map.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const envMapScript = `require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+
+if (!fs.existsSync(serverPath)) {
+  console.error("ERROR: server.js was not found.");
+  process.exit(1);
+}
+
+const server = fs.readFileSync(serverPath, "utf8");
+
+function unique(values) {
+  return Array.from(new Set(values.filter(Boolean))).sort();
+}
+
+function findProcessEnvKeys(text) {
+  const keys = [];
+  const dotPattern = /process\\.env\\.([A-Z0-9_]+)/g;
+  const bracketPattern = /process\\.env\\[["']([A-Z0-9_]+)["']\\]/g;
+  let match;
+
+  while ((match = dotPattern.exec(text))) keys.push(match[1]);
+  while ((match = bracketPattern.exec(text))) keys.push(match[1]);
+
+  return unique(keys);
+}
+
+function redact(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 8) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+const allKeys = findProcessEnvKeys(server);
+const mpesaKeys = allKeys.filter((key) => key.includes("MPESA") || key.includes("DARAJA") || key.includes("SAFARICOM"));
+
+const groups = {
+  environment: ["MPESA_ENV", "MPESA_MODE", "MPESA_BASE_URL"],
+  consumerKey: ["MPESA_CONSUMER_KEY", "MPESA_DARAJA_CONSUMER_KEY", "DARAJA_CONSUMER_KEY", "SAFARICOM_CONSUMER_KEY"],
+  consumerSecret: ["MPESA_CONSUMER_SECRET", "MPESA_DARAJA_CONSUMER_SECRET", "DARAJA_CONSUMER_SECRET", "SAFARICOM_CONSUMER_SECRET"],
+  shortcode: ["MPESA_SHORTCODE", "MPESA_BUSINESS_SHORTCODE", "MPESA_PAYBILL", "MPESA_TILL", "BUSINESS_SHORTCODE"],
+  passkey: ["MPESA_PASSKEY", "MPESA_LIPA_NA_MPESA_PASSKEY", "LIPA_NA_MPESA_PASSKEY"],
+  callback: ["MPESA_CALLBACK_URL", "MPESA_STK_CALLBACK_URL", "CALLBACK_URL"],
+  confirmation: ["MPESA_PRODUCTION_CONFIRMED", "MPESA_LIVE_CONFIRMED"]
+};
+
+function findConfigured(keys) {
+  return keys.filter((key) => Object.prototype.hasOwnProperty.call(process.env, key));
+}
+
+console.log("SokoYetu M-PESA Environment Variable Map");
+console.log("----------------------------------------");
+console.log("");
+console.log("M-PESA/Daraja/Safaricom keys referenced in server.js:");
+if (mpesaKeys.length) {
+  for (const key of mpesaKeys) console.log("-", key, process.env[key] ? "=" + redact(process.env[key]) : "(not set)");
+} else {
+  console.log("- None found.");
+}
+
+console.log("");
+console.log("Recommended groups:");
+for (const [group, keys] of Object.entries(groups)) {
+  const used = keys.filter((key) => mpesaKeys.includes(key));
+  const configured = findConfigured(keys);
+  console.log("-", group + ":");
+  console.log("  referenced:", used.length ? used.join(", ") : "not detected in server.js");
+  console.log("  configured:", configured.length ? configured.map((key) => key + "=" + redact(process.env[key])).join(", ") : "none");
+}
+
+const env = String(process.env.MPESA_ENV || process.env.MPESA_MODE || "").toLowerCase();
+const wantsProduction = env === "production" || env === "live";
+const confirmed = String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true";
+
+console.log("");
+if (wantsProduction && !confirmed) {
+  console.log("GUARD: Production/live appears requested, but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+  process.exitCode = 2;
+} else {
+  console.log("GUARD: No production-confirmation block detected.");
+}
+`;
+
+fs.writeFileSync(path.join(scriptsDir, "mpesa-env-map.js"), envMapScript, "utf8");
+
+const checkScript = `require("dotenv").config();
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 33B M-PESA Environment Guard Check");
+console.log("------------------------------------------------");
+
+let warnings = 0;
+
+const requiredFiles = [
+  "admin-mpesa-env-guard.html",
+  "scripts/mpesa-env-map.js",
+  "scripts/check-stage33b-mpesa-env-guard.js",
+  "STAGE33B_MPESA_ENV_GUARD_GUIDE.md",
+  "STAGE33B_RENDER_MPESA_ENV_SWITCH_TEMPLATE.md"
+];
+
+for (const file of requiredFiles) {
+  if (!fs.existsSync(path.join(root, file))) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const serverPath = path.join(root, "server.js");
+if (!fs.existsSync(serverPath)) {
+  console.log("WARN: server.js is missing.");
+  warnings += 1;
+} else {
+  const server = fs.readFileSync(serverPath, "utf8");
+  const requiredServer = [
+    "SokoYetu Stage 33B: M-PESA Environment Mapping and Guard API",
+    "/api/admin/mpesa-env-guard",
+    "MPESA_PRODUCTION_CONFIRMED",
+    "M-PESA production guard"
+  ];
+
+  for (const item of requiredServer) {
+    if (!server.includes(item)) {
+      console.log("WARN: server.js missing:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: server.js includes", item);
+    }
+  }
+}
+
+const adminControlPath = path.join(root, "admin-control.html");
+if (fs.existsSync(adminControlPath)) {
+  const control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-mpesa-env-guard.html")) {
+    console.log("WARN: admin-control.html does not link admin-mpesa-env-guard.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: admin-control.html links admin-mpesa-env-guard.html.");
+  }
+}
+
+const robotsPath = path.join(root, "robots.txt");
+if (fs.existsSync(robotsPath)) {
+  const robots = fs.readFileSync(robotsPath, "utf8");
+  if (!robots.includes("Disallow: /admin-mpesa-env-guard.html")) {
+    console.log("WARN: robots.txt does not disallow admin-mpesa-env-guard.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: robots.txt disallows admin-mpesa-env-guard.html.");
+  }
+}
+
+console.log("");
+console.log("Local environment guard:");
+const env = String(process.env.MPESA_ENV || process.env.MPESA_MODE || "").toLowerCase();
+const wantsProduction = env === "production" || env === "live";
+const confirmed = String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true";
+
+if (wantsProduction && !confirmed) {
+  console.log("WARN: MPESA_ENV/MPESA_MODE appears production/live, but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: Production guard confirmation state is safe.");
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 33B M-PESA environment guard check passed.");
+`;
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage33b-mpesa-env-guard.js"), checkScript, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-mpesa-env-guard.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu M-PESA Environment Guard</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu M-PESA Environment Guard</h1>
+    <p>Map exact M-PESA variables used by the code and check whether production/live mode is safely confirmed.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+    <a class="linkbtn secondary" href="/admin-orders.html">Admin orders</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Access</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+      </div>
+      <button id="loadBtn" type="button">Load environment guard</button>
+      <div class="warnBox">This page does not switch M-PESA to production. It only maps variables and warns about unsafe production/live states.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">Environment guard result</div>
+    <div class="body" id="result"></div>
+  </section>
+
+  <section class="card">
+    <div class="head">Manual switch rule</div>
+    <div class="body">
+      <div class="badBox">
+        Do not set <code>MPESA_ENV=production</code> or <code>MPESA_MODE=production</code> unless live Daraja production credentials, live shortcode, live passkey and HTTPS callback URL are confirmed.
+      </div>
+      <div class="note">
+        The extra confirmation flag should only be added after manual verification:
+        <code>MPESA_PRODUCTION_CONFIRMED=true</code>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "bad" ? "pill bad" : "pill warn";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+async function loadGuard(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading M-PESA environment guard...</div>');
+  try {
+    const response = await fetch("/api/admin/mpesa-env-guard", {
+      headers: {"x-admin-order-token": token()},
+      credentials: "include",
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not load environment guard.");
+    render(data);
+    msg('<div class="ok">M-PESA environment guard loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load environment guard.") + '</div>');
+  }
+}
+function render(data){
+  const result = document.getElementById("result");
+  const blockers = data.blockers || [];
+  const warnings = data.warnings || [];
+  const groups = data.groups || [];
+  const referenced = data.referencedMpesaKeys || [];
+
+  const statusBox = blockers.length
+    ? '<div class="badBox"><b>M-PESA production guard is blocking readiness.</b><br>' + blockers.map(b => "• " + esc(b)).join("<br>") + '</div>'
+    : '<div class="ok"><b>No production guard blocker detected.</b><br>This still does not mean production should be switched without manual Safaricom approval.</div>';
+
+  const warningBox = warnings.length
+    ? '<div class="warnBox"><b>Warnings</b><br>' + warnings.map(w => "• " + esc(w)).join("<br>") + '</div>'
+    : '<div class="ok"><b>No warnings returned by the environment guard.</b></div>';
+
+  result.innerHTML =
+    statusBox +
+    warningBox +
+    '<div class="grid">' +
+      '<div class="metric">Referenced M-PESA keys<b>' + esc(referenced.length) + '</b></div>' +
+      '<div class="metric">Production requested<b>' + esc(data.productionRequested ? "yes" : "no") + '</b></div>' +
+      '<div class="metric">Production confirmed<b>' + esc(data.productionConfirmed ? "yes" : "no") + '</b></div>' +
+      '<div class="metric">Guard status<b>' + esc(data.guardStatus || "-") + '</b></div>' +
+    '</div>' +
+    '<div><b>Referenced M-PESA/Daraja/Safaricom keys in server.js</b><table><thead><tr><th>Key</th><th>Configured?</th><th>Value</th></tr></thead><tbody>' +
+      (referenced.length ? referenced.map(k => '<tr><td><code>' + esc(k.key) + '</code></td><td>' + pill(k.configured ? "ok" : "warn", k.configured ? "SET" : "NOT SET") + '</td><td>' + esc(k.value || "-") + '</td></tr>').join("") : '<tr><td colspan="3">No M-PESA-related keys were detected in server.js.</td></tr>') +
+    '</tbody></table></div>' +
+    '<div><b>Recommended production mapping groups</b><table><thead><tr><th>Group</th><th>Referenced in code</th><th>Configured in environment</th><th>Status</th></tr></thead><tbody>' +
+      groups.map(g => '<tr><td>' + esc(g.group) + '</td><td>' + esc(g.referencedKeys.join(", ") || "-") + '</td><td>' + esc(g.configuredKeys.join(", ") || "-") + '</td><td>' + pill(g.ok ? "ok" : "bad", g.ok ? "OK" : "MISSING") + '</td></tr>').join("") +
+    '</tbody></table></div>';
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("loadBtn").onclick = loadGuard;
+</script>
+</body>
+</html>`, "utf8");
+
+// Patch server endpoint.
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 33B: M-PESA Environment Mapping and Guard API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 33B: M-PESA Environment Mapping and Guard API
+// Read-only. M-PESA production guard only; does not alter payment logic.
+// ================================
+function requireMpesaEnvGuardToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage33bRedact(value) {
+  const text = String(value || "");
+  if (!text) return "";
+  if (text.length <= 8) return text.slice(0, 2) + "...hidden";
+  return text.slice(0, 4) + "...hidden..." + text.slice(-3);
+}
+
+function stage33bUnique(values) {
+  return Array.from(new Set(values.filter(Boolean))).sort();
+}
+
+function stage33bFindEnvKeys(text) {
+  const keys = [];
+  const dotPattern = /process\\.env\\.([A-Z0-9_]+)/g;
+  const bracketPattern = /process\\.env\\[["']([A-Z0-9_]+)["']\\]/g;
+  let match;
+
+  while ((match = dotPattern.exec(text))) keys.push(match[1]);
+  while ((match = bracketPattern.exec(text))) keys.push(match[1]);
+
+  return stage33bUnique(keys);
+}
+
+function stage33bConfiguredKeys(keys) {
+  return keys.filter((key) => Object.prototype.hasOwnProperty.call(process.env, key));
+}
+
+app.get("/api/admin/mpesa-env-guard", async (req, res) => {
+  try {
+    if (!requireMpesaEnvGuardToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const serverText = fs.readFileSync(pathModule.join(__dirname, "server.js"), "utf8");
+
+    const allKeys = stage33bFindEnvKeys(serverText);
+    const mpesaKeys = allKeys.filter((key) => key.includes("MPESA") || key.includes("DARAJA") || key.includes("SAFARICOM"));
+
+    const groups = [
+      {
+        group: "environment",
+        keys: ["MPESA_ENV", "MPESA_MODE", "MPESA_BASE_URL"],
+      },
+      {
+        group: "consumer key",
+        keys: ["MPESA_CONSUMER_KEY", "MPESA_DARAJA_CONSUMER_KEY", "DARAJA_CONSUMER_KEY", "SAFARICOM_CONSUMER_KEY"],
+      },
+      {
+        group: "consumer secret",
+        keys: ["MPESA_CONSUMER_SECRET", "MPESA_DARAJA_CONSUMER_SECRET", "DARAJA_CONSUMER_SECRET", "SAFARICOM_CONSUMER_SECRET"],
+      },
+      {
+        group: "business shortcode / PayBill / Till",
+        keys: ["MPESA_SHORTCODE", "MPESA_BUSINESS_SHORTCODE", "MPESA_PAYBILL", "MPESA_TILL", "BUSINESS_SHORTCODE"],
+      },
+      {
+        group: "passkey",
+        keys: ["MPESA_PASSKEY", "MPESA_LIPA_NA_MPESA_PASSKEY", "LIPA_NA_MPESA_PASSKEY"],
+      },
+      {
+        group: "callback URL",
+        keys: ["MPESA_CALLBACK_URL", "MPESA_STK_CALLBACK_URL", "CALLBACK_URL"],
+      },
+      {
+        group: "production confirmation guard",
+        keys: ["MPESA_PRODUCTION_CONFIRMED", "MPESA_LIVE_CONFIRMED"],
+      },
+    ].map((item) => {
+      const referencedKeys = item.keys.filter((key) => mpesaKeys.includes(key));
+      const configuredKeys = stage33bConfiguredKeys(item.keys);
+      const required = item.group !== "production confirmation guard";
+      return {
+        group: item.group,
+        referencedKeys,
+        configuredKeys,
+        ok: required ? configuredKeys.length > 0 : true,
+      };
+    });
+
+    const blockers = [];
+    const warnings = [];
+
+    const mpesaEnv = String(process.env.MPESA_ENV || "").toLowerCase();
+    const mpesaMode = String(process.env.MPESA_MODE || "").toLowerCase();
+    const productionRequested = ["production", "live"].includes(mpesaEnv) || ["production", "live"].includes(mpesaMode);
+    const productionConfirmed = String(process.env.MPESA_PRODUCTION_CONFIRMED || process.env.MPESA_LIVE_CONFIRMED || "").toLowerCase() === "true";
+
+    if (productionRequested && !productionConfirmed) {
+      blockers.push("M-PESA production/live appears requested, but MPESA_PRODUCTION_CONFIRMED=true is not set.");
+    }
+
+    const missingRequired = groups.filter((g) => g.group !== "production confirmation guard" && !g.ok);
+    for (const group of missingRequired) {
+      warnings.push("No configured environment variable found for " + group.group + ".");
+    }
+
+    const callback = process.env.MPESA_CALLBACK_URL || process.env.MPESA_STK_CALLBACK_URL || process.env.CALLBACK_URL || "";
+    if (callback && !/^https:\\/\\//i.test(callback)) {
+      blockers.push("Production callback URL must use HTTPS.");
+    }
+
+    if (callback && !/SokoYetu Mtaani\\.co\\.ke/i.test(callback)) {
+      warnings.push("Callback URL does not appear to use SokoYetu Mtaani.co.ke. Confirm it points to the Render production domain.");
+    }
+
+    const referencedMpesaKeys = mpesaKeys.map((key) => {
+      const value = process.env[key];
+      return {
+        key,
+        configured: Boolean(value),
+        value: value ? stage33bRedact(value) : "",
+      };
+    });
+
+    return res.json({
+      message: "M-PESA environment guard loaded.",
+      guardStatus: blockers.length ? "BLOCKED" : "PASSIVE_GUARD_OK",
+      productionRequested,
+      productionConfirmed,
+      referencedMpesaKeys,
+      groups,
+      blockers,
+      warnings,
+      note: "M-PESA production guard is read-only and does not switch payment mode.",
+    });
+  } catch (error) {
+    console.error("M-PESA production guard error:", error);
+    return res.status(500).json({
+      message: "Could not load M-PESA environment guard.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const listenIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (listenIndex !== -1) {
+    server = server.slice(0, listenIndex) + endpoint + "\n" + server.slice(listenIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 33B M-PESA environment guard endpoint to server.js.");
+} else {
+  console.log("Stage 33B endpoint already exists.");
+}
+
+// Add admin-control link.
+if (fs.existsSync(adminControlPath)) {
+  let control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-mpesa-env-guard.html")) {
+    const section = `
+  <section class="card">
+    <div class="head">M-PESA switch safety</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-env-guard.html">
+        <b>M-PESA Environment Guard</b>
+        <span>Map exact M-PESA variables used by server.js and detect missing or unsafe production/live settings.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+`;
+    if (control.includes("</main>")) control = control.replace("</main>", section + "\n</main>");
+    else control += section;
+    fs.writeFileSync(adminControlPath, control, "utf8");
+    console.log("Added M-PESA environment guard link to admin-control.html.");
+  } else {
+    console.log("admin-control.html already links to admin-mpesa-env-guard.html.");
+  }
+}
+
+// Update robots.txt.
+let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, "utf8") : "User-agent: *\nAllow: /\n";
+if (!robots.includes("Disallow: /admin-mpesa-env-guard.html")) {
+  robots += "\nDisallow: /admin-mpesa-env-guard.html\n";
+  fs.writeFileSync(robotsPath, robots, "utf8");
+  console.log("Updated robots.txt to disallow admin-mpesa-env-guard.html.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE33B_MPESA_ENV_GUARD_GUIDE.md"), `# SokoYetu Stage 33B: Production M-PESA Environment Variable Mapping and Safe Switch Guard
+
+Stage 33B is read-only. It does not switch M-PESA to production.
+
+## New page
+
+\`\`\`text
+/admin-mpesa-env-guard.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/mpesa-env-guard
+\`\`\`
+
+## New scripts
+
+\`\`\`text
+npm run stage33b:check
+npm run mpesa:env-map
+\`\`\`
+
+## What it does
+
+- Scans \`server.js\` for \`process.env.*\` M-PESA/Daraja/Safaricom variables.
+- Shows which referenced variables are configured.
+- Groups variables by purpose: environment, consumer key, consumer secret, shortcode, passkey and callback URL.
+- Adds a production guard warning if production/live mode appears requested without explicit confirmation.
+- Redacts secret values.
+
+## Safe switch guard
+
+If production/live mode is requested, add this only after manual verification:
+
+\`\`\`env
+MPESA_PRODUCTION_CONFIRMED=true
+\`\`\`
+
+Do not add that flag until:
+
+\`\`\`text
+Safaricom production app is approved
+Live shortcode is confirmed
+Live passkey is confirmed
+Production consumer key and secret are confirmed
+Callback URL uses HTTPS and points to Render production
+One small real payment test is planned
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+M-PESA callback logic
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage33b:check
+npm run mpesa:env-map
+node --check server.js
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/admin-mpesa-env-guard.html
+\`\`\`
+`);
+
+fs.writeFileSync(path.join(root, "STAGE33B_RENDER_MPESA_ENV_SWITCH_TEMPLATE.md"), `# Stage 33B: Render M-PESA Production Switch Template
+
+Use this only after Safaricom production credentials are issued and verified.
+
+## Keep sandbox until ready
+
+\`\`\`env
+MPESA_ENV=sandbox
+MPESA_MODE=sandbox
+\`\`\`
+
+## Production switch variables
+
+Use the exact variable names required by your \`server.js\`. Stage 33B helps map them.
+
+Common production template:
+
+\`\`\`env
+MPESA_ENV=production
+MPESA_MODE=production
+
+MPESA_CONSUMER_KEY=PASTE_PRODUCTION_CONSUMER_KEY
+MPESA_CONSUMER_SECRET=PASTE_PRODUCTION_CONSUMER_SECRET
+
+MPESA_SHORTCODE=PASTE_LIVE_SHORTCODE
+MPESA_PASSKEY=PASTE_LIVE_PASSKEY
+
+MPESA_CALLBACK_URL=https://www.mysokoyetu.co.ke/api/mpesa/callback
+
+MPESA_PRODUCTION_CONFIRMED=true
+\`\`\`
+
+## Important
+
+Never commit real M-PESA production credentials to GitHub. Add them only in Render environment variables.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 33B M-PESA environment guard installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage33b:check");
+console.log("npm run mpesa:env-map");
+console.log("node --check server.js");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-mpesa-env-guard.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js robots.txt admin-control.html admin-mpesa-env-guard.html scripts/check-stage33b-mpesa-env-guard.js scripts/mpesa-env-map.js STAGE33B_MPESA_ENV_GUARD_GUIDE.md STAGE33B_RENDER_MPESA_ENV_SWITCH_TEMPLATE.md");
+console.log('git commit -m "Add M-PESA environment guard"');
+console.log("git push");
+

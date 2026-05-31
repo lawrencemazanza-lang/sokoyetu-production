@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 33F M-PESA Incident Response Check");
+console.log("SokoYetu Mtaani Stage 33F M-PESA Incident Response Check");
 console.log("------------------------------------------------");
 
 let warnings = 0;
@@ -72,3 +72,4 @@ if (fs.existsSync(robotsPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 33F M-PESA incident response check passed.");
+

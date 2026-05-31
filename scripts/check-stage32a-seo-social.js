@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 32A SEO and Social Metadata Check");
+console.log("SokoYetu Mtaani Stage 32A SEO and Social Metadata Check");
 console.log("-----------------------------------------------");
 
 let warnings = 0;
@@ -36,7 +36,7 @@ for (const page of pages) {
 
   const html = fs.readFileSync(filePath, "utf8");
   const required = [
-    "SokoYetu Stage 32A SEO start",
+    "SokoYetu Mtaani Stage 32A SEO start",
     'name="description"',
     'rel="canonical"',
     'property="og:title"',
@@ -85,3 +85,5 @@ if (!fs.existsSync(structured)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 32A SEO/social metadata check passed.");
+
+

@@ -1,0 +1,515 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu Mtaani project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage27b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage27b:check"] = "node scripts/check-stage27b-seller-dashboard.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage27b-seller-dashboard.js"), `require("dotenv").config();
+
+console.log("SokoYetu Mtaani Stage 27B Seller Verification Dashboard Check");
+console.log("----------------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.SELLER_VERIFICATION_TOKEN) {
+  console.log("WARN: SELLER_VERIFICATION_TOKEN is not set. The seller verification dashboard will not be usable until this is added.");
+  warnings += 1;
+} else {
+  console.log("OK: SELLER_VERIFICATION_TOKEN =", process.env.SELLER_VERIFICATION_TOKEN.slice(0, 4) + "...hidden");
+}
+
+console.log("OK: seller-verification.html should be available after server restart/deployment.");
+console.log("OK: /api/admin/sellers/verification should be available after server restart/deployment.");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "seller-verification.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Seller Verification Dashboard</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:75px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .sellers{display:grid;gap:14px}
+    .seller{border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;background:#fff}
+    .sellerTop{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .sellerBody{padding:14px;display:grid;gap:12px}
+    .title{font-weight:900}
+    .muted{color:#64748b;font-size:13px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:800px){.sellerTop{grid-template-columns:1fr}table{font-size:12px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Seller Verification Dashboard</h1>
+    <p>Review sellers, product activity and soft-launch verification risk before approving sellers operationally.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Admin access and filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Seller verification token</label>
+          <input id="token" type="password" placeholder="Paste SELLER_VERIFICATION_TOKEN">
+        </div>
+        <div>
+          <label>Seller filter</label>
+          <select id="filter">
+            <option value="">All sellers</option>
+            <option value="with-products">Sellers with products</option>
+            <option value="without-products">Sellers without products</option>
+            <option value="risk-review">Needs risk review</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Name, email, phone">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load sellers</button>
+        <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+      </div>
+      <div class="note">This dashboard is a soft-launch verification tool. It does not yet block seller login automatically; admin still controls approval operationally.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Sellers</div>
+    <div class="body">
+      <div id="summary" class="note">No sellers loaded yet.</div>
+      <div id="sellers" class="sellers"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let sellerList = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+
+function riskClass(level){
+  if (level === "HIGH") return "pill bad";
+  if (level === "MEDIUM") return "pill warn";
+  return "pill";
+}
+
+async function api(url, options={}){
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {"Content-Type": "application/json", "x-seller-verification-token": token(), ...(options.headers || {})},
+    ...options
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || "Request failed.");
+  return data;
+}
+
+function buildUrl(){
+  const params = new URLSearchParams();
+  const filter = document.getElementById("filter").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (filter) params.set("filter", filter);
+  if (q) params.set("q", q);
+  return "/api/admin/sellers/verification" + (params.toString() ? "?" + params.toString() : "");
+}
+
+async function loadSellers(){
+  if (!token()) {
+    msg('<div class="err">Seller verification token is required.</div>');
+    return;
+  }
+
+  msg('<div class="note">Loading sellers...</div>');
+
+  try {
+    const data = await api(buildUrl());
+    sellerList = data.sellers || [];
+    renderSellers();
+    msg('<div class="ok">Sellers loaded successfully.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load sellers.") + '</div>');
+  }
+}
+
+function renderSellers(){
+  const wrap = document.getElementById("sellers");
+  const summary = document.getElementById("summary");
+
+  if (!sellerList.length) {
+    summary.textContent = "No sellers found for this filter.";
+    wrap.innerHTML = "";
+    return;
+  }
+
+  const withProducts = sellerList.filter(s => Number(s.productCount || 0) > 0).length;
+  const riskReview = sellerList.filter(s => s.riskLevel !== "LOW").length;
+
+  summary.innerHTML = '<b>' + sellerList.length + '</b> sellers loaded. <b>' + withProducts + '</b> have products. <b>' + riskReview + '</b> need review.';
+
+  wrap.innerHTML = sellerList.map(seller => {
+    const products = (seller.products || []).map(product => {
+      return '<tr><td>' + esc(product.name) + '</td><td>' + esc(product.category || "-") + '</td><td>KES ' + Number(product.price || 0).toLocaleString("en-KE") + '</td><td>' + esc(product.stock ?? "-") + '</td><td>' + (product.imageUrl ? "Yes" : "No") + '</td></tr>';
+    }).join("") || '<tr><td colspan="5">No products found for this seller.</td></tr>';
+
+    const issues = (seller.issues || []).map(issue => '<span class="pill warn">' + esc(issue) + '</span>').join("") || '<span class="pill">No immediate risk flags</span>';
+
+    return '<article class="seller">' +
+      '<div class="sellerTop">' +
+        '<div>' +
+          '<div class="title">' + esc(seller.name || "Unnamed seller") + ' · Seller #' + seller.id + '</div>' +
+          '<div class="muted">' + esc(seller.email || "-") + ' · ' + esc(seller.phone || "-") + '</div>' +
+        '</div>' +
+        '<div>' +
+          '<span class="' + riskClass(seller.riskLevel) + '">' + esc(seller.riskLevel) + ' RISK</span>' +
+          '<span class="pill">' + esc(seller.productCount) + ' products</span>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sellerBody">' +
+        '<div><b>Review flags</b><br>' + issues + '</div>' +
+        '<div><b>Products</b><table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Image</th></tr></thead><tbody>' + products + '</tbody></table></div>' +
+        '<div class="grid">' +
+          '<div><label>Operational decision</label><select id="decision-' + seller.id + '">' +
+            '<option value="APPROVED">Approve for soft launch</option>' +
+            '<option value="MORE_INFO">Request more information</option>' +
+            '<option value="HOLD">Hold for review</option>' +
+            '<option value="SUSPEND">Suspend operationally</option>' +
+            '<option value="REJECT">Reject</option>' +
+          '</select></div>' +
+          '<div><label>Admin note</label><textarea id="note-' + seller.id + '" placeholder="Example: Contact details confirmed. Seller needs clearer product photos."></textarea></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" onclick="saveSellerDecision(' + seller.id + ')">Save decision note</button></div>' +
+        '<div class="muted">Note: In this safe version, decisions are recorded in server logs only. Full persistent seller verification requires a later database migration.</div>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+}
+
+async function saveSellerDecision(sellerId){
+  const decision = document.getElementById("decision-" + sellerId).value;
+  const note = document.getElementById("note-" + sellerId).value.trim();
+
+  try {
+    msg('<div class="note">Saving seller decision note...</div>');
+    await api("/api/admin/sellers/" + sellerId + "/verification-note", {
+      method: "POST",
+      body: JSON.stringify({ decision, note })
+    });
+    msg('<div class="ok">Seller decision note recorded in server logs. Persistent approval will be added in the next database-backed seller verification stage.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not save seller decision.") + '</div>');
+  }
+}
+
+document.getElementById("loadBtn").onclick = loadSellers;
+document.getElementById("refreshBtn").onclick = loadSellers;
+window.saveSellerDecision = saveSellerDecision;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Mtaani Stage 27B: Seller Verification Dashboard API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Mtaani Stage 27B: Seller Verification Dashboard API
+// Protected by SELLER_VERIFICATION_TOKEN. No schema migration in this safe version.
+// ================================
+function requireSellerVerificationToken(req, res) {
+  const configuredToken = process.env.SELLER_VERIFICATION_TOKEN;
+  const providedToken = req.headers["x-seller-verification-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "SELLER_VERIFICATION_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid seller verification token." });
+    return false;
+  }
+
+  return true;
+}
+
+function assessSellerRisk(seller, products) {
+  const issues = [];
+
+  if (!seller.phone) issues.push("Missing phone");
+  if (!seller.email) issues.push("Missing email");
+  if (!seller.name) issues.push("Missing name");
+  if (!products.length) issues.push("No products listed");
+
+  const missingImages = products.filter((p) => !p.imageUrl).length;
+  if (missingImages > 0) issues.push(\`\${missingImages} product(s) missing image\`);
+
+  const lowStock = products.filter((p) => Number(p.stock || 0) <= 0).length;
+  if (lowStock > 0) issues.push(\`\${lowStock} product(s) out of stock\`);
+
+  const suspicious = products.filter((p) => /fake|replica|copy|counterfeit/i.test(String(p.name || "") + " " + String(p.description || ""))).length;
+  if (suspicious > 0) issues.push(\`\${suspicious} product(s) need counterfeit wording review\`);
+
+  let riskLevel = "LOW";
+  if (issues.some((issue) => /counterfeit|fake|replica|copy|Missing phone|Missing email/i.test(issue))) riskLevel = "HIGH";
+  else if (issues.length) riskLevel = "MEDIUM";
+
+  return { riskLevel, issues };
+}
+
+app.get("/api/admin/sellers/verification", async (req, res) => {
+  try {
+    if (!requireSellerVerificationToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const where = {
+      role: "seller",
+    };
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const sellers = await prisma.user.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        products: {
+          orderBy: { id: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            price: true,
+            stock: true,
+            imageUrl: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    let prepared = sellers.map((seller) => {
+      const products = seller.products || [];
+      const risk = assessSellerRisk(seller, products);
+
+      return {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone: seller.phone,
+        role: seller.role,
+        productCount: products.length,
+        products,
+        riskLevel: risk.riskLevel,
+        issues: risk.issues,
+      };
+    });
+
+    if (filter === "with-products") prepared = prepared.filter((seller) => seller.productCount > 0);
+    if (filter === "without-products") prepared = prepared.filter((seller) => seller.productCount === 0);
+    if (filter === "risk-review") prepared = prepared.filter((seller) => seller.riskLevel !== "LOW");
+
+    return res.json({
+      message: "Seller verification records loaded.",
+      count: prepared.length,
+      sellers: prepared,
+    });
+  } catch (error) {
+    console.error("Seller verification load error:", error);
+    return res.status(500).json({
+      message: "Could not load seller verification records.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/sellers/:id/verification-note", async (req, res) => {
+  try {
+    if (!requireSellerVerificationToken(req, res)) return;
+
+    const id = Number(req.params.id);
+    const decision = String(req.body?.decision || "").trim();
+    const note = String(req.body?.note || "").trim();
+
+    const allowed = new Set(["APPROVED", "MORE_INFO", "HOLD", "SUSPEND", "REJECT"]);
+
+    if (!id || id <= 0) return res.status(400).json({ message: "Valid seller ID is required." });
+    if (!allowed.has(decision)) return res.status(400).json({ message: "Invalid seller decision." });
+
+    const seller = await prisma.user.findFirst({
+      where: { id, role: "seller" },
+      select: { id: true, name: true, email: true, phone: true, role: true },
+    });
+
+    if (!seller) return res.status(404).json({ message: "Seller was not found." });
+
+    console.log("Seller verification decision:", {
+      sellerId: seller.id,
+      sellerEmail: seller.email,
+      decision,
+      note,
+      recordedAt: new Date().toISOString(),
+    });
+
+    return res.json({
+      message: "Seller verification decision recorded in server logs.",
+      seller,
+      decision,
+      note,
+    });
+  } catch (error) {
+    console.error("Seller verification note error:", error);
+    return res.status(500).json({
+      message: "Could not record seller verification decision.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 27B seller verification endpoints to server.js.");
+} else {
+  console.log("Stage 27B endpoints already exist.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE27B_SELLER_VERIFICATION_DASHBOARD_GUIDE.md"), `# SokoYetu Mtaani Stage 27B: Seller Verification Dashboard
+
+Stage 27B adds a protected admin seller verification dashboard.
+
+## New page
+
+\`\`\`text
+/seller-verification.html
+\`\`\`
+
+## New endpoints
+
+\`\`\`text
+GET  /api/admin/sellers/verification
+POST /api/admin/sellers/:id/verification-note
+\`\`\`
+
+## Required environment variable
+
+Add this to local \`.env\` and Render Environment Variables:
+
+\`\`\`env
+SELLER_VERIFICATION_TOKEN=SokoYetu Mtaani_seller_verify_2026_change_this_secret
+\`\`\`
+
+Use a stronger secret in production.
+
+## What admin can do
+
+- View seller accounts.
+- Search by seller name, email or phone.
+- Filter sellers with products, without products or needing risk review.
+- See product count and recent products.
+- See soft risk flags such as missing phone, missing images, out-of-stock products and counterfeit wording.
+- Record an operational seller decision note.
+
+## Important limitation
+
+This safe version does not add a new database table for persistent seller approval. It records seller decisions in server logs only. A later Stage 27C can add a proper database-backed seller verification model and migration.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 27B seller verification dashboard installed.");
+console.log("");
+console.log("Next:");
+console.log("Add SELLER_VERIFICATION_TOKEN to .env:");
+console.log("SELLER_VERIFICATION_TOKEN=SokoYetu Mtaani_seller_verify_2026_change_this_secret");
+console.log("npm run stage27b:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/seller-verification.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage27b-seller-dashboard.js seller-verification.html STAGE27B_SELLER_VERIFICATION_DASHBOARD_GUIDE.md");
+console.log('git commit -m "Add seller verification dashboard"');
+console.log("git push");
+

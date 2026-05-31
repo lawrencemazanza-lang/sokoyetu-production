@@ -1,0 +1,248 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const robotsPath = path.join(root, "robots.txt");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage30c-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(robotsPath, "robots");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage30c:check"] = "node scripts/check-stage30c-noindex.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const sensitivePages = [
+  "admin-control.html",
+  "admin-orders.html",
+  "admin-support.html",
+  "admin-backup.html",
+  "admin-system-health.html",
+  "admin-launch.html",
+  "seller-verification.html",
+  "seller-verification-persistent.html",
+  "order-operations.html",
+  "seller-onboarding.html"
+];
+
+function addNoindexToHtml(fileName) {
+  const filePath = path.join(root, fileName);
+  if (!fs.existsSync(filePath)) {
+    console.log("Skipped missing page:", fileName);
+    return false;
+  }
+
+  let html = fs.readFileSync(filePath, "utf8");
+  const before = html;
+
+  if (!html.includes('name="robots"') && html.includes("<head>")) {
+    html = html.replace(
+      "<head>",
+      '<head>\n  <meta name="robots" content="noindex,nofollow,noarchive">\n  <meta name="googlebot" content="noindex,nofollow,noarchive">'
+    );
+  }
+
+  if (!html.includes("SokoYetu internal operations page")) {
+    html = html.replace(
+      "</body>",
+      "\n<!-- SokoYetu internal operations page: noindex/nofollow enabled in Stage 30C -->\n</body>"
+    );
+  }
+
+  if (html !== before) {
+    backup(filePath, fileName.replace(/[^a-z0-9]/gi, "-"));
+    fs.writeFileSync(filePath, html, "utf8");
+    console.log("Noindex added/confirmed:", fileName);
+    return true;
+  }
+
+  console.log("Noindex already present or no changes needed:", fileName);
+  return false;
+}
+
+let changed = 0;
+for (const page of sensitivePages) {
+  if (addNoindexToHtml(page)) changed += 1;
+}
+
+const disallowLines = [
+  "User-agent: *",
+  "Allow: /",
+  "Disallow: /admin-control.html",
+  "Disallow: /admin-orders.html",
+  "Disallow: /admin-support.html",
+  "Disallow: /admin-backup.html",
+  "Disallow: /admin-system-health.html",
+  "Disallow: /admin-launch.html",
+  "Disallow: /seller-verification.html",
+  "Disallow: /seller-verification-persistent.html",
+  "Disallow: /order-operations.html",
+  "Disallow: /seller-onboarding.html",
+  "",
+  "Sitemap: https://www.mysokoyetu.co.ke/sitemap.xml",
+  ""
+].join("\n");
+
+let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, "utf8") : "";
+
+if (!robots.includes("Disallow: /admin-control.html")) {
+  robots = disallowLines;
+  fs.writeFileSync(robotsPath, robots, "utf8");
+  console.log("Updated robots.txt with admin/internal disallow rules.");
+} else {
+  console.log("robots.txt already has Stage 30C admin/internal disallow rules.");
+}
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage30c-noindex.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+const pages = ${JSON.stringify(sensitivePages, null, 2)};
+
+let warnings = 0;
+
+console.log("SokoYetu Stage 30C Admin Noindex Hardening Check");
+console.log("-----------------------------------------------");
+
+for (const page of pages) {
+  const filePath = path.join(root, page);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", page, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+
+  if (!html.includes('name="robots"') || !html.includes("noindex")) {
+    console.log("WARN:", page, "does not contain robots noindex meta tag.");
+    warnings += 1;
+  } else {
+    console.log("OK:", page, "has noindex meta tag.");
+  }
+}
+
+const robotsPath = path.join(root, "robots.txt");
+
+if (!fs.existsSync(robotsPath)) {
+  console.log("WARN: robots.txt is missing.");
+  warnings += 1;
+} else {
+  const robots = fs.readFileSync(robotsPath, "utf8");
+  const needed = [
+    "/admin-control.html",
+    "/admin-orders.html",
+    "/admin-support.html",
+    "/admin-backup.html",
+    "/admin-system-health.html",
+    "/admin-launch.html",
+    "/seller-verification.html",
+    "/seller-verification-persistent.html"
+  ];
+
+  for (const item of needed) {
+    if (!robots.includes("Disallow: " + item)) {
+      console.log("WARN: robots.txt missing Disallow:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: robots.txt disallows", item);
+    }
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 30C noindex hardening check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE30C_ADMIN_NOINDEX_HARDENING_GUIDE.md"), `# SokoYetu Stage 30C: Admin Page Privacy and Search-Index Hardening
+
+Stage 30C reduces the chance that internal admin and operations pages are indexed by search engines.
+
+## What changed
+
+The following pages receive noindex/nofollow meta tags where present:
+
+\`\`\`text
+admin-control.html
+admin-orders.html
+admin-support.html
+admin-backup.html
+admin-system-health.html
+admin-launch.html
+seller-verification.html
+seller-verification-persistent.html
+order-operations.html
+seller-onboarding.html
+\`\`\`
+
+\`robots.txt\` is also updated to disallow these internal paths.
+
+## Important limitation
+
+This is search-index hardening, not full authentication. Protected admin data is still secured by backend token checks such as:
+
+\`\`\`text
+ADMIN_ORDER_TOKEN
+SELLER_VERIFICATION_TOKEN
+\`\`\`
+
+Keep those tokens private.
+
+## What this stage does not touch
+
+\`\`\`text
+checkout
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+product import
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage30c:check
+\`\`\`
+
+Then open:
+
+\`\`\`text
+http://localhost:5173/robots.txt
+http://localhost:5173/admin-control.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 30C admin noindex hardening installed.");
+console.log("Sensitive pages changed:", changed);
+console.log("");
+console.log("Next:");
+console.log("npm run stage30c:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/robots.txt");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json robots.txt scripts/check-stage30c-noindex.js admin-control.html admin-orders.html admin-support.html admin-backup.html admin-system-health.html admin-launch.html seller-verification.html seller-verification-persistent.html order-operations.html seller-onboarding.html STAGE30C_ADMIN_NOINDEX_HARDENING_GUIDE.md");
+console.log('git commit -m "Harden admin pages against indexing"');
+console.log("git push");

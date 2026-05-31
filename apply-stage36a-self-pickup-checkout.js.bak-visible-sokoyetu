@@ -1,0 +1,160 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const serverPath = path.join(root, "server.js");
+const checkoutPath = path.join(root, "checkout.html");
+
+if (!fs.existsSync(packagePath) || !fs.existsSync(serverPath) || !fs.existsSync(checkoutPath)) {
+  console.error("ERROR: package.json, server.js, or checkout.html was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage36a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(serverPath, "server");
+backup(checkoutPath, "checkout");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage36a:check"] = "node scripts/check-stage36a-self-pickup.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage36a-self-pickup.js"), `const fs = require("fs");
+const path = require("path");
+const root = process.cwd();
+console.log("SokoYetu Stage 36A Self-Pickup Checkout Check");
+console.log("---------------------------------------------");
+let warnings = 0;
+function checkFile(file, items) {
+  const fp = path.join(root, file);
+  if (!fs.existsSync(fp)) { console.log("WARN:", file, "is missing."); warnings++; return; }
+  const text = fs.readFileSync(fp, "utf8");
+  for (const item of items) {
+    if (!text.includes(item)) { console.log("WARN:", file, "missing:", item); warnings++; }
+    else console.log("OK:", file, "includes", item);
+  }
+}
+checkFile("checkout.html", ["Self-pickup", "deliveryMethod", "SELF_PICKUP", "Pickup is free", "calculateDeliveryFee"]);
+checkFile("server.js", ["SokoYetu Stage 36A: Self-pickup checkout support", "isSelfPickup", "finalDeliveryAddress", "SELF PICKUP", "deliveryFee = isSelfPickup ? 0"]);
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 36A self-pickup checkout check passed.");
+`, "utf8");
+
+const checkoutHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Secure Checkout</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:26px 18px}header div,main{width:min(980px,94vw);margin:0 auto}h1{margin:0;font-size:28px}header p{margin:7px 0 0;color:#dcfce7}main{display:grid;grid-template-columns:1.1fr .9fr;gap:18px;padding:22px 0 42px}.card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}.head{background:#ecfdf5;color:#064e3b;padding:14px 16px;font-weight:900;border-bottom:1px solid #bbf7d0}.body{padding:16px;display:grid;gap:13px}label{font-weight:900;color:#064e3b}input,textarea,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}textarea{min-height:88px;resize:vertical}button,.linkbtn{border:0;border-radius:14px;background:#16a34a;color:#fff;padding:12px 15px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center}button:disabled{opacity:.55;cursor:not-allowed}.secondary{background:#111827}.row{display:grid;grid-template-columns:70px 1fr auto;gap:12px;align-items:center;border:1px solid #e5e7eb;border-radius:16px;padding:10px;background:#f8fafc}.row img{width:70px;height:70px;object-fit:cover;border-radius:14px;background:#e5e7eb}.title{font-weight:900;color:#064e3b}.meta{font-size:13px;color:#64748b;margin-top:4px}.price{font-weight:900}.summary{display:grid;gap:8px;border-top:1px solid #e5e7eb;margin-top:10px;padding-top:12px}.line{display:flex;justify-content:space-between;gap:10px}.line.total{font-size:18px;font-weight:900;color:#064e3b;border-top:1px solid #e5e7eb;padding-top:10px}.msg{border-radius:16px;padding:12px;line-height:1.45}.ok{background:#ecfdf5;border:1px solid #86efac;color:#047857}.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}.note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.45}.empty{padding:16px;border-radius:16px;background:#f8fafc;border:1px solid #e5e7eb;color:#64748b}.actions{display:flex;gap:10px;flex-wrap:wrap}@media(max-width:840px){main{grid-template-columns:1fr}.row{grid-template-columns:58px 1fr}.price{grid-column:2}}
+  </style>
+</head>
+<body>
+<header><div><h1>SokoYetu Secure Checkout</h1><p>M-PESA checkout · Delivery or self-pickup option</p></div></header>
+<main>
+  <section class="card"><div class="head">Checkout details</div><div class="body">
+    <form id="checkoutForm">
+      <label for="phone">M-PESA phone number</label>
+      <input id="phone" placeholder="0714565555 or 254714565555" autocomplete="tel">
+      <label for="deliveryMethod">How do you want to receive the order?</label>
+      <select id="deliveryMethod"><option value="DELIVERY">Home delivery</option><option value="SELF_PICKUP">Self-pickup - no delivery fee</option></select>
+      <div id="deliveryAddressWrap"><label for="deliveryAddress">Delivery address</label><textarea id="deliveryAddress" placeholder="Example: Nairobi CBD, Moi Avenue, building name"></textarea></div>
+      <div id="pickupNote" class="note" style="display:none">Pickup is free. After payment/order confirmation, SokoYetu will confirm pickup details using your checkout phone number.</div>
+      <button id="payBtn" type="submit">Create order and send M-PESA prompt</button>
+    </form>
+    <div id="message"></div>
+    <div class="actions"><a class="linkbtn secondary" href="/">Continue shopping</a><a class="linkbtn secondary" href="/track-order.html">Track order</a></div>
+  </div></section>
+  <aside class="card"><div class="head">Cart summary</div><div class="body" id="cartBody"><div class="empty">Loading cart...</div></div></aside>
+</main>
+<script>
+const cartBody=document.getElementById("cartBody"),form=document.getElementById("checkoutForm"),message=document.getElementById("message"),payBtn=document.getElementById("payBtn"),deliveryMethodEl=document.getElementById("deliveryMethod"),deliveryAddressEl=document.getElementById("deliveryAddress"),deliveryAddressWrap=document.getElementById("deliveryAddressWrap"),pickupNote=document.getElementById("pickupNote");let latestCart=[];
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\\"":"&quot;","'":"&#39;"}[m]||m))}
+function money(v){return "KES "+Number(v||0).toLocaleString("en-KE",{maximumFractionDigits:0})}
+async function fetchJson(url,options={}){const res=await fetch(url,{credentials:"include",headers:{"Content-Type":"application/json",...(options.headers||{})},...options});const text=await res.text();let data={};try{data=text?JSON.parse(text):{}}catch{throw new Error("Server returned a non-JSON response.")}if(!res.ok)throw new Error(data.message||"Request failed");return data}
+function normalizeCart(data){const raw=Array.isArray(data)?data:Array.isArray(data.items)?data.items:Array.isArray(data.cart)?data.cart:Array.isArray(data.cartItems)?data.cartItems:[];return raw.map(i=>({productId:i.productId||i.id||i.product?.id||"",name:i.name||i.title||i.product?.name||i.product?.title||"Product",imageUrl:i.imageUrl||i.image||i.product?.imageUrl||"",price:Number(i.price||i.product?.price||0),quantity:Number(i.quantity||i.qty||1)}))}
+function isSelfPickup(){return deliveryMethodEl.value==="SELF_PICKUP"}
+function subtotal(){return latestCart.reduce((s,i)=>s+Number(i.price||0)*Number(i.quantity||1),0)}
+function calculateDeliveryFee(){const sub=subtotal();if(isSelfPickup())return 0;if(sub>=10000||sub===0)return 0;return 300}
+function renderMethodUI(){if(isSelfPickup()){deliveryAddressWrap.style.display="none";pickupNote.style.display="block";deliveryAddressEl.removeAttribute("required")}else{deliveryAddressWrap.style.display="block";pickupNote.style.display="none";deliveryAddressEl.setAttribute("required","required")}renderCart()}
+function renderCart(){if(!latestCart.length){cartBody.innerHTML="<div class='empty'>Your cart is empty. Go back to the shop and add a product first.</div>";payBtn.disabled=true;return}payBtn.disabled=false;const rows=latestCart.map(i=>"<article class='row'>"+(i.imageUrl?"<img src='"+esc(i.imageUrl)+"' alt=''>":"<img alt=''>")+"<div><div class='title'>"+esc(i.name)+"</div><div class='meta'>Quantity: "+esc(i.quantity)+" · Product ID: "+esc(i.productId)+"</div></div><div class='price'>"+money(i.price*i.quantity)+"</div></article>").join("");const sub=subtotal(),deliveryFee=calculateDeliveryFee(),total=sub+deliveryFee,deliveryLabel=isSelfPickup()?"Self-pickup - free":deliveryFee===0?"Free":money(deliveryFee);cartBody.innerHTML=rows+"<div class='summary'><div class='line'><span>Subtotal</span><b>"+money(sub)+"</b></div><div class='line'><span>Delivery</span><b>"+deliveryLabel+"</b></div><div class='line total'><span>Total</span><b>"+money(total)+"</b></div></div><div class='note'>"+(isSelfPickup()?"Self-pickup selected. Delivery fee is KES 0.":"Free delivery applies above KES 10,000.")+"</div>"}
+async function loadCart(){try{const data=await fetchJson("/api/cart");latestCart=normalizeCart(data);renderCart()}catch(e){cartBody.innerHTML="<div class='msg err'>"+esc(e.message)+"</div>";payBtn.disabled=true}}
+deliveryMethodEl.addEventListener("change",renderMethodUI);
+form.addEventListener("submit",async e=>{e.preventDefault();const phone=document.getElementById("phone").value.trim(),deliveryMethod=deliveryMethodEl.value,deliveryAddress=deliveryAddressEl.value.trim();if(!phone){message.innerHTML="<div class='msg err'>M-PESA phone number is required.</div>";return}if(deliveryMethod!=="SELF_PICKUP"&&!deliveryAddress){message.innerHTML="<div class='msg err'>Delivery address is required for home delivery.</div>";return}try{payBtn.disabled=true;message.innerHTML="<div class='msg ok'>Creating order and sending M-PESA STK Push...</div>";const od=await fetchJson("/api/orders",{method:"POST",body:JSON.stringify({phone,deliveryMethod,fulfillmentMethod:deliveryMethod,deliveryAddress:deliveryMethod==="SELF_PICKUP"?"SELF PICKUP":deliveryAddress})});const order=od.order||od;if(!order.id)throw new Error("Order was created but no order ID was returned.");const sd=await fetchJson("/api/payments/mpesa/stk-push",{method:"POST",body:JSON.stringify({orderId:order.id,phone})});message.innerHTML="<div class='msg ok'><b>Order created.</b><br>Order ID: #"+esc(order.id)+"<br>"+(deliveryMethod==="SELF_PICKUP"?"Self-pickup selected. No delivery fee was charged.<br>":"")+"M-PESA STK Push sent. Check the customer phone and enter the M-PESA PIN."+(sd.checkoutRequestId?"<br><small>Checkout Request ID: "+esc(sd.checkoutRequestId)+"</small>":"")+"</div>"}catch(e){message.innerHTML="<div class='msg err'><b>Checkout could not continue.</b><br>"+esc(e.message||"Please check Daraja settings and try again.")+"</div>"}finally{payBtn.disabled=false}});
+renderMethodUI();loadCart();
+</script>
+</body></html>`;
+fs.writeFileSync(checkoutPath, checkoutHtml, "utf8");
+console.log("Replaced checkout.html with self-pickup checkout flow.");
+
+let server = fs.readFileSync(serverPath, "utf8");
+const start = server.indexOf('app.post("/api/orders", requireAuth, requireRole("buyer"), async (req, res) => {');
+const endMarker = "// SokoYetu Step 6: M-PESA STK Push Routes";
+const end = server.indexOf(endMarker, start);
+if (start === -1 || end === -1) {
+  console.error("ERROR: Could not locate /api/orders handler or M-PESA marker. checkout.html was updated, but server.js was not patched.");
+  process.exit(1);
+}
+let before = server.slice(0, start), handler = server.slice(start, end), after = server.slice(end);
+if (!handler.includes("SokoYetu Stage 36A: Self-pickup checkout support")) {
+  handler = handler.replace('const { deliveryAddress, phone } = req.body;', `// SokoYetu Stage 36A: Self-pickup checkout support
+    const { phone } = req.body;
+    const requestedDeliveryMethod = String(req.body.deliveryMethod || req.body.fulfillmentMethod || "DELIVERY").toUpperCase();
+    const isSelfPickup = ["SELF_PICKUP", "SELF-PICKUP", "PICKUP", "COLLECTION"].includes(requestedDeliveryMethod);
+    const rawDeliveryAddress = String(req.body.deliveryAddress || "").trim();
+    const deliveryMethod = isSelfPickup ? "SELF_PICKUP" : "DELIVERY";
+    const finalDeliveryAddress = isSelfPickup
+      ? "SELF PICKUP - Buyer will collect the order. Confirm pickup details using the checkout phone before releasing the product."
+      : rawDeliveryAddress;`);
+  handler = handler.replace(`if (!deliveryAddress) {
+      return res.status(400).json({ message: "Delivery address is required." });
+    }`, `if (!isSelfPickup && !finalDeliveryAddress) {
+      return res.status(400).json({ message: "Delivery address is required for home delivery." });
+    }`);
+  handler = handler.replace('const deliveryFee = subtotal >= 10000 ? 0 : 300;', 'const deliveryFee = isSelfPickup ? 0 : (subtotal >= 10000 ? 0 : 300);');
+  handler = handler.replace('const totalAmount = subtotal + deliveryFee;', 'const totalAmount = subtotal + deliveryFee;\n    const orderFulfilmentMethod = deliveryMethod;');
+  handler = handler.replace('deliveryAddress,', 'deliveryAddress: finalDeliveryAddress,');
+  server = before + handler + after;
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Patched /api/orders to support self-pickup deliveryFee = 0.");
+} else {
+  console.log("server.js already includes Stage 36A self-pickup support.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE36A_SELF_PICKUP_CHECKOUT_GUIDE.md"), `# SokoYetu Stage 36A: Self-Pickup Checkout Option
+
+Stage 36A adds a buyer-facing self-pickup option in checkout.
+
+## Behaviour
+
+\`\`\`text
+Home delivery: delivery address required; KES 300 delivery fee unless subtotal is KES 10,000 or above.
+Self-pickup: delivery address not required; delivery fee is KES 0; M-PESA amount excludes delivery fee.
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage36a:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Manual test: add product to cart, open checkout, select Self-pickup, confirm delivery fee is KES 0, submit controlled test order, check Admin Orders and Track Order.
+`);
+console.log("\nSUCCESS: Stage 36A self-pickup checkout option installed.");
+console.log("\nNext:\nnpm run stage36a:check\nnode --check server.js\nnpm run dev");
+console.log("\nCommit:\ngit add package.json server.js checkout.html scripts/check-stage36a-self-pickup.js STAGE36A_SELF_PICKUP_CHECKOUT_GUIDE.md\ngit commit -m \"Add self-pickup checkout option\"\ngit push");

@@ -1,4 +1,4 @@
-# SokoYetu Stage 20C: Production Seed
+﻿# SokoYetu Mtaani Stage 20C: Production Seed
 
 Your Render app is live, but /api/products returns:
 
@@ -57,9 +57,10 @@ npm install && npx prisma generate && npx prisma migrate deploy
 Open:
 
 ```text
-https://sokoyetu-production-1.onrender.com/api/products
+https://SokoYetu Mtaani-production-1.onrender.com/api/products
 ```
 
 It should show products with IDs.
 
 Then test Add to Cart again.
+

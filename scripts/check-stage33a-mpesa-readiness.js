@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 33A Production M-PESA Readiness Check");
+console.log("SokoYetu Mtaani Stage 33A Production M-PESA Readiness Check");
 console.log("---------------------------------------------------");
 
 let warnings = 0;
@@ -43,3 +43,4 @@ console.log("- Confirm callback URL points to the Render domain.");
 console.log("- Run a small real transaction only after the above are confirmed.");
 console.log("");
 console.log("Warnings:", warnings);
+

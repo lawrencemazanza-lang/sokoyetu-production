@@ -1,4 +1,4 @@
-# SokoYetu Stage 18 User Interface Polish Checklist
+﻿# SokoYetu Mtaani Stage 18 User Interface Polish Checklist
 
 Stage 18 is a clean-up stage. It does not change PostgreSQL, Daraja, Cloudinary or LiveKit credentials.
 
@@ -56,7 +56,8 @@ Stage 18 is a clean-up stage. It does not change PostgreSQL, Daraja, Cloudinary 
 Run in the browser console:
 
 ```js
-sokoyetuStage18Cleanup()
+SokoYetu MtaaniStage18Cleanup()
 ```
 
 Then refresh the page.
+

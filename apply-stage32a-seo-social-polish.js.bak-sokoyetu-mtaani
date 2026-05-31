@@ -1,0 +1,387 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage32a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(sitemapPath, "sitemap");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage32a:check"] = "node scripts/check-stage32a-seo-social.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const siteUrl = "https://www.mysokoyetu.co.ke";
+const defaultImage = `${siteUrl}/favicon.ico`;
+
+const pages = {
+  "index.html": {
+    title: "SokoYetu Marketplace Kenya",
+    description: "Shop products from Kenyan sellers on SokoYetu, browse categories, seller stores, secure checkout, order tracking and customer support.",
+    url: `${siteUrl}/`,
+    type: "website"
+  },
+  "categories.html": {
+    title: "Browse SokoYetu Product Categories",
+    description: "Browse SokoYetu products by category, compare available items and discover products from marketplace sellers.",
+    url: `${siteUrl}/categories.html`,
+    type: "website"
+  },
+  "product-detail.html": {
+    title: "SokoYetu Product Details",
+    description: "View SokoYetu product details, product price, category, stock status, seller information and customer support links.",
+    url: `${siteUrl}/product-detail.html`,
+    type: "product"
+  },
+  "seller-stores.html": {
+    title: "SokoYetu Seller Stores",
+    description: "Browse SokoYetu seller stores and discover products grouped by marketplace seller.",
+    url: `${siteUrl}/seller-stores.html`,
+    type: "website"
+  },
+  "seller-store.html": {
+    title: "SokoYetu Seller Storefront",
+    description: "View a SokoYetu seller storefront and browse products listed by this marketplace seller.",
+    url: `${siteUrl}/seller-store.html`,
+    type: "website"
+  },
+  "help-center.html": {
+    title: "SokoYetu Help Center",
+    description: "Get help with SokoYetu order tracking, support requests, returns, refunds, customer service and marketplace policies.",
+    url: `${siteUrl}/help-center.html`,
+    type: "website"
+  },
+  "track-order.html": {
+    title: "Track Your SokoYetu Order",
+    description: "Track your SokoYetu order using your order ID and checkout phone number.",
+    url: `${siteUrl}/track-order.html`,
+    type: "website"
+  },
+  "support-request.html": {
+    title: "SokoYetu Customer Support Request",
+    description: "Submit a SokoYetu support request for delivery, payment, product, cancellation or refund issues.",
+    url: `${siteUrl}/support-request.html`,
+    type: "website"
+  },
+  "contact-support.html": {
+    title: "Contact SokoYetu Support",
+    description: "Contact SokoYetu customer support for help with orders, sellers, payments, delivery and marketplace issues.",
+    url: `${siteUrl}/contact-support.html`,
+    type: "website"
+  },
+  "faq.html": {
+    title: "SokoYetu Frequently Asked Questions",
+    description: "Read common questions and answers about shopping, checkout, delivery, order tracking and support on SokoYetu.",
+    url: `${siteUrl}/faq.html`,
+    type: "website"
+  },
+  "returns-policy.html": {
+    title: "SokoYetu Returns and Refunds Policy",
+    description: "Read SokoYetu return, cancellation and refund guidance for marketplace orders.",
+    url: `${siteUrl}/returns-policy.html`,
+    type: "website"
+  },
+  "privacy-policy.html": {
+    title: "SokoYetu Privacy Policy",
+    description: "Read how SokoYetu handles customer, account, order and marketplace information.",
+    url: `${siteUrl}/privacy-policy.html`,
+    type: "website"
+  },
+  "terms-of-service.html": {
+    title: "SokoYetu Terms of Service",
+    description: "Read the SokoYetu marketplace terms of service for buyers, sellers and platform use.",
+    url: `${siteUrl}/terms-of-service.html`,
+    type: "website"
+  },
+  "data-protection.html": {
+    title: "SokoYetu Data Protection",
+    description: "Review SokoYetu data protection guidance for customer, order and marketplace data handling.",
+    url: `${siteUrl}/data-protection.html`,
+    type: "website"
+  },
+  "seller-policy.html": {
+    title: "SokoYetu Seller Policy",
+    description: "Read SokoYetu seller responsibilities for accurate product listings, fulfilment and customer support.",
+    url: `${siteUrl}/seller-policy.html`,
+    type: "website"
+  }
+};
+
+function esc(value) {
+  return String(value || "")
+    .replace(/&/g, "&amp;")
+    .replace(/"/g, "&quot;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function seoBlock(meta) {
+  return `
+  <!-- SokoYetu Stage 32A SEO start -->
+  <title>${esc(meta.title)}</title>
+  <meta name="description" content="${esc(meta.description)}">
+  <link rel="canonical" href="${esc(meta.url)}">
+  <meta property="og:site_name" content="SokoYetu">
+  <meta property="og:title" content="${esc(meta.title)}">
+  <meta property="og:description" content="${esc(meta.description)}">
+  <meta property="og:type" content="${esc(meta.type)}">
+  <meta property="og:url" content="${esc(meta.url)}">
+  <meta property="og:image" content="${esc(defaultImage)}">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="${esc(meta.title)}">
+  <meta name="twitter:description" content="${esc(meta.description)}">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Stage 32A SEO end -->`;
+}
+
+function applySeo(fileName, meta) {
+  const filePath = path.join(root, fileName);
+  if (!fs.existsSync(filePath)) {
+    console.log("Skipped missing public page:", fileName);
+    return false;
+  }
+
+  backup(filePath, fileName.replace(/[^a-z0-9]/gi, "-"));
+
+  let html = fs.readFileSync(filePath, "utf8");
+  const before = html;
+  const block = seoBlock(meta);
+
+  html = html.replace(/<!-- SokoYetu Stage 32A SEO start -->[\s\S]*?<!-- SokoYetu Stage 32A SEO end -->/g, "");
+
+  // Remove only the first simple static title/meta description/canonical to avoid duplicate basics.
+  html = html.replace(/<title>[\s\S]*?<\/title>/i, "");
+  html = html.replace(/<meta\s+name=["']description["'][^>]*>/i, "");
+  html = html.replace(/<link\s+rel=["']canonical["'][^>]*>/i, "");
+
+  if (html.includes("<head>")) {
+    html = html.replace("<head>", "<head>" + block);
+  } else {
+    html = block + "\n" + html;
+  }
+
+  if (html !== before) {
+    fs.writeFileSync(filePath, html, "utf8");
+    console.log("SEO metadata applied:", fileName);
+    return true;
+  }
+
+  console.log("SEO metadata already current:", fileName);
+  return false;
+}
+
+let changed = 0;
+for (const [fileName, meta] of Object.entries(pages)) {
+  if (applySeo(fileName, meta)) changed += 1;
+}
+
+// Add a public JSON-LD organization file that can be reused/inspected.
+fs.writeFileSync(path.join(root, "sokoyetu-structured-data.json"), JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "SokoYetu",
+  "url": siteUrl,
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "mysokoyetu@gmail.com",
+    "contactType": "customer support",
+    "areaServed": "KE"
+  },
+  "sameAs": []
+}, null, 2), "utf8");
+
+// Ensure sitemap includes all public SEO pages.
+let sitemap = fs.existsSync(sitemapPath)
+  ? fs.readFileSync(sitemapPath, "utf8")
+  : `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>${siteUrl}/</loc>\n  </url>\n</urlset>\n`;
+
+for (const meta of Object.values(pages)) {
+  if (!sitemap.includes(meta.url)) {
+    const block = `\n  <url>\n    <loc>${meta.url}</loc>\n  </url>\n`;
+    if (sitemap.includes("</urlset>")) sitemap = sitemap.replace("</urlset>", block + "</urlset>");
+    else sitemap += block;
+  }
+}
+fs.writeFileSync(sitemapPath, sitemap, "utf8");
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage32a-seo-social.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 32A SEO and Social Metadata Check");
+console.log("-----------------------------------------------");
+
+let warnings = 0;
+
+const pages = ${JSON.stringify(Object.keys(pages), null, 2)};
+
+for (const page of pages) {
+  const filePath = path.join(root, page);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", page, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+  const required = [
+    "SokoYetu Stage 32A SEO start",
+    'name="description"',
+    'rel="canonical"',
+    'property="og:title"',
+    'property="og:description"',
+    'property="og:url"',
+    'name="twitter:card"',
+    'name="theme-color"'
+  ];
+
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN:", page, "missing:", item);
+      warnings += 1;
+    }
+  }
+
+  if (required.every((item) => html.includes(item))) {
+    console.log("OK:", page, "has SEO/social metadata.");
+  }
+}
+
+const sitemapPath = path.join(root, "sitemap.xml");
+if (!fs.existsSync(sitemapPath)) {
+  console.log("WARN: sitemap.xml is missing.");
+  warnings += 1;
+} else {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  for (const page of pages) {
+    const pathPart = page === "index.html" ? "/" : "/" + page;
+    if (!sitemap.includes(pathPart)) {
+      console.log("WARN: sitemap.xml may be missing:", pathPart);
+      warnings += 1;
+    }
+  }
+  console.log("OK: sitemap.xml checked.");
+}
+
+const structured = path.join(root, "sokoyetu-structured-data.json");
+if (!fs.existsSync(structured)) {
+  console.log("WARN: sokoyetu-structured-data.json is missing.");
+  warnings += 1;
+} else {
+  console.log("OK: structured data JSON exists.");
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 32A SEO/social metadata check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE32A_SEO_SOCIAL_POLISH_GUIDE.md"), `# SokoYetu Stage 32A: SEO, Social Sharing and Public Metadata Polish
+
+Stage 32A improves metadata on public-facing pages.
+
+## What it adds
+
+Each public page receives:
+
+\`\`\`text
+title
+meta description
+canonical URL
+Open Graph title
+Open Graph description
+Open Graph URL
+Open Graph image
+Twitter summary card
+theme-color
+\`\`\`
+
+## Pages updated
+
+\`\`\`text
+index.html
+categories.html
+product-detail.html
+seller-stores.html
+seller-store.html
+help-center.html
+track-order.html
+support-request.html
+contact-support.html
+faq.html
+returns-policy.html
+privacy-policy.html
+terms-of-service.html
+data-protection.html
+seller-policy.html
+\`\`\`
+
+## Additional file
+
+\`\`\`text
+sokoyetu-structured-data.json
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage32a:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/
+http://localhost:5173/categories.html
+http://localhost:5173/help-center.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 32A SEO and social metadata polish installed.");
+console.log("Pages updated:", changed);
+console.log("");
+console.log("Next:");
+console.log("npm run stage32a:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json sitemap.xml sokoyetu-structured-data.json scripts/check-stage32a-seo-social.js index.html categories.html product-detail.html seller-stores.html seller-store.html help-center.html track-order.html support-request.html contact-support.html faq.html returns-policy.html privacy-policy.html terms-of-service.html data-protection.html seller-policy.html STAGE32A_SEO_SOCIAL_POLISH_GUIDE.md");
+console.log('git commit -m "Polish public SEO and social metadata"');
+console.log("git push");

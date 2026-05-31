@@ -1,0 +1,61 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const indexPath = path.join(root, "index.html");
+let warnings = 0;
+
+console.log("SokoYetu Stage 37C Homepage Redesign Check");
+console.log("------------------------------------------");
+
+if (!fs.existsSync(indexPath)) {
+  console.log("WARN: index.html missing.");
+  process.exit(1);
+}
+
+const html = fs.readFileSync(indexPath, "utf8");
+const required = [
+  "soko-home-shell",
+  "soko-header-search",
+  "soko-category-sidebar",
+  "soko-hero-card",
+  "soko-right-offers",
+  "soko-flash-sale",
+  "soko-product-grid",
+  "soko-mobile-bottom",
+  "WhatsApp SokoYetu",
+  "254714565555",
+  "6923522",
+  "Self-pickup",
+  "/api/products"
+];
+
+for (const item of required) {
+  if (!html.includes(item)) {
+    console.log("WARN: index.html missing:", item);
+    warnings++;
+  } else {
+    console.log("OK: index.html includes", item);
+  }
+}
+
+const forbidden = [
+  "Watch sellers demonstrate products",
+  "Join live rooms",
+  "streaming live",
+  "launch-readiness draft",
+  "SokoYetu Stage 36B: checkout page STK note"
+];
+
+for (const item of forbidden) {
+  if (html.toLowerCase().includes(item.toLowerCase())) {
+    console.log("WARN: index.html still contains unwanted text:", item);
+    warnings++;
+  } else {
+    console.log("OK: index.html does not contain", item);
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 37C homepage redesign check passed.");

@@ -1,4 +1,4 @@
-# SokoYetu Stage 26A: Soft Launch Order Checklist
+﻿# SokoYetu Mtaani Stage 26A: Soft Launch Order Checklist
 
 Use this checklist for every real order during soft launch.
 
@@ -28,3 +28,4 @@ Use this checklist for every real order during soft launch.
 - [ ] Seller payout noted if applicable.
 - [ ] Support issue recorded if any.
 - [ ] Refund/cancellation handled if needed.
+

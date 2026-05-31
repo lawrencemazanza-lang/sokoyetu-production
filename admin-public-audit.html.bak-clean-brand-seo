@@ -1,0 +1,209 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Public Site QA Audit</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:24px;color:#064e3b;margin-top:4px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .bad{background:#fee2e2;color:#991b1b}
+    .warn{background:#fef3c7;color:#92400e}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-brand-seo.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Public Site QA Audit</h1>
+    <p>Check whether public buyer pages, public assets, product API, sitemap, manifest and customer-service pages are reachable before wider testing.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/">Open public shop</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Run audit</div>
+    <div class="body">
+      <button id="runBtn" type="button">Run public site QA audit</button>
+      <div class="note">This audit checks same-origin pages and assets only. It does not test real M-PESA payment completion and does not change database records.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Summary</div>
+    <div class="body">
+      <div id="summary" class="grid">
+        <div class="metric">Checks run<b>0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Results</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Area</th><th>URL</th><th>Status</th><th>Notes</th></tr></thead>
+        <tbody id="results">
+          <tr><td colspan="4">No audit has been run yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const checks = [
+  { area:"Home", url:"/", expect:"html" },
+  { area:"Categories", url:"/categories.html", expect:"html" },
+  { area:"Product Detail Template", url:"/product-detail.html?id=1", expect:"html", allowNotFound:true },
+  { area:"Seller Directory", url:"/seller-stores.html", expect:"html" },
+  { area:"Seller Store Template", url:"/seller-store.html?sellerId=1", expect:"html", allowNotFound:true },
+  { area:"Help Center", url:"/help-center.html", expect:"html" },
+  { area:"Track Order", url:"/track-order.html", expect:"html" },
+  { area:"Support Request", url:"/support-request.html", expect:"html" },
+  { area:"Contact Support", url:"/contact-support.html", expect:"html" },
+  { area:"Frequently Asked Questions", url:"/faq.html", expect:"html" },
+  { area:"Returns Policy", url:"/returns-policy.html", expect:"html" },
+  { area:"Privacy Policy", url:"/privacy-policy.html", expect:"html" },
+  { area:"Terms of Service", url:"/terms-of-service.html", expect:"html" },
+  { area:"Public Navigation CSS", url:"/public-nav.css", expect:"asset" },
+  { area:"Public Navigation JS", url:"/public-nav.js", expect:"asset" },
+  { area:"Favicon", url:"/favicon.svg", expect:"asset" },
+  { area:"Web Manifest", url:"/site.webmanifest", expect:"json" },
+  { area:"Sitemap", url:"/sitemap.xml", expect:"xml" },
+  { area:"Robots", url:"/robots.txt", expect:"text" },
+  { area:"Product API", url:"/api/products", expect:"json" }
+];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function setMessage(html){ document.getElementById("message").innerHTML = html; }
+function statusPill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "warn" ? "pill warn" : "pill bad";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+async function runOne(check){
+  const started = performance.now();
+  try {
+    const response = await fetch(check.url, { credentials:"include", cache:"no-store" });
+    const duration = Math.round(performance.now() - started);
+    const text = await response.text();
+
+    let ok = response.ok;
+    let note = "HTTP " + response.status + " · " + duration + " ms";
+
+    if (check.expect === "html" && !text.toLowerCase().includes("<!doctype") && !text.toLowerCase().includes("<html")) {
+      ok = false;
+      note += " · Not clearly HTML";
+    }
+
+    if (check.expect === "json") {
+      try { JSON.parse(text); }
+      catch (error) { ok = false; note += " · Invalid JSON"; }
+    }
+
+    if (check.expect === "xml" && !text.includes("<urlset") && !text.includes("<?xml")) {
+      ok = false;
+      note += " · Not clearly XML";
+    }
+
+    if (check.expect === "asset" && text.length < 20) {
+      ok = false;
+      note += " · Asset content looks too small";
+    }
+
+    if (check.area === "Product API") {
+      try {
+        const data = JSON.parse(text);
+        const products = Array.isArray(data) ? data : (data.products || data.data || []);
+        note += " · " + products.length + " product(s)";
+        if (!products.length) note += " · Add products before buyer testing";
+      } catch {}
+    }
+
+    return { ...check, ok, warn:false, status:response.status, duration, note };
+  } catch (error) {
+    return { ...check, ok:false, warn:false, status:"ERROR", duration:null, note:error.message || "Fetch failed" };
+  }
+}
+async function runAudit(){
+  setMessage('<div class="note">Running public site audit...</div>');
+  document.getElementById("results").innerHTML = '<tr><td colspan="4">Checking...</td></tr>';
+
+  const results = [];
+  for (const check of checks) {
+    const result = await runOne(check);
+    results.push(result);
+    renderResults(results);
+  }
+
+  const passed = results.filter(r => r.ok).length;
+  const failed = results.filter(r => !r.ok).length;
+  const slow = results.filter(r => r.duration && r.duration > 1500).length;
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Checks run<b>' + results.length + '</b></div>' +
+    '<div class="metric">Passed<b>' + passed + '</b></div>' +
+    '<div class="metric">Failed<b>' + failed + '</b></div>' +
+    '<div class="metric">Slow checks<b>' + slow + '</b></div>';
+
+  if (failed) {
+    setMessage('<div class="err"><b>Audit completed with issues.</b><br>Review failed rows before wider buyer testing.</div>');
+  } else if (slow) {
+    setMessage('<div class="warnBox"><b>Audit passed with slow responses.</b><br>Review slow rows and Render logs if needed.</div>');
+  } else {
+    setMessage('<div class="ok"><b>Audit passed.</b><br>Public pages and assets are reachable from this browser session.</div>');
+  }
+}
+function renderResults(results){
+  document.getElementById("results").innerHTML = results.map(r => {
+    const kind = r.ok ? (r.duration && r.duration > 1500 ? "warn" : "ok") : "bad";
+    const text = r.ok ? (r.duration && r.duration > 1500 ? "SLOW" : "OK") : "FAIL";
+    return '<tr>' +
+      '<td>' + esc(r.area) + '</td>' +
+      '<td><a href="' + esc(r.url) + '" target="_blank">' + esc(r.url) + '</a></td>' +
+      '<td>' + statusPill(kind, text) + '</td>' +
+      '<td>' + esc(r.note) + '</td>' +
+    '</tr>';
+  }).join("");
+}
+document.getElementById("runBtn").onclick = runAudit;
+</script>
+  <script src="/sokoyetu-brand-seo.js" defer></script>
+</body>
+</html>
+

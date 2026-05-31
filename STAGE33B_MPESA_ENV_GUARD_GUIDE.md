@@ -1,4 +1,4 @@
-# SokoYetu Stage 33B: Production M-PESA Environment Variable Mapping and Safe Switch Guard
+﻿# SokoYetu Mtaani Stage 33B: Production M-PESA Environment Variable Mapping and Safe Switch Guard
 
 Stage 33B is read-only. It does not switch M-PESA to production.
 
@@ -79,3 +79,4 @@ Open:
 ```text
 http://localhost:5173/admin-mpesa-env-guard.html
 ```
+

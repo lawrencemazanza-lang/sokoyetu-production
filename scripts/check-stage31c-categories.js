@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 31C Public Category Directory Check");
+console.log("SokoYetu Mtaani Stage 31C Public Category Directory Check");
 console.log("-------------------------------------------------");
 
 let warnings = 0;
@@ -14,7 +14,7 @@ if (!fs.existsSync(categoriesPath)) {
   warnings += 1;
 } else {
   const html = fs.readFileSync(categoriesPath, "utf8");
-  const required = ["/api/products", "categoryFilter", "searchBox", "Browse SokoYetu Categories"];
+  const required = ["/api/products", "categoryFilter", "searchBox", "Browse SokoYetu Mtaani Categories"];
   for (const item of required) {
     if (!html.includes(item)) {
       console.log("WARN: categories.html missing:", item);
@@ -42,3 +42,4 @@ if (fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 31C category directory check passed.");
+

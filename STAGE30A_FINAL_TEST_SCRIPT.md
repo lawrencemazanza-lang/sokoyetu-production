@@ -1,4 +1,4 @@
-# SokoYetu Stage 30A: Final Test Script
+﻿# SokoYetu Mtaani Stage 30A: Final Test Script
 
 Run this before inviting users.
 
@@ -44,3 +44,4 @@ Run this before inviting users.
 - Admin cannot view orders.
 - Database errors appear in Render logs.
 - Domain/HTTPS fails.
+

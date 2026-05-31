@@ -1,4 +1,4 @@
-# SokoYetu Stage 28B: Customer Support and Refund Request Portal
+﻿# SokoYetu Mtaani Stage 28B: Customer Support and Refund Request Portal
 
 Stage 28B adds a public support request page for existing orders.
 
@@ -45,3 +45,4 @@ This stage uses the existing `DeliveryTracking` model to record support notes, s
 - Refund requests add a `REFUND_REQUESTED` tracking note and update the order status to `REFUND_REQUESTED`.
 - Cancellation requests update the order to `CANCELLED` if the order is not already delivered.
 - Other support requests add a `CUSTOMER_SUPPORT_REQUESTED` tracking note.
+

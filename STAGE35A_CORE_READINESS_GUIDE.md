@@ -1,4 +1,4 @@
-# SokoYetu Stage 35A: Core Production Readiness Audit and Critical Gap Report
+﻿# SokoYetu Mtaani Stage 35A: Core Production Readiness Audit and Critical Gap Report
 
 Stage 35A is a hard launch-readiness audit. It is read-only.
 
@@ -80,3 +80,4 @@ http://localhost:5173/admin-core-readiness.html
 ```
 
 Paste `ADMIN_ORDER_TOKEN`, run the audit, and copy the gap report.
+

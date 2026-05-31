@@ -1,0 +1,170 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Soft Launch Command Center</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:24px;color:#064e3b;margin-top:4px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .checklist{display:grid;gap:8px}
+    .checkitem{border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;padding:10px}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-brand-seo.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Soft Launch Command Center</h1>
+    <p>Final go/no-go readiness view before inviting real users to the marketplace.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Access</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+      </div>
+      <button id="loadBtn" type="button">Load launch readiness</button>
+      <div class="note">This page does not expose secrets. It only gives a practical launch-readiness view for admin use.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">Launch readiness</div>
+    <div class="body" id="result"></div>
+  </section>
+
+  <section class="card">
+    <div class="head">Final manual checks</div>
+    <div class="body checklist">
+      <div class="checkitem">☐ Open https://www.mySokoYetu Mtaani.co.ke and confirm HTTPS works.</div>
+      <div class="checkitem">☐ Create a buyer account and confirm login works.</div>
+      <div class="checkitem">☐ Add product to cart and open checkout.</div>
+      <div class="checkitem">☐ Send one sandbox M-PESA STK Push and confirm phone receives prompt.</div>
+      <div class="checkitem">☐ Check admin orders page and update one test order status.</div>
+      <div class="checkitem">☐ Test order tracking with a real order ID and checkout phone.</div>
+      <div class="checkitem">☐ Submit a support/refund request and view it in admin support queue.</div>
+      <div class="checkitem">☐ Export orders and payments from admin backup page.</div>
+      <div class="checkitem">☐ Confirm support@, orders@ and admin@ email forwarding when Truehost completes provisioning.</div>
+      <div class="checkitem">☐ Keep M-PESA in sandbox until production Daraja credentials are issued.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pill(value, bad=false, warn=false){
+  return '<span class="pill ' + (bad ? "bad" : warn ? "warn" : "") + '">' + esc(value) + '</span>';
+}
+async function loadReadiness(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading launch readiness...</div>');
+  try {
+    const response = await fetch("/api/admin/launch-readiness", {
+      headers: {"x-admin-order-token": token()},
+      credentials: "include"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not load launch readiness.");
+    renderReadiness(data);
+    msg('<div class="ok">Launch readiness loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load launch readiness.") + '</div>');
+  }
+}
+function renderReadiness(data){
+  const result = document.getElementById("result");
+  const metrics = data.metrics || {};
+  const config = data.config || {};
+  const blockers = data.blockers || [];
+  const warnings = data.warnings || [];
+
+  const statusBox = blockers.length
+    ? '<div class="badBox"><b>Not ready for wider launch.</b><br>' + blockers.map(b => '• ' + esc(b)).join('<br>') + '</div>'
+    : '<div class="ok"><b>Ready for controlled soft launch testing.</b><br>Proceed only with trusted users while M-PESA remains in sandbox.</div>';
+
+  const warningBox = warnings.length
+    ? '<div class="warnBox"><b>Warnings</b><br>' + warnings.map(w => '• ' + esc(w)).join('<br>') + '</div>'
+    : '<div class="ok"><b>No warnings returned by launch-readiness endpoint.</b></div>';
+
+  result.innerHTML =
+    statusBox +
+    warningBox +
+    '<div class="grid">' +
+      '<div class="metric">Users<b>' + esc(metrics.users ?? 0) + '</b></div>' +
+      '<div class="metric">Sellers<b>' + esc(metrics.sellers ?? 0) + '</b></div>' +
+      '<div class="metric">Products<b>' + esc(metrics.products ?? 0) + '</b></div>' +
+      '<div class="metric">Orders<b>' + esc(metrics.orders ?? 0) + '</b></div>' +
+      '<div class="metric">Payments<b>' + esc(metrics.payments ?? 0) + '</b></div>' +
+      '<div class="metric">Support notes<b>' + esc(metrics.supportNotes ?? 0) + '</b></div>' +
+    '</div>' +
+    '<div><b>Configuration</b><br>' +
+      pill("Site: " + (config.publicSiteUrl || "not set"), !config.publicSiteUrl) +
+      pill("Support: " + (config.supportEmail || "not set"), !config.supportEmail) +
+      pill("M-PESA: " + (config.mpesaMode || "-") + " / " + (config.mpesaEnv || "-"), false, config.mpesaEnv === "sandbox") +
+      pill("Upload: " + (config.uploadMode || "-"), !config.uploadMode) +
+      pill("Admin registration: " + (config.adminRegistrationEnabled || "not set"), config.adminRegistrationEnabled === "true") +
+    '</div>' +
+    '<div><b>Important links</b><table><thead><tr><th>Page</th><th>URL</th></tr></thead><tbody>' +
+      (data.links || []).map(l => '<tr><td>' + esc(l.label) + '</td><td><a href="' + esc(l.url) + '" target="_blank">' + esc(l.url) + '</a></td></tr>').join("") +
+    '</tbody></table></div>' +
+    '<div><b>Recent orders</b><table><thead><tr><th>ID</th><th>Status</th><th>Payment</th><th>Total</th><th>Created</th></tr></thead><tbody>' +
+      (data.recentOrders || []).map(o => '<tr><td>#' + esc(o.id) + '</td><td>' + esc(o.orderStatus) + '</td><td>' + esc(o.paymentStatus) + '</td><td>KES ' + Number(o.totalAmount || 0).toLocaleString("en-KE") + '</td><td>' + esc(o.createdAt ? new Date(o.createdAt).toLocaleString() : "-") + '</td></tr>').join("") +
+    '</tbody></table></div>';
+
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("loadBtn").onclick = loadReadiness;
+</script>
+
+<!-- SokoYetu Mtaani internal operations page: noindex/nofollow enabled in Stage 30C -->
+  <script src="/sokoyetu-brand-seo.js" defer></script>
+</body>
+</html>
+

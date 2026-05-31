@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 29B Admin Backup and Export Check");
+console.log("SokoYetu Mtaani Stage 29B Admin Backup and Export Check");
 console.log("-----------------------------------------------");
 
 let warnings = 0;
@@ -22,3 +22,4 @@ if (!process.env.DATABASE_URL) {
 console.log("OK: admin-backup.html should be available after server restart/deployment.");
 console.log("OK: /api/admin/export/:type should be available after server restart/deployment.");
 console.log("Warnings:", warnings);
+

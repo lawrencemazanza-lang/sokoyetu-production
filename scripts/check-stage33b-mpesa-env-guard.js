@@ -1,10 +1,10 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 33B M-PESA Environment Guard Check");
+console.log("SokoYetu Mtaani Stage 33B M-PESA Environment Guard Check");
 console.log("------------------------------------------------");
 
 let warnings = 0;
@@ -33,7 +33,7 @@ if (!fs.existsSync(serverPath)) {
 } else {
   const server = fs.readFileSync(serverPath, "utf8");
   const requiredServer = [
-    "SokoYetu Stage 33B: M-PESA Environment Mapping and Guard API",
+    "SokoYetu Mtaani Stage 33B: M-PESA Environment Mapping and Guard API",
     "/api/admin/mpesa-env-guard",
     "MPESA_PRODUCTION_CONFIRMED",
     "M-PESA production guard"
@@ -87,3 +87,4 @@ if (wantsProduction && !confirmed) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 33B M-PESA environment guard check passed.");
+

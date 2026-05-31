@@ -1,0 +1,191 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Accessibility Audit</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:24px;color:#064e3b;margin-top:4px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .bad{background:#fee2e2;color:#991b1b}
+    .warn{background:#fef3c7;color:#92400e}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Accessibility Audit</h1>
+    <p>Check public pages for basic accessibility and mobile usability signals such as alt text, labels, headings, focus assets and skip links.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/">Open public shop</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Run audit</div>
+    <div class="body">
+      <button id="runBtn" type="button">Run accessibility audit</button>
+      <div class="note">This audit is a practical pre-launch check, not a formal WCAG certification. It checks page markup and shared accessibility assets.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Summary</div>
+    <div class="body">
+      <div id="summary" class="grid">
+        <div class="metric">Pages checked<b>0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Results</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Page</th><th>Status</th><th>Issues</th><th>Notes</th></tr></thead>
+        <tbody id="results">
+          <tr><td colspan="4">No audit has been run yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const pages = [
+  "/", "/categories.html", "/product-detail.html?id=1", "/seller-stores.html",
+  "/seller-store.html?sellerId=1", "/help-center.html", "/track-order.html",
+  "/support-request.html", "/contact-support.html", "/faq.html",
+  "/returns-policy.html", "/privacy-policy.html", "/terms-of-service.html",
+  "/data-protection.html", "/seller-policy.html", "/checkout.html"
+];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function setMessage(html){ document.getElementById("message").innerHTML = html; }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "warn" ? "pill warn" : "pill bad";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+async function auditPage(url){
+  try {
+    const response = await fetch(url, { cache:"no-store", credentials:"include" });
+    const html = await response.text();
+    const issues = [];
+    const notes = [];
+
+    if (!response.ok) issues.push("HTTP " + response.status);
+    if (!html.includes('/public-a11y.css')) issues.push("Missing public-a11y.css");
+    if (!html.includes('/public-a11y.js')) issues.push("Missing public-a11y.js");
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    if (!doc.querySelector("h1")) issues.push("Missing h1");
+    if (!doc.querySelector("main")) issues.push("Missing main element");
+    if (!doc.querySelector("title") || !doc.querySelector("title").textContent.trim()) issues.push("Missing title");
+
+    const images = Array.from(doc.querySelectorAll("img"));
+    const missingAlt = images.filter(img => !img.getAttribute("alt")).length;
+    if (missingAlt) issues.push(missingAlt + " image(s) missing alt");
+
+    const fields = Array.from(doc.querySelectorAll("input,select,textarea"));
+    const unlabelled = fields.filter(field => {
+      if (field.getAttribute("aria-label")) return false;
+      if (field.closest("label")) return false;
+      if (field.id && doc.querySelector('label[for="' + CSS.escape(field.id) + '"]')) return false;
+      return true;
+    }).length;
+    if (unlabelled) issues.push(unlabelled + " form field(s) may lack labels");
+
+    const emptyButtons = Array.from(doc.querySelectorAll("button")).filter(btn => !btn.textContent.trim() && !btn.getAttribute("aria-label")).length;
+    if (emptyButtons) issues.push(emptyButtons + " empty button(s)");
+
+    const emptyLinks = Array.from(doc.querySelectorAll("a")).filter(a => !a.textContent.trim() && !a.getAttribute("aria-label")).length;
+    if (emptyLinks) issues.push(emptyLinks + " empty link(s)");
+
+    notes.push(images.length + " image(s)");
+    notes.push(fields.length + " form field(s)");
+    notes.push(doc.querySelectorAll("a").length + " link(s)");
+
+    return { url, ok: issues.length === 0, issues, notes };
+  } catch (error) {
+    return { url, ok:false, issues:[error.message || "Fetch failed"], notes:[] };
+  }
+}
+async function runAudit(){
+  setMessage('<div class="note">Running accessibility audit...</div>');
+  document.getElementById("results").innerHTML = '<tr><td colspan="4">Checking...</td></tr>';
+
+  const results = [];
+  for (const page of pages) {
+    const result = await auditPage(page);
+    results.push(result);
+    render(results);
+  }
+
+  const passed = results.filter(r => r.ok).length;
+  const failed = results.length - passed;
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Pages checked<b>' + results.length + '</b></div>' +
+    '<div class="metric">Passed<b>' + passed + '</b></div>' +
+    '<div class="metric">Needs review<b>' + failed + '</b></div>';
+
+  if (failed) {
+    setMessage('<div class="warnBox"><b>Audit completed with items to review.</b><br>Fix rows with issues before wider launch testing.</div>');
+  } else {
+    setMessage('<div class="ok"><b>Audit passed.</b><br>Public pages include the shared accessibility assets and basic markup checks passed.</div>');
+  }
+}
+function render(results){
+  document.getElementById("results").innerHTML = results.map(r => {
+    return '<tr>' +
+      '<td><a href="' + esc(r.url) + '" target="_blank">' + esc(r.url) + '</a></td>' +
+      '<td>' + (r.ok ? pill("ok","OK") : pill("warn","REVIEW")) + '</td>' +
+      '<td>' + (r.issues.length ? esc(r.issues.join(" | ")) : "None") + '</td>' +
+      '<td>' + esc(r.notes.join(" | ")) + '</td>' +
+    '</tr>';
+  }).join("");
+}
+document.getElementById("runBtn").onclick = runAudit;
+</script>
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+

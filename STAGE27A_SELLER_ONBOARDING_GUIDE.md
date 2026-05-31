@@ -1,4 +1,4 @@
-# SokoYetu Stage 27A: Seller Onboarding and Verification Guide
+﻿# SokoYetu Mtaani Stage 27A: Seller Onboarding and Verification Guide
 
 Stage 27A defines the seller onboarding workflow for soft launch.
 
@@ -44,3 +44,4 @@ Return/refund approach
 ## Soft launch rule
 
 During soft launch, sellers should not publish products without admin review. Admin should verify seller details and product reliability before promotion.
+

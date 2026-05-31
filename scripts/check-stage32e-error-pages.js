@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 32E Friendly Error Pages Check");
+console.log("SokoYetu Mtaani Stage 32E Friendly Error Pages Check");
 console.log("--------------------------------------------");
 
 let warnings = 0;
@@ -20,7 +20,7 @@ for (const file of requiredFiles) {
 
   const html = fs.readFileSync(filePath, "utf8");
   const required = [
-    "SokoYetu",
+    "SokoYetu Mtaani",
     "/help-center.html",
     "/track-order.html",
     "/support-request.html",
@@ -48,7 +48,7 @@ if (!fs.existsSync(serverPath)) {
 } else {
   const server = fs.readFileSync(serverPath, "utf8");
   const requiredServer = [
-    "SokoYetu Stage 32E: Friendly Error Pages",
+    "SokoYetu Mtaani Stage 32E: Friendly Error Pages",
     "API endpoint not found",
     "404.html",
     "500.html"
@@ -67,3 +67,4 @@ if (!fs.existsSync(serverPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 32E friendly error pages check passed.");
+

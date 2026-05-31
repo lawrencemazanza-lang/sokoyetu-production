@@ -1,13 +1,13 @@
-# SokoYetu Step 15: Real Safaricom Daraja Sandbox STK Push
+﻿# SokoYetu Mtaani Step 15: Real Safaricom Daraja Sandbox STK Push
 
-This step changes SokoYetu from demo M-PESA mode to real Daraja sandbox testing.
+This step changes SokoYetu Mtaani from demo M-PESA mode to real Daraja sandbox testing.
 
 ## What you need
 
 1. Safaricom Daraja developer account.
 2. Daraja sandbox app credentials: Consumer Key, Consumer Secret and Passkey.
 3. Public callback URL, usually from ngrok during local testing.
-4. SokoYetu server running on port 5173.
+4. SokoYetu Mtaani server running on port 5173.
 
 ## A. Daraja app
 
@@ -33,7 +33,7 @@ must become a public HTTPS URL, such as:
 https://abc123.ngrok-free.app/api/payments/mpesa/callback
 ```
 
-Run SokoYetu in one CMD:
+Run SokoYetu Mtaani in one CMD:
 
 ```cmd
 npm run dev
@@ -85,7 +85,7 @@ If token works, credentials are correct.
 
 ## E. Test STK
 
-Keep SokoYetu running in one CMD and ngrok running in another CMD. In a third CMD:
+Keep SokoYetu Mtaani running in one CMD and ngrok running in another CMD. In a third CMD:
 
 ```cmd
 npm run mpesa:stk
@@ -94,7 +94,7 @@ npm run mpesa:stk
 Default test uses:
 
 ```text
-Buyer: testbuyer3@sokoyetu.co.ke
+Buyer: testbuyer3@SokoYetu Mtaani.co.ke
 Password: Test12345
 Product ID: 2
 Phone: 254708374149
@@ -103,9 +103,10 @@ Phone: 254708374149
 Or pass your own test number:
 
 ```cmd
-node scripts/test-mpesa-stk.js testbuyer3@sokoyetu.co.ke Test12345 2 2547XXXXXXXX "Nairobi CBD, Kenya"
+node scripts/test-mpesa-stk.js testbuyer3@SokoYetu Mtaani.co.ke Test12345 2 2547XXXXXXXX "Nairobi CBD, Kenya"
 ```
 
 ## Success indicators
 
-The response should include fields such as MerchantRequestID, CheckoutRequestID, ResponseCode and ResponseDescription. In SokoYetu, the payment status should move to STK_SENT, and the order status should move to WAITING_MPESA_CONFIRMATION.
+The response should include fields such as MerchantRequestID, CheckoutRequestID, ResponseCode and ResponseDescription. In SokoYetu Mtaani, the payment status should move to STK_SENT, and the order status should move to WAITING_MPESA_CONFIRMATION.
+

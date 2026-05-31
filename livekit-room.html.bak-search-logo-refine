@@ -1,0 +1,318 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SokoYetu Mtaani Live Room</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { margin:0; font-family:Arial,Helvetica,sans-serif; background:#050816; color:#fff; min-height:100vh; }
+    header { padding:18px; background:linear-gradient(135deg,#111827,#dc2626); display:flex; justify-content:space-between; align-items:center; gap:12px; flex-wrap:wrap; }
+    h1 { margin:0; font-size:22px; }
+    .status { color:#fecaca; font-weight:800; }
+    main { padding:18px; display:grid; gap:16px; }
+    .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+    .tile { background:#111827; border:1px solid rgba(248,113,113,.35); border-radius:18px; min-height:220px; overflow:hidden; position:relative; display:grid; place-items:center; color:#cbd5e1; text-align:center; padding:18px; }
+    video, audio { width:100%; height:100%; object-fit:cover; }
+    .name { position:absolute; left:10px; bottom:10px; background:rgba(0,0,0,.62); border-radius:999px; padding:6px 9px; font-size:13px; font-weight:800; }
+    .controls { display:flex; gap:8px; flex-wrap:wrap; }
+    button { border:none; border-radius:999px; padding:10px 14px; font-weight:900; cursor:pointer; }
+    .danger { background:#dc2626; color:#fff; }
+    .soft { background:#fee2e2; color:#991b1b; }
+    .dark { background:#111827; color:#fff; border:1px solid rgba(255,255,255,.2); }
+    .notice { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:16px; padding:14px; color:#cbd5e1; line-height:1.55; }
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+</head>
+<body>
+  <!-- SokoYetu Mtaani Stage 17B No Camera Host Fix -->
+  <header>
+    <div>
+      <h1>🔴 SokoYetu Mtaani Live</h1>
+      <div class="status" id="status">Connecting...</div>
+    </div>
+    <div class="controls">
+      <button class="soft" id="toggleCamera" style="display:none;">Try Camera</button>
+      <button class="soft" id="toggleMic" style="display:none;">Try Microphone</button>
+      <button class="dark" id="shareScreen" style="display:none;">Share Screen</button>
+      <button class="danger" id="leaveRoom">Leave</button>
+    </div>
+  </header>
+
+  <main>
+    <div class="notice" id="notice">
+      Live room is loading. If this desktop has no camera, the seller can still host using microphone or screen share.
+    </div>
+    <section class="grid" id="videoGrid"></section>
+  </main>
+
+  <script type="module">
+    import {
+      Room,
+      RoomEvent,
+      Track,
+      createLocalTracks,
+      createLocalScreenTracks
+    } from "https://cdn.jsdelivr.net/npm/livekit-client@2/dist/livekit-client.esm.mjs";
+
+    const params = new URLSearchParams(window.location.search);
+    const url = params.get("url");
+    const token = params.get("token");
+    const canPublish = params.get("publish") === "true";
+    const roomName = params.get("room") || "SokoYetu Mtaani live room";
+
+    const statusEl = document.getElementById("status");
+    const noticeEl = document.getElementById("notice");
+    const grid = document.getElementById("videoGrid");
+    const toggleCamera = document.getElementById("toggleCamera");
+    const toggleMic = document.getElementById("toggleMic");
+    const shareScreen = document.getElementById("shareScreen");
+    const leaveRoom = document.getElementById("leaveRoom");
+
+    let room;
+    let localVideoTrack = null;
+    let localAudioTrack = null;
+    let localScreenTrack = null;
+    let cameraEnabled = false;
+    let micEnabled = false;
+    let screenEnabled = false;
+
+    function addPlaceholder(title, message) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.innerHTML = "<div><h3 style='margin:0 0 8px;color:white;'>" + title + "</h3><p style='margin:0;'>" + message + "</p></div>";
+      grid.appendChild(tile);
+      return tile;
+    }
+
+    function addTile(track, participant, label) {
+      const tile = document.createElement("div");
+      tile.className = "tile";
+      tile.dataset.sid = (participant.sid || participant.identity || "local") + "-" + (track.sid || Math.random());
+
+      const element = track.attach();
+      tile.appendChild(element);
+
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = label || participant.name || participant.identity || "Participant";
+      tile.appendChild(name);
+
+      grid.appendChild(tile);
+      return tile;
+    }
+
+    function removeTrack(track) {
+      try {
+        track.detach().forEach((element) => element.remove());
+      } catch {}
+
+      document.querySelectorAll("[data-sid]").forEach((tile) => {
+        if (!tile.querySelector("video") && !tile.querySelector("audio")) {
+          tile.remove();
+        }
+      });
+    }
+
+    async function publishTrack(track, label) {
+      await room.localParticipant.publishTrack(track);
+
+      if (track.kind === Track.Kind.Video) {
+        addTile(track, room.localParticipant, label || "You");
+      }
+    }
+
+    async function tryStartCameraAndMic() {
+      try {
+        const tracks = await createLocalTracks({ audio: true, video: true });
+
+        for (const track of tracks) {
+          await publishTrack(track, track.kind === Track.Kind.Video ? "You - Camera" : "You - Mic");
+
+          if (track.kind === Track.Kind.Video) {
+            localVideoTrack = track;
+            cameraEnabled = true;
+          }
+
+          if (track.kind === Track.Kind.Audio) {
+            localAudioTrack = track;
+            micEnabled = true;
+          }
+        }
+
+        noticeEl.textContent = "Camera and microphone are live.";
+        toggleCamera.textContent = "Turn Camera Off";
+        toggleMic.textContent = "Mute Mic";
+        return true;
+      } catch (error) {
+        console.warn("Camera and microphone failed:", error);
+        return false;
+      }
+    }
+
+    async function tryStartMicOnly() {
+      try {
+        const tracks = await createLocalTracks({ audio: true, video: false });
+
+        for (const track of tracks) {
+          await publishTrack(track, "You - Mic");
+          if (track.kind === Track.Kind.Audio) {
+            localAudioTrack = track;
+            micEnabled = true;
+          }
+        }
+
+        addPlaceholder("Audio-only host", "No camera was found. Your microphone is live. Use Share Screen to show products or use a phone with a camera.");
+        noticeEl.textContent = "No camera was found, but microphone is live.";
+        toggleMic.textContent = "Mute Mic";
+        return true;
+      } catch (error) {
+        console.warn("Microphone-only failed:", error);
+        return false;
+      }
+    }
+
+    async function connect() {
+      if (!url || !token) {
+        statusEl.textContent = "Missing LiveKit URL or token.";
+        noticeEl.textContent = "Close this tab and rejoin from SokoYetu Mtaani.";
+        return;
+      }
+
+      room = new Room({ adaptiveStream: true, dynacast: true });
+
+      room.on(RoomEvent.TrackSubscribed, (track, publication, participant) => {
+        addTile(track, participant);
+      });
+
+      room.on(RoomEvent.TrackUnsubscribed, (track) => {
+        removeTrack(track);
+      });
+
+      room.on(RoomEvent.Disconnected, () => {
+        statusEl.textContent = "Disconnected";
+      });
+
+      await room.connect(url, token);
+      statusEl.textContent = "Connected to " + roomName;
+
+      if (canPublish) {
+        toggleCamera.style.display = "inline-block";
+        toggleMic.style.display = "inline-block";
+        shareScreen.style.display = "inline-block";
+
+        noticeEl.textContent = "Host mode active. Trying camera and microphone...";
+
+        const cameraMicStarted = await tryStartCameraAndMic();
+
+        if (!cameraMicStarted) {
+          const micStarted = await tryStartMicOnly();
+
+          if (!micStarted) {
+            addPlaceholder("Host connected", "No camera or microphone was found. You can still share your screen, or host from a phone with a camera.");
+            noticeEl.textContent = "No camera or microphone was found. Use Share Screen or host from a phone.";
+          }
+        }
+      } else {
+        noticeEl.textContent = "You are watching this seller live. If the host has no camera, they may use audio or screen share.";
+        addPlaceholder("Waiting for host media", "The seller may publish camera, microphone, or screen share shortly.");
+      }
+    }
+
+    toggleCamera.addEventListener("click", async () => {
+      if (!room) return;
+
+      if (localVideoTrack) {
+        cameraEnabled = !cameraEnabled;
+        await localVideoTrack.setEnabled(cameraEnabled);
+        toggleCamera.textContent = cameraEnabled ? "Turn Camera Off" : "Turn Camera On";
+        return;
+      }
+
+      try {
+        const tracks = await createLocalTracks({ audio: false, video: true });
+        const video = tracks.find((track) => track.kind === Track.Kind.Video);
+        if (!video) throw new Error("No camera track created.");
+
+        localVideoTrack = video;
+        cameraEnabled = true;
+        await publishTrack(video, "You - Camera");
+        toggleCamera.textContent = "Turn Camera Off";
+        noticeEl.textContent = "Camera is now live.";
+      } catch (error) {
+        alert("No camera was found on this computer. Use Share Screen or host from a phone with a camera.");
+      }
+    });
+
+    toggleMic.addEventListener("click", async () => {
+      if (!room) return;
+
+      if (localAudioTrack) {
+        micEnabled = !micEnabled;
+        await localAudioTrack.setEnabled(micEnabled);
+        toggleMic.textContent = micEnabled ? "Mute Mic" : "Unmute Mic";
+        return;
+      }
+
+      try {
+        const tracks = await createLocalTracks({ audio: true, video: false });
+        const audio = tracks.find((track) => track.kind === Track.Kind.Audio);
+        if (!audio) throw new Error("No microphone track created.");
+
+        localAudioTrack = audio;
+        micEnabled = true;
+        await publishTrack(audio, "You - Mic");
+        toggleMic.textContent = "Mute Mic";
+        noticeEl.textContent = "Microphone is now live.";
+      } catch (error) {
+        alert("No microphone was found or permission was denied.");
+      }
+    });
+
+    shareScreen.addEventListener("click", async () => {
+      if (!room) return;
+
+      if (localScreenTrack) {
+        try {
+          localScreenTrack.stop();
+          await room.localParticipant.unpublishTrack(localScreenTrack);
+        } catch {}
+        localScreenTrack = null;
+        screenEnabled = false;
+        shareScreen.textContent = "Share Screen";
+        noticeEl.textContent = "Screen sharing stopped.";
+        return;
+      }
+
+      try {
+        const tracks = await createLocalScreenTracks({ audio: false });
+        const screenTrack = tracks.find((track) => track.kind === Track.Kind.Video);
+        if (!screenTrack) throw new Error("No screen track created.");
+
+        localScreenTrack = screenTrack;
+        screenEnabled = true;
+        await publishTrack(screenTrack, "You - Screen");
+        shareScreen.textContent = "Stop Sharing";
+        noticeEl.textContent = "Screen sharing is live. You can show product photos, your product page, or a presentation.";
+      } catch (error) {
+        alert("Screen sharing was cancelled or blocked by the browser.");
+      }
+    });
+
+    leaveRoom.addEventListener("click", () => {
+      if (room) room.disconnect();
+      window.close();
+    });
+
+    connect().catch((error) => {
+      console.error(error);
+      statusEl.textContent = "Connection failed";
+      noticeEl.textContent = error.message || "Could not connect to the live room.";
+    });
+  </script>
+  <script src="/sokoyetu-final-seo.js" defer></script>
+</body>
+</html>
+
+
+

@@ -1,4 +1,4 @@
-# SokoYetu Stage 34B: Public Trust Center and Buyer Safety Hub
+﻿# SokoYetu Mtaani Stage 34B: Public Trust Center and Buyer Safety Hub
 
 Stage 34B adds a public Trust Center page.
 
@@ -63,3 +63,4 @@ Open:
 ```text
 http://localhost:5173/trust-center.html
 ```
+

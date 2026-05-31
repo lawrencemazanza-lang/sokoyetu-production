@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 19 Security Configuration Check");
+console.log("SokoYetu Mtaani Stage 19 Security Configuration Check");
 console.log("--------------------------------------------");
 
 let ok = true;
@@ -72,3 +72,4 @@ if (warn.length) {
 
 console.log(ok ? "Security configuration looks acceptable for the current environment." : "Security configuration needs attention before deployment.");
 process.exit(ok ? 0 : 1);
+

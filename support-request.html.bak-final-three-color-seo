@@ -1,0 +1,166 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Mtaani Stage 32A SEO start -->
+  <title>SokoYetu Mtaani Customer Support Request</title>
+  <meta name="description" content="Submit a SokoYetu Mtaani support request for delivery, payment, product, cancellation or refund issues.">
+  <link rel="canonical" href="https://www.mySokoYetu Mtaani.co.ke/support-request.html">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="SokoYetu Mtaani Customer Support Request">
+  <meta property="og:description" content="Submit a SokoYetu Mtaani support request for delivery, payment, product, cancellation or refund issues.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mySokoYetu Mtaani.co.ke/support-request.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SokoYetu Mtaani Customer Support Request">
+  <meta name="twitter:description" content="Submit a SokoYetu Mtaani support request for delivery, payment, product, cancellation or refund issues.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Mtaani Stage 32A SEO end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(980px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    textarea{min-height:130px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:12px 15px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .muted{color:#64748b;font-size:13px}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/public-nav.css">
+
+  
+
+  <!-- SokoYetu Mtaani Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Mtaani Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-a11y.css">
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Customer Support Request</h1>
+    <p>Submit delivery, payment, product, cancellation or refund support for an existing order.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Submit a support request</div>
+    <div class="body">
+      <div class="note">For privacy, we verify the order using the order ID and the phone number used at checkout.</div>
+
+      <div class="grid">
+        <div>
+          <label>Order ID</label>
+          <input id="orderId" inputmode="numeric" placeholder="Example: 12">
+        </div>
+        <div>
+          <label>M-PESA phone number used at checkout</label>
+          <input id="phone" inputmode="tel" placeholder="Example: 254714565555 or 0714565555">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Request type</label>
+          <select id="requestType">
+            <option value="GENERAL_SUPPORT">General support</option>
+            <option value="DELIVERY_ISSUE">Delivery issue</option>
+            <option value="PAYMENT_ISSUE">Payment issue</option>
+            <option value="PRODUCT_ISSUE">Product issue</option>
+            <option value="CANCELLATION_REQUEST">Cancellation request</option>
+            <option value="REFUND_REQUEST">Refund request</option>
+          </select>
+        </div>
+        <div>
+          <label>Your name</label>
+          <input id="customerName" placeholder="Optional">
+        </div>
+      </div>
+
+      <div>
+        <label>Message</label>
+        <textarea id="messageText" placeholder="Explain the issue clearly. Include delivery details, payment concern, product issue, or refund reason."></textarea>
+      </div>
+
+      <button id="submitBtn" type="button">Submit request</button>
+      <div id="message"></div>
+      <p class="muted">Need help by email? Contact SokoYetu Mtaani@gmail.com with your order number.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+
+async function submitRequest(){
+  const orderId = document.getElementById("orderId").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const requestType = document.getElementById("requestType").value;
+  const customerName = document.getElementById("customerName").value.trim();
+  const messageText = document.getElementById("messageText").value.trim();
+
+  if (!orderId || !phone || !messageText) {
+    msg('<div class="err">Order ID, phone number and message are required.</div>');
+    return;
+  }
+
+  msg('<div class="note">Submitting request...</div>');
+
+  try {
+    const response = await fetch("/api/orders/support-request", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ orderId, phone, requestType, customerName, message: messageText })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not submit support request.");
+
+    msg('<div class="ok"><b>Support request received.</b><br>Reference: Order #' + esc(data.orderId) + '<br>Status: ' + esc(data.orderStatus) + '<br>Our team will review and respond through the contact details linked to the order.</div>');
+    document.getElementById("messageText").value = "";
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not submit support request.") + '</div>');
+  }
+}
+
+document.getElementById("submitBtn").onclick = submitRequest;
+</script>
+  <script src="/public-nav.js" defer></script>
+  <script src="/public-a11y.js" defer></script>
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+
+
+

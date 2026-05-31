@@ -1,0 +1,115 @@
+/* SokoYetu Stage 32D: accessibility and mobile usability polish */
+html{
+  scroll-behavior:smooth;
+}
+body{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+.skip-link{
+  position:absolute;
+  left:-999px;
+  top:10px;
+  z-index:10000;
+  background:#064e3b;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  font-weight:900;
+  text-decoration:none;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.skip-link:focus{
+  left:12px;
+  outline:3px solid #fbbf24;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible{
+  outline:3px solid #fbbf24 !important;
+  outline-offset:3px !important;
+}
+button,
+a,
+input,
+select,
+textarea{
+  touch-action:manipulation;
+}
+button,
+.linkbtn,
+.sy-public-nav a,
+.sy-public-footer a{
+  min-height:42px;
+}
+input,
+select,
+textarea{
+  min-height:42px;
+}
+img{
+  max-width:100%;
+}
+.sr-only{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+.sy-a11y-live{
+  position:fixed;
+  left:12px;
+  bottom:12px;
+  z-index:10000;
+  background:#064e3b;
+  color:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:13px;
+  font-weight:800;
+  box-shadow:0 14px 34px rgba(15,23,42,.22);
+  opacity:0;
+  transform:translateY(10px);
+  pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+}
+.sy-a11y-live.show{
+  opacity:1;
+  transform:translateY(0);
+}
+@media(max-width:760px){
+  body{
+    font-size:16px;
+  }
+  main{
+    padding-left:0;
+    padding-right:0;
+  }
+  table{
+    display:block;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .card{
+    border-radius:18px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    scroll-behavior:auto !important;
+    transition-duration:.001ms !important;
+  }
+}

@@ -1,0 +1,540 @@
+const AS = "assets/";
+const state = {
+  role: localStorage.getItem("sokoyetuRole") || "buyer",
+  user: null,
+  authChecked: false,
+  cart: JSON.parse(localStorage.getItem("sokoyetuCart") || "[]"),
+  wishlist: JSON.parse(localStorage.getItem("sokoyetuWishlist") || "[]"),
+  imported: JSON.parse(localStorage.getItem("sokoyetuImported") || "[]"),
+  flashIndex: 0,
+  adIndex: 0,
+  selectedSupplier: 0,
+  profit: Number(localStorage.getItem("sokoyetuProfit") || 18),
+  searchQuery: "",
+  categoryFilter: "all"
+};
+
+const categories = [
+  ["🏬", "Official Stores"], ["📱", "Phones & Tablets"], ["💻", "Computing"], ["📺", "TVs & Audio"], ["🧺", "Appliances"],
+  ["💄", "Beauty & Health"], ["👗", "Fashion"], ["🛒", "Supermarket"], ["🏡", "Home & Garden"], ["👶", "Baby & Kids"],
+  ["⚽", "Sports"], ["🚗", "Automotive"], ["🛠️", "Tools & Hardware"], ["🎮", "Gaming"]
+];
+
+const products = [
+  {id:"p1", name:"Samsung Galaxy A54 5G", seller:"TechHub Nairobi", category:"Phones", img:"phone.svg", price:42000, old:49000, stock:62, rating:4.8, reviews:120, discount:14},
+  {id:"p2", name:"HP Pavilion 15 Laptop", seller:"Laptop Palace KE", category:"Computing", img:"laptop.svg", price:65000, old:75000, stock:34, rating:4.7, reviews:45, discount:13},
+  {id:"p3", name:"Nike Air Force 1 '07", seller:"Kicks Kenya", category:"Fashion", img:"sneaker.svg", price:12500, old:15000, stock:27, rating:4.9, reviews:89, discount:17},
+  {id:"p4", name:"Kenyan Coffee Blend 500g", seller:"Highlands Coffee Co.", category:"Groceries", img:"coffee.svg", price:1200, old:1500, stock:86, rating:4.9, reviews:340, discount:20},
+  {id:"p5", name:"Avocado Organic Skincare Set", seller:"Nairobi Naturals", category:"Beauty", img:"beauty.svg", price:2800, old:3500, stock:43, rating:4.6, reviews:210, discount:20},
+  {id:"p6", name:"Fresh Family Groceries Basket", seller:"Soko Fresh", category:"Supermarket", img:"groceries.svg", price:3650, old:4300, stock:51, rating:4.5, reviews:99, discount:15},
+  {id:"p7", name:"Vitron 43 inch Smart TV", seller:"Vision Electronics", category:"TVs & Audio", img:"tv.svg", price:17999, old:25999, stock:20, rating:4.4, reviews:74, discount:31},
+  {id:"p8", name:"Modern 5-Seater Sofa Set", seller:"Home Essentials KE", category:"Furniture", img:"furniture.svg", price:48500, old:62000, stock:8, rating:4.7, reviews:37, discount:22},
+  {id:"p9", name:"Bluetooth Subwoofer System", seller:"Audio World KE", category:"Audio", img:"speaker.svg", price:4802, old:6100, stock:10, rating:4.3, reviews:61, discount:21},
+  {id:"p10", name:"Twin Tub Washing Machine 7.5kg", seller:"Appliance Centre", category:"Appliances", img:"appliance.svg", price:17280, old:26200, stock:18, rating:4.6, reviews:96, discount:34},
+  {id:"p11", name:"Maasai Beaded Bracelet Set", seller:"Maasai Crafts", category:"Fashion", img:"beauty.svg", price:850, old:1200, stock:78, rating:4.8, reviews:520, discount:29},
+  {id:"p12", name:"Redmi Budget Smartphone Bundle", seller:"Mobile Mart KE", category:"Phones", img:"phone.svg", price:13999, old:16999, stock:32, rating:4.4, reviews:145, discount:18}
+];
+
+const ads = [
+  {kicker:"Flash Deals Daily", title:"Kenya's smart marketplace for trusted products and live shopping.", text:"Shop phones, laptops, home essentials, groceries, fashion, beauty products and local brands from verified sellers across Kenya.", icon:"🛍️", cta:"Start Shopping"},
+  {kicker:"Live Now", title:"Watch sellers demonstrate products before you buy.", text:"Join live rooms, ask questions, view pinned products and purchase directly through SokoYetu checkout.", icon:"📹", cta:"Watch Live Deals"},
+  {kicker:"AI Buyer Tools", title:"Find the best product without wasting time.", text:"Use smart search, compare prices, filter by delivery speed and get personalised recommendations.", icon:"🤖", cta:"Open Smart Tools"},
+  {kicker:"For Admin", title:"Source products from wholesalers and price competitively.", text:"AI wholesale sourcing helps compare market price, add profit percentage and publish to the SokoYetu wall.", icon:"📦", cta:"AI Wholesale"}
+];
+
+const liveSellers = [
+  {name:"TechHub Nairobi", topic:"Phones, laptops and accessories", viewers:842, product:"Samsung Galaxy A54", icon:"📱"},
+  {name:"Mama Africa Designs", topic:"Ankara dresses and handmade fashion", viewers:426, product:"African print dress", icon:"👗"},
+  {name:"Home Essentials KE", topic:"Kitchen, furniture and home upgrades", viewers:318, product:"Ceramic cooking pot", icon:"🏡"},
+  {name:"Nairobi Naturals", topic:"Skincare, beauty and wellness", viewers:267, product:"Avocado skincare set", icon:"💄"}
+];
+
+const suppliers = [
+  {name:"River Road Electronics Hub", location:"Nairobi CBD", score:96, delivery:"Same-day Nairobi dispatch", categories:"Phones, audio, accessories", note:"Strong for fast-moving electronics and phone bundles.", products:[
+    {name:"Android 128GB Smartphone Bundle", img:"phone.svg", cost:11200, market:15500, stock:240},
+    {name:"Wireless Earbuds Bulk Pack", img:"speaker.svg", cost:1250, market:2300, stock:510},
+    {name:"Laptop Backpack and Mouse Combo", img:"laptop.svg", cost:2100, market:3600, stock:140}
+  ]},
+  {name:"Eastleigh Fashion Wholesale", location:"Eastleigh, Nairobi", score:91, delivery:"24 to 48 hours", categories:"Fashion, shoes, bags", note:"Good margins for fashion drops and live-selling bundles.", products:[
+    {name:"Ladies Ankara Dress Collection", img:"sneaker.svg", cost:1900, market:3600, stock:320},
+    {name:"Urban Sneaker Wholesale Lot", img:"sneaker.svg", cost:7800, market:13000, stock:84},
+    {name:"Fashion Handbag Mixed Designs", img:"beauty.svg", cost:1350, market:2600, stock:450}
+  ]},
+  {name:"Thika Road Home Supplies", location:"Ruiru / Thika Road", score:88, delivery:"Nationwide courier available", categories:"Home, appliances, furniture", note:"Best for home bundles, kitchen products and furniture.", products:[
+    {name:"5L Ceramic Cooking Pot", img:"appliance.svg", cost:1150, market:2200, stock:190},
+    {name:"Modern Compact Sofa Set", img:"furniture.svg", cost:31500, market:52000, stock:22},
+    {name:"LED Desk Lamp Bulk Unit", img:"tv.svg", cost:950, market:1900, stock:310}
+  ]}
+];
+
+const formatMoney = n => `KES ${Number(n).toLocaleString("en-KE")}`;
+const image = p => AS + p.img;
+const allProducts = () => [...state.imported, ...products];
+
+function save() {
+  localStorage.setItem("sokoyetuRole", state.role);
+  localStorage.setItem("sokoyetuCart", JSON.stringify(state.cart));
+  localStorage.setItem("sokoyetuWishlist", JSON.stringify(state.wishlist));
+  localStorage.setItem("sokoyetuImported", JSON.stringify(state.imported));
+  localStorage.setItem("sokoyetuProfit", String(state.profit));
+}
+
+function toast(message) {
+  const el = document.querySelector(".toast");
+  if (!el) return;
+  el.textContent = message;
+  el.classList.add("show");
+  setTimeout(() => el.classList.remove("show"), 2600);
+}
+
+function roleName() {
+  return state.role[0].toUpperCase() + state.role.slice(1);
+}
+
+function getCartTotal() {
+  return state.cart.reduce((sum, item) => sum + item.price * item.qty, 0);
+}
+
+function productCard(p) {
+  return `
+    <article class="product-card">
+      <span class="card-discount">-${p.discount || Math.max(5, Math.round((1 - p.price / p.old) * 100))}%</span>
+      <img src="${image(p)}" alt="${p.name}">
+      <h3>${p.name}</h3>
+      <div class="card-seller">${p.seller}</div>
+      <div class="card-price">${formatMoney(p.price)}</div>
+      <div class="card-old">${formatMoney(p.old || Math.round(p.price * 1.22))}</div>
+      <div class="seller">⭐ ${p.rating || 4.6} · ${p.reviews || 24} reviews</div>
+      <div class="card-actions">
+        <button class="btn orange small" onclick="addToCart('${p.id}')">Add</button>
+        <button class="btn ghost small" onclick="toggleWishlist('${p.id}')">♡</button>
+      </div>
+    </article>
+  `;
+}
+
+function renderHeader() {
+  const cartCount = state.cart.reduce((s, i) => s + i.qty, 0);
+  return `
+    <div class="top-promo">🌍 <span>Free delivery on orders above KES 10,000</span> &nbsp; | &nbsp; Shop with confidence - verified sellers, secure checkout and M-PESA support</div>
+    <div class="mini-strip">
+      <div class="mini-strip-inner">
+        <a class="sell-link" href="#" onclick="setRole('seller'); openModal('accountModal'); return false;">Sell on SokoYetu →</a>
+        <div class="mini-actions">
+          <button class="mini-pill green" onclick="openModal('liveModal')">🔴 Live Sellers</button>
+          <button class="mini-pill blue" onclick="openModal('smartModal')">🤖 Smart Buyer Tools</button>
+          ${state.user?.role === "admin" ? `<button class="mini-pill" onclick="openModal('adminModal')">⚙️ AI Admin Centre</button>` : ""}
+          ${state.user?.role === "seller" ? `<button class="mini-pill" onclick="openModal('sellerModal')">📹 Seller Studio</button>` : ""}
+        </div>
+      </div>
+    </div>
+    <header class="site-header">
+      <div class="header-inner">
+        <a class="logo-wrap" href="#" onclick="scrollToTop(); return false;">
+          <div class="logo-mark"><div class="logo-letters">SY</div></div>
+          <div>
+            <div class="logo-text"><span class="soko">Soko</span><span class="yetu">Yetu</span></div>
+            <div class="logo-sub">Smart Kenyan Market</div>
+          </div>
+        </a>
+        <form class="search-box" onsubmit="searchProducts(event)">
+          <input id="searchInput" placeholder="Search products, brands, categories..." autocomplete="off">
+          <button>Search</button>
+        </form>
+        <div class="header-actions">
+          <button class="header-btn" onclick="openModal('accountModal')">👤 ${state.user ? `${state.user.name} (${roleName()})` : "Sign In"}</button>
+          <button class="header-btn" onclick="openModal('helpModal')">❔ Help</button>
+          <button class="header-btn cart" onclick="openModal('cartModal')">🛒 Cart <span class="cart-badge">${cartCount}</span></button>
+        </div>
+      </div>
+    </header>
+    <nav class="category-strip"><div class="category-strip-inner">
+      <button class="category-chip active" onclick="filterCategory('all')">All Categories</button>
+      ${categories.slice(1, 11).map(c => `<button class="category-chip" onclick="filterCategory('${c[1]}')">${c[0]} ${c[1]}</button>`).join("")}
+    </div></nav>
+  `;
+}
+
+function renderApp() {
+  document.getElementById("app").innerHTML = `
+    ${renderHeader()}
+    <main class="page">
+      ${renderMarketplaceTop()}
+      ${renderFilteredResults()}
+      ${renderInfoGrid()}
+      ${renderProductSection("Top selling items", allProducts().slice(0, 6))}
+      ${renderProductSection("New on SokoYetu | Phone Deals", allProducts().filter(p => /phone|galaxy|redmi|smartphone/i.test(p.name)).concat(allProducts()).slice(0, 6))}
+      ${renderProductSection("Home, TV and Appliance Deals", allProducts().filter(p => /tv|washing|sofa|lamp|pot|appliance/i.test(p.name)).concat(allProducts()).slice(0, 6))}
+      ${renderLiveSellersSection()}
+      ${renderRoleSection()}
+    </main>
+    ${renderFooter()}
+    ${renderModals()}
+    <div class="toast"></div>
+  `;
+  renderDynamicBits();
+}
+
+function renderMarketplaceTop() {
+  return `
+    <section class="market-grid">
+      <aside class="card side-categories">
+        <div class="side-title">Shop by Category</div>
+        ${categories.map((c, idx) => `<a class="side-cat ${idx === 0 ? "selected" : ""}" href="#" onclick="filterCategory('${c[1]}'); return false;"><span>${c[0]}</span>${c[1]}</a>`).join("")}
+      </aside>
+      <div class="center-stage">
+        <section class="ad-burner" id="adBurner"></section>
+        ${renderFlashSales()}
+      </div>
+      <aside class="quick-panel">
+        <button class="quick-card orange" onclick="openModal('liveModal')"><div class="quick-icon">🔴</div><strong>Live Sellers Now</strong><span>Join live rooms and buy pinned products.</span></button>
+        <button class="quick-card blue" onclick="openModal('smartModal')"><div class="quick-icon">🤖</div><strong>Smart Buyer Tools</strong><span>Ask AI to find best deals by budget.</span></button>
+        <button class="quick-card green" onclick="setRole('seller'); openModal('accountModal')"><div class="quick-icon">🏪</div><strong>Sell on SokoYetu</strong><span>Go live, list products and grow sales.</span></button>
+        <button class="quick-card" onclick="openModal('mpesaModal')"><div class="quick-icon">📲</div><strong>M-PESA Checkout</strong><span>Fast STK-ready payment experience.</span></button>
+      </aside>
+    </section>
+  `;
+}
+
+function renderFlashSales() {
+  const items = [...products, ...state.imported].slice(0, 10);
+  const repeated = [...items, ...items];
+  return `
+    <section class="flash-card">
+      <div class="flash-head">
+        <div class="flash-title">⚡ Flash Sales | Live Now</div>
+        <div class="countdown">Time Left: <span class="time-pill" id="countdownText">00h : 00m : 00s</span> <button class="btn white small" onclick="filterCategory('flash')">See All</button></div>
+      </div>
+      <div class="flash-body">
+        <div id="liveFlashProduct"></div>
+        <div class="flash-mini-row">
+          <div class="flash-mini-track">
+            ${repeated.map(p => `
+              <button class="mini-product" onclick="focusFlash('${p.id}')">
+                <img src="${image(p)}" alt="${p.name}">
+                <div class="name">${p.name}</div>
+                <div class="mini-price">${formatMoney(p.price)}</div>
+                <div class="mini-discount">-${p.discount}% · ${p.stock} left</div>
+              </button>
+            `).join("")}
+          </div>
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+
+function categoryMatches(p, cat) {
+  if (!cat || cat === "all" || cat === "flash") return true;
+  const c = cat.toLowerCase();
+  const hay = `${p.name} ${p.category} ${p.seller}`.toLowerCase();
+  if (c.includes("phone")) return /phone|galaxy|redmi|smartphone|tablet/.test(hay);
+  if (c.includes("comput")) return /laptop|comput|backpack|mouse/.test(hay);
+  if (c.includes("tv") || c.includes("audio")) return /tv|audio|speaker|subwoofer|earbud/.test(hay);
+  if (c.includes("appliance")) return /appliance|washing|pot|lamp/.test(hay);
+  if (c.includes("beauty") || c.includes("health")) return /beauty|skincare|wellness/.test(hay);
+  if (c.includes("fashion")) return /fashion|shoe|sneaker|dress|bracelet|ankara/.test(hay);
+  if (c.includes("supermarket")) return /supermarket|grocery|groceries|coffee|basket/.test(hay);
+  if (c.includes("home") || c.includes("garden")) return /home|sofa|furniture|lamp|pot/.test(hay);
+  return hay.includes(c);
+}
+
+function getVisibleProducts() {
+  const q = state.searchQuery.trim().toLowerCase();
+  return allProducts().filter(p => {
+    const hay = `${p.name} ${p.category} ${p.seller}`.toLowerCase();
+    const queryOk = !q || hay.includes(q) || q.split(/\s+/).filter(Boolean).some(w => w.length > 2 && hay.includes(w));
+    return queryOk && categoryMatches(p, state.categoryFilter);
+  });
+}
+
+function renderFilteredResults() {
+  if (!state.searchQuery && state.categoryFilter === "all") return "";
+  const results = getVisibleProducts();
+  const title = state.searchQuery ? `Search results for “${state.searchQuery}”` : `${state.categoryFilter} deals`;
+  return `<section class="section filtered-results"><div class="section-head"><h2>${title}</h2><button class="see-all" onclick="clearFilters()">Clear →</button></div>${results.length ? `<div class="product-row">${results.slice(0, 8).map(productCard).join("")}</div>` : `<div class="empty-state">No product matched your search yet. Try another brand, product or category.</div>`}</section>`;
+}
+
+function visibleAds() {
+  return state.user?.role === "admin" ? ads : ads.filter(a => a.kicker !== "For Admin");
+}
+
+function renderInfoGrid() {
+  return `
+    <section class="info-grid">
+      <div class="info-card"><div class="info-icon">🚚</div><h3>Free Delivery</h3><p>Orders above KES 10,000 qualify for free delivery.</p></div>
+      <div class="info-card"><div class="info-icon">📲</div><h3>M-PESA Ready</h3><p>Checkout is designed for STK push integration.</p></div>
+      <div class="info-card"><div class="info-icon">✅</div><h3>Verified Sellers</h3><p>Seller profiles, trust badges and quality checks.</p></div>
+      <div class="info-card"><div class="info-icon">↩️</div><h3>Easy Returns</h3><p>Clear seven-day return workflow for eligible products.</p></div>
+    </section>
+  `;
+}
+
+function renderProductSection(title, list) {
+  const clean = list.filter(Boolean).slice(0, 6);
+  return `
+    <section class="section">
+      <div class="section-head"><h2>${title}</h2><button class="see-all" onclick="filterCategory('all')">See All →</button></div>
+      <div class="product-row">${clean.map(productCard).join("")}</div>
+    </section>
+  `;
+}
+
+function renderLiveSellersSection() {
+  return `
+    <section class="section">
+      <div class="section-head"><h2>🔴 Live Sellers Now</h2><button class="see-all" onclick="openModal('liveModal')">View Live Rooms →</button></div>
+      <div class="live-sellers-grid">
+        ${liveSellers.map(s => `
+          <article class="live-room">
+            <div class="live-screen"><span class="live-label">LIVE</span><span class="viewer-label">${s.viewers} watching</span>${s.icon}</div>
+            <div class="live-room-body"><h3>${s.name}</h3><p>${s.topic}</p><button class="btn orange small" onclick="openModal('liveModal')">Join Live</button></div>
+          </article>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function renderRoleSection() {
+  if (state.user?.role === "admin") {
+    return `<section class="section"><div class="section-head"><h2>⚙️ Admin-only AI Digital Selling Centre</h2><button class="see-all" onclick="openModal('adminModal')">Open Admin Centre →</button></div><div style="padding:16px" class="tool-grid">${adminTools().map(t=>toolCard(t)).join("")}</div></section>`;
+  }
+  if (state.user?.role === "seller") {
+    return `<section class="section"><div class="section-head"><h2>🏪 Seller-only Growth Studio</h2><button class="see-all" onclick="openModal('sellerModal')">Open Seller Studio →</button></div><div style="padding:16px" class="tool-grid">${sellerTools().map(t=>toolCard(t)).join("")}</div></section>`;
+  }
+  return `<section class="section"><div class="section-head"><h2>🤖 Buyer Smart Tools</h2><button class="see-all" onclick="openModal('smartModal')">Open Smart Tools →</button></div><div style="padding:16px" class="tool-grid">${buyerTools().map(t=>toolCard(t)).join("")}</div></section>`;
+}
+
+function toolCard(t) { return `<article class="tool-card"><h3>${t.icon} ${t.title}</h3><p>${t.text}</p><button class="btn ghost small" onclick="${t.action || "toast('Demo tool opened')"}">Open</button></article>`; }
+function buyerTools(){return[
+  {icon:"🔎", title:"AI Product Finder", text:"Describe what you need and get budget-aware product suggestions.", action:"openModal('smartModal')"},
+  {icon:"📉", title:"Price Drop Alerts", text:"Save products and receive alerts when the price falls.", action:"openModal('wishlistModal')"},
+  {icon:"🎁", title:"Bundle Builder", text:"Create smart bundles such as phone + case + earbuds."}
+]}
+function sellerTools(){return[
+  {icon:"📹", title:"Live Selling Room", text:"Set up product demos, pin products and receive buyer questions.", action:"openModal('sellerModal')"},
+  {icon:"📣", title:"Advert Maker", text:"Generate WhatsApp, TikTok and Instagram product copy."},
+  {icon:"📦", title:"Stock Alerts", text:"Know when products are moving fast or nearly out of stock."}
+]}
+function adminTools(){return[
+  {icon:"🏭", title:"AI Wholesale Sourcing", text:"Search wholesalers, open catalogues and import products with profit margin.", action:"openModal('adminModal')"},
+  {icon:"🧮", title:"Profit Guard", text:"Compare wholesale cost, SokoYetu price and Kenyan market average."},
+  {icon:"📲", title:"M-PESA Reconciliation", text:"Plan reconciliation between orders, payments and seller payouts.", action:"openModal('mpesaModal')"}
+]}
+
+function renderFooter() {
+  return `
+    <footer class="footer">
+      <div class="footer-inner">
+        <div>
+          <a class="logo-wrap" href="#"><div class="logo-mark"><div class="logo-letters">SY</div></div><div><div class="logo-text"><span style="color:#fff">Soko</span><span class="yetu">Yetu</span></div><div class="logo-sub" style="color:#f8c481">Smart Kenyan Market</div></div></a>
+          <p>SokoYetu is Kenya's smart marketplace for trusted products, verified sellers, live shopping and AI-powered digital selling. Buyers discover better deals faster, sellers sell through product walls and live rooms, and admins can source products from wholesalers, price competitively and publish products with smarter marketing support.</p>
+        </div>
+        <div><h3>Quick Links</h3><a>Home</a><a>All Products</a><a>Track Order</a><a>Live Sellers</a><a>Become a Seller</a></div>
+        <div><h3>Categories</h3><a>Electronics</a><a>Fashion</a><a>Home & Garden</a><a>Beauty & Health</a><a>Groceries</a><a>Sports</a></div>
+        <div><h3>Contact Us</h3><p>Phone: 0714565555<br>Email: mysokoyetu@gmail.com<br>Location: Nairobi, Kenya</p><p><b>M-PESA Accepted</b><br>Pay easily with Lipa na M-PESA.</p></div>
+      </div>
+      <div class="footer-bottom"><span>© 2026 SokoYetu. All rights reserved.</span><span>Privacy Policy · Terms of Service · Returns Policy</span></div>
+    </footer>
+  `;
+}
+
+function renderModals() {
+  return `
+    <div id="accountModal" class="modal-backdrop">${modalShell("Choose account role", renderAccountModal())}</div>
+    <div id="liveModal" class="modal-backdrop">${modalShell("Live sellers", renderLiveModal())}</div>
+    <div id="smartModal" class="modal-backdrop">${modalShell("Smart buyer tools", renderSmartModal())}</div>
+    <div id="cartModal" class="modal-backdrop">${modalShell("Your cart", renderCartModal(), "small")}</div>
+    <div id="helpModal" class="modal-backdrop">${modalShell("Help centre", renderHelpModal(), "small")}</div>
+    <div id="mpesaModal" class="modal-backdrop">${modalShell("M-PESA checkout demo", renderMpesaModal(), "small")}</div>
+    <div id="sellerModal" class="modal-backdrop">${modalShell("Seller Studio", renderSellerModal())}</div>
+    <div id="adminModal" class="modal-backdrop">${modalShell("Admin-only AI Centre", renderAdminModal())}</div>
+    <div id="wishlistModal" class="modal-backdrop">${modalShell("Wishlist and price alerts", renderWishlistModal(), "small")}</div>
+  `;
+}
+
+function modalShell(title, body, size="") { return `<section class="modal ${size}"><div class="modal-head"><h2>${title}</h2><button class="close-btn" onclick="closeModals()">×</button></div><div class="modal-body">${body}</div></section>`; }
+function renderAccountModal(){
+  if (state.user) {
+    return `
+      <div class="cart-summary">
+        <div class="summary-line"><span>Signed in as</span><b>${state.user.name}</b></div>
+        <div class="summary-line"><span>Email</span><b>${state.user.email}</b></div>
+        <div class="summary-line"><span>Role</span><b>${roleName()}</b></div>
+      </div>
+      <p style="color:#6b7280">Your role controls what you can see. Buyer tools, seller studio and admin centre are separated for security.</p>
+      <button class="btn ghost" onclick="logoutAccount()">Sign Out</button>
+    `;
+  }
+
+  return `
+    <p style="margin-top:0;color:#6b7280">Create a real database account or sign in. Choose Buyer, Seller or Admin before registering.</p>
+    <div class="role-grid">
+      ${["buyer","seller","admin"].map(r => `<button class="role-card ${state.role===r?"active":""}" onclick="setRole('${r}')"><b>${r==="buyer"?"🛍️ Buyer":r==="seller"?"🏪 Seller":"⚙️ Admin"}</b><span>${r==="buyer"?"Shop, join live rooms and use smart buyer tools.":r==="seller"?"Manage products, go live and run seller marketing.":"Source wholesalers, import products and manage marketplace tools."}</span></button>`).join("")}
+    </div>
+    <div class="form-grid">
+      <div class="field"><label>Full name</label><input id="authName" placeholder="Enter your name"></div>
+      <div class="field"><label>Email</label><input id="authEmail" placeholder="name@example.com"></div>
+      <div class="field"><label>Phone</label><input id="authPhone" placeholder="0714565555"></div>
+      <div class="field"><label>Password</label><input id="authPassword" type="password" placeholder="Password"></div>
+    </div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+      <button class="btn orange" onclick="registerAccount()">Create Account</button>
+      <button class="btn ghost" onclick="loginAccount()">Sign In</button>
+    </div>
+  `;
+}
+function renderLiveModal(){ return `<p style="margin-top:0;color:#6b7280">Sellers can demonstrate products live, pin products, answer buyer questions and receive orders directly from live rooms.</p><div class="live-sellers-grid">${liveSellers.map(s=>`<article class="live-room"><div class="live-screen"><span class="live-label">LIVE</span><span class="viewer-label">${s.viewers} watching</span>${s.icon}</div><div class="live-room-body"><h3>${s.name}</h3><p>${s.topic}</p><div class="badge orange">Pinned: ${s.product}</div><br><br><button class="btn orange small" onclick="toast('Joined ${s.name} live room')">Join Live Room</button></div></article>`).join("")}</div>`;}
+function renderSmartModal(){ return `<div class="field"><label>Ask SokoYetu AI</label><textarea rows="3" id="aiQuestion" placeholder="Example: I need a good phone under KES 25,000 with strong battery"></textarea></div><button style="margin-top:10px" class="btn orange" onclick="runSmartAssistant()">Get Recommendation</button><div id="aiAnswer" class="cart-summary"><b>Suggested use:</b> Ask by budget, category, delivery speed, rating or product purpose.</div><div class="tool-grid" style="margin-top:14px">${buyerTools().map(toolCard).join("")}</div>`;}
+function renderHelpModal(){ return `<p>How can we help?</p><div class="tool-grid" style="grid-template-columns:1fr"><article class="tool-card"><h3>📦 Track your order</h3><p>View order status from payment confirmation to delivery.</p></article><article class="tool-card"><h3>↩️ Returns and refunds</h3><p>Eligible products follow a clear return request workflow.</p></article><article class="tool-card"><h3>📲 Payment options</h3><p>M-PESA, card and cash-on-delivery can be added in production.</p></article></div>`;}
+function renderMpesaModal(){return `<p style="color:#6b7280">This is a front-end M-PESA STK Push demo interface. Connect Safaricom Daraja credentials in production.</p><div class="field"><label>M-PESA phone number</label><input id="mpesaPhone" placeholder="0714565555"></div><div class="cart-summary"><div class="summary-line"><span>Amount</span><b>${formatMoney(getCartTotal() || 1200)}</b></div></div><button style="margin-top:12px" class="btn green" onclick="toast('STK Push demo sent. Add Daraja API for live payment.')">Pay with M-PESA</button>`;}
+function renderWishlistModal(){ const items = allProducts().filter(p => state.wishlist.includes(p.id)); return items.length ? items.map(p=>`<div class="cart-item"><img src="${image(p)}"><div><b>${p.name}</b><div class="seller">Price alert active</div></div><b>${formatMoney(p.price)}</b></div>`).join("") : `<p>No wishlist items yet. Click the heart button on products to save them.</p>`; }
+function renderSellerModal(){ return state.user?.role !== "seller" ? `<p>This area is for seller accounts only. Please sign in using a seller account.</p>` : `<div class="tool-grid">${sellerTools().map(toolCard).join("")}</div><div class="form-grid"><div class="field"><label>Live session title</label><input placeholder="Tonight's phone deals"></div><div class="field"><label>Product to pin</label><select>${products.slice(0,6).map(p=>`<option>${p.name}</option>`).join("")}</select></div><div class="field"><label>Coupon code</label><input value="LIVE10"></div><div class="field"><label>Verification status</label><select><option>Verified seller badge enabled</option></select></div></div><button style="margin-top:14px" class="btn orange" onclick="toast('Seller live room prepared')">Prepare Live Room</button>`; }
+function renderAdminModal(){ return state.user?.role !== "admin" ? `<p>This area is for admin accounts only. Please sign in using an admin account.</p>` : `<div class="admin-layout"><aside class="admin-menu"><button class="active">AI Wholesale Sourcing</button><button>Product Wall Imports</button><button>Advert Studio</button><button>M-PESA Reconciliation</button><button>Quality Risk Checks</button></aside><div>${renderWholesaleTool()}</div></div>`; }
+function renderWholesaleTool(){ const s=suppliers[state.selectedSupplier]; return `<div class="field"><label>Search wholesalers, products, category or location</label><input id="supplierSearch" oninput="renderSupplierSearch()" placeholder="Example: phones wholesalers in Nairobi"></div><div id="supplierResults" class="wholesaler-list" style="margin-top:12px">${suppliers.map((x,i)=>supplierCard(x,i)).join("")}</div><hr style="border:0;border-top:1px solid #eef0f3;margin:16px 0"><h3>${s.name}</h3><p style="color:#6b7280">${s.note}</p><div class="badge green">Reliability ${s.score}%</div> <div class="badge orange">${s.location}</div> <div class="badge">${s.delivery}</div><div class="field" style="max-width:260px;margin-top:12px"><label>Profit percentage</label><input id="profitInput" type="number" value="${state.profit}" oninput="updateProfit(this.value)"></div><div class="catalogue-grid">${s.products.map((p,i)=>catalogueCard(p,i)).join("")}</div>`; }
+function supplierCard(s,i){ return `<button class="wholesaler-card" onclick="selectSupplier(${i})"><div><b>${s.name}</b><div class="seller">${s.location} · ${s.categories}</div></div><span class="badge green">${s.score}%</span></button>`; }
+function catalogueCard(p,i){ const price=Math.round(p.cost*(1+state.profit/100)); const profit=price-p.cost; const competitive=price <= p.market; return `<article class="catalogue-card"><img src="${AS+p.img}"><div><b>${p.name}</b><div class="seller">Wholesale: ${formatMoney(p.cost)} · Stock ${p.stock}</div><div class="seller">Market avg: ${formatMoney(p.market)}</div><div><span class="badge ${competitive?'green':'red'}">SokoYetu: ${formatMoney(price)}</span> <span class="badge orange">Profit: ${formatMoney(profit)}</span></div><button style="margin-top:8px" class="btn orange small" onclick="importProduct(${i})">Add to SokoYetu Wall</button></div></article>`; }
+function renderCartModal(){ if (!state.cart.length) return `<p>Your cart is empty. Add items from Flash Sales or product sections.</p>`; const subtotal=getCartTotal(); const delivery=subtotal>=10000?0:350; const total=subtotal+delivery; return `${state.cart.map(item=>`<div class="cart-item"><img src="${image(item)}"><div><b>${item.name}</b><div class="seller">Qty ${item.qty} · ${item.seller}</div></div><div><b>${formatMoney(item.price*item.qty)}</b><br><button class="btn ghost small" onclick="removeFromCart('${item.id}')">Remove</button></div></div>`).join("")}<div class="cart-summary"><div class="summary-line"><span>Subtotal</span><b>${formatMoney(subtotal)}</b></div><div class="summary-line"><span>Delivery</span><b>${delivery===0?'Free':formatMoney(delivery)}</b></div><div class="seller">Free delivery applies above KES 10,000.</div><div class="summary-line total"><span>Total</span><b>${formatMoney(total)}</b></div></div><button style="margin-top:12px;width:100%" class="btn green" onclick="openModal('mpesaModal')">Checkout with M-PESA</button>`; }
+
+function renderDynamicBits() { renderAdBurner(); renderFlashProduct(); updateCountdown(); }
+function renderAdBurner(){ const el=document.getElementById('adBurner'); if(!el) return; const list = visibleAds(); const active = state.adIndex % list.length; el.innerHTML = list.map((a,i)=>`<article class="ad-slide ${i===active?'active':''}"><div><div class="ad-kicker">${a.kicker}</div><h1>${a.title}</h1><p>${a.text}</p><div class="ad-cta"><button class="btn orange" onclick="${a.kicker==='Live Now'?"openModal('liveModal')":a.kicker==='AI Buyer Tools'?"openModal('smartModal')":a.kicker==='For Admin'?"openModal('adminModal')":"window.scrollTo({top:360,behavior:'smooth'})"}">${a.cta}</button><button class="btn white" onclick="filterCategory('all')">View Deals</button></div></div><div class="ad-visual">${a.icon}</div></article>`).join('') + `<div class="ad-dots">${list.map((a,i)=>`<span class="ad-dot ${i===active?'active':''}"></span>`).join('')}</div>`; }
+function renderFlashProduct(){ const el=document.getElementById('liveFlashProduct'); if(!el) return; const list=allProducts().slice(0,10); const p=list[state.flashIndex % list.length]; el.innerHTML = `<article class="live-product streaming-in"><span class="live-badge">STREAMING DEAL</span><img class="product-img" src="${image(p)}" alt="${p.name}"><div class="live-info"><div class="seller">${p.seller}</div><h3>${p.name}</h3><div class="price-line"><span class="price">${formatMoney(p.price)}</span><span class="old">${formatMoney(p.old)}</span><span class="discount">-${p.discount}%</span></div><div class="stock-wrap"><div class="stock-text">${p.stock} items left</div><div class="stock-track"><div class="stock-bar" style="width:${Math.max(8, Math.min(100,p.stock))}%"></div></div></div><button class="btn orange small" onclick="addToCart('${p.id}')">Add to Cart</button></div></article>`; }
+function updateCountdown(){ const target=new Date(); target.setHours(23,59,59,999); const diff=target-Date.now(); const h=Math.floor(diff/36e5); const m=Math.floor(diff%36e5/6e4); const s=Math.floor(diff%6e4/1000); const el=document.getElementById('countdownText'); if(el) el.textContent=`${String(h).padStart(2,'0')}h : ${String(m).padStart(2,'0')}m : ${String(s).padStart(2,'0')}s`; }
+
+function addToCart(id){ const p=allProducts().find(x=>x.id===id); if(!p) return; const existing=state.cart.find(x=>x.id===id); if(existing) existing.qty+=1; else state.cart.push({...p, qty:1}); save(); renderApp(); toast(`${p.name} added to cart`); }
+function removeFromCart(id){ state.cart=state.cart.filter(x=>x.id!==id); save(); renderApp(); openModal('cartModal'); }
+function toggleWishlist(id){ if(state.wishlist.includes(id)) state.wishlist=state.wishlist.filter(x=>x!==id); else state.wishlist.push(id); save(); toast('Wishlist updated'); }
+function setRole(role){
+  if (state.user && state.user.role !== role) {
+    toast(`You are signed in as ${roleName()}. Sign out to use another role.`);
+    return;
+  }
+  state.role=role;
+  save();
+  renderApp();
+  toast(`Selected ${roleName()} account type`);
+}
+function openModal(id){ closeModals(); const el=document.getElementById(id); if(el) el.classList.add('open'); }
+function closeModals(){ document.querySelectorAll('.modal-backdrop').forEach(m=>m.classList.remove('open')); }
+function scrollToTop(){ window.scrollTo({top:0, behavior:'smooth'}); }
+function filterCategory(cat){ state.categoryFilter = cat || 'all'; state.searchQuery = ''; renderApp(); toast(cat==='all'||cat==='flash'?'Showing marketplace deals':`Showing ${cat}`); window.scrollTo({top:320, behavior:'smooth'}); }
+function focusFlash(id){ const list=allProducts().slice(0,10); const idx=list.findIndex(p=>p.id===id); if(idx>=0){ state.flashIndex=idx; renderFlashProduct(); } }
+function searchProducts(e){ e.preventDefault(); const q=document.getElementById('searchInput').value.trim(); state.searchQuery = q; state.categoryFilter = 'all'; renderApp(); toast(q?`Showing results for: ${q}`:'Type a product, brand or category'); if(q) window.scrollTo({top:320, behavior:'smooth'}); }
+function clearFilters(){ state.searchQuery=''; state.categoryFilter='all'; renderApp(); toast('Filters cleared'); }
+function runSmartAssistant(){ const q=(document.getElementById('aiQuestion')||{}).value || ''; const match=allProducts().filter(p=>q.toLowerCase().split(/\s+/).some(word=>word.length>3 && p.name.toLowerCase().includes(word))).slice(0,3); const rec=match.length?match:allProducts().slice(0,3); document.getElementById('aiAnswer').innerHTML = `<b>AI suggestion:</b> Based on your request, compare these options first:<br>${rec.map(p=>`• ${p.name} — ${formatMoney(p.price)} from ${p.seller}`).join('<br>')}<br><br><span class="seller">This is a front-end demo. Connect a real AI API for live intelligent recommendations.</span>`; }
+function selectSupplier(i){ state.selectedSupplier=i; renderApp(); openModal('adminModal'); }
+function updateProfit(v){ state.profit=Math.max(0, Number(v||0)); save(); const modal=document.getElementById('adminModal'); if(modal && modal.classList.contains('open')) { modal.innerHTML = modalShell("Admin-only AI Centre", renderAdminModal()); } }
+function importProduct(i){ const s=suppliers[state.selectedSupplier]; const p=s.products[i]; const price=Math.round(p.cost*(1+state.profit/100)); const newProduct={id:'w'+Date.now()+i, name:p.name, seller:'SokoYetu Wholesale Wall', category:'Wholesale Import', img:p.img, price, old:p.market, stock:p.stock, rating:4.6, reviews:0, discount:Math.max(1, Math.round((1-price/p.market)*100))}; state.imported.unshift(newProduct); save(); renderApp(); openModal('adminModal'); toast(`${p.name} added to SokoYetu wall`); }
+function renderSupplierSearch(){ const q=(document.getElementById('supplierSearch')||{}).value?.toLowerCase() || ''; const html=suppliers.filter(s=>!q || `${s.name} ${s.location} ${s.categories} ${s.note}`.toLowerCase().includes(q)).map((s,i)=>supplierCard(s,i)).join('') || '<p>No matching supplier in demo data.</p>'; document.getElementById('supplierResults').innerHTML=html; }
+
+
+async function apiRequest(path, options = {}) {
+  const response = await fetch(path, {
+    headers: { "Content-Type": "application/json", ...(options.headers || {}) },
+    credentials: "include",
+    ...options,
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || "Request failed.");
+  }
+
+  return data;
+}
+
+async function loadCurrentUser() {
+  try {
+    const data = await apiRequest("/api/auth/me");
+    state.user = data.user;
+    state.role = data.user.role;
+    save();
+  } catch (error) {
+    state.user = null;
+  } finally {
+    state.authChecked = true;
+  }
+}
+
+async function registerAccount() {
+  try {
+    const payload = {
+      name: document.getElementById("authName")?.value.trim(),
+      email: document.getElementById("authEmail")?.value.trim(),
+      phone: document.getElementById("authPhone")?.value.trim(),
+      password: document.getElementById("authPassword")?.value,
+      role: state.role || "buyer",
+    };
+
+    if (!payload.name || !payload.email || !payload.password) {
+      toast("Name, email and password are required.");
+      return;
+    }
+
+    const data = await apiRequest("/api/auth/register", {
+      method: "POST",
+      body: JSON.stringify(payload),
+    });
+
+    state.user = data.user;
+    state.role = data.user.role;
+    save();
+    renderApp();
+    openModal("accountModal");
+    toast("Account created successfully.");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function loginAccount() {
+  try {
+    const email = document.getElementById("authEmail")?.value.trim();
+    const password = document.getElementById("authPassword")?.value;
+
+    if (!email || !password) {
+      toast("Email and password are required.");
+      return;
+    }
+
+    const data = await apiRequest("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+
+    state.user = data.user;
+    state.role = data.user.role;
+    save();
+    renderApp();
+    openModal("accountModal");
+    toast("Signed in successfully.");
+  } catch (error) {
+    toast(error.message);
+  }
+}
+
+async function logoutAccount() {
+  try {
+    await apiRequest("/api/auth/logout", { method: "POST" });
+  } catch (error) {
+    console.warn(error);
+  }
+
+  state.user = null;
+  state.role = "buyer";
+  save();
+  renderApp();
+  openModal("accountModal");
+  toast("Signed out successfully.");
+}
+
+document.addEventListener('click', e => { if(e.target.classList.contains('modal-backdrop')) closeModals(); });
+document.addEventListener('keydown', e => { if(e.key === 'Escape') closeModals(); });
+
+loadCurrentUser().finally(() => renderApp());
+setInterval(()=>{ const list = visibleAds(); state.adIndex=(state.adIndex+1)%list.length; renderAdBurner(); }, 4500);
+setInterval(()=>{ const list=allProducts().slice(0,10); state.flashIndex=(state.flashIndex+1)%list.length; renderFlashProduct(); }, 2700);
+setInterval(updateCountdown, 1000);

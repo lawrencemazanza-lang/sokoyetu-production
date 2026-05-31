@@ -1,0 +1,266 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20L: Payment Button Isolation Fix")) {
+  console.log("No change needed. Stage 20L is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20l-payment-button-isolation-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+let changes = 0;
+
+// Rename customer checkout payment/refresh button classes so old cart listeners do not treat payment as cart/add-to-cart.
+const replacements = [
+  {
+    from: ".sy-cart-btn{border:none;border-radius:14px;background:#dc2626;color:#fff;font-weight:900;padding:12px 15px;cursor:pointer}.sy-cart-btn.secondary{background:#111827}",
+    to: ".sy-pay-action{border:none;border-radius:14px;background:#16a34a;color:#fff;font-weight:900;padding:12px 15px;cursor:pointer}.sy-pay-action.secondary{background:#064e3b}"
+  },
+  {
+    from: "<button class='sy-cart-btn' type='submit'>Send M-PESA STK Push</button>",
+    to: "<button class='sy-pay-action' id='syDirectMpesaPayBtn' type='button'>Send M-PESA STK Push</button>"
+  },
+  {
+    from: "<button class='sy-cart-btn secondary' type='button' id='syRefreshCartBtn'>Refresh Cart</button>",
+    to: "<button class='sy-pay-action secondary' type='button' id='syRefreshCartBtn'>Refresh Cart</button>"
+  },
+  {
+    from: ".sy-cart-btn{background:#16a34a!important;color:#fff!important}",
+    to: ".sy-pay-action{background:#16a34a!important;color:#fff!important}"
+  },
+  {
+    from: ".sy-cart-btn.secondary{background:#064e3b!important;color:#fff!important}",
+    to: ".sy-pay-action.secondary{background:#064e3b!important;color:#fff!important}"
+  },
+  {
+    from: 'className.includes("sy-cart-btn")',
+    to: 'className.includes("sy-pay-action")'
+  },
+  {
+    from: "className.includes('sy-cart-btn')",
+    to: "className.includes('sy-pay-action')"
+  }
+];
+
+for (const item of replacements) {
+  while (code.includes(item.from)) {
+    code = code.replace(item.from, item.to);
+    changes += 1;
+  }
+}
+
+// Add a direct isolated payment handler. It uses a button id that old cart handlers should not recognize.
+const patch = `
+
+// ================================
+// SokoYetu Stage 20L: Payment Button Isolation Fix
+// Prevents old Add-to-Cart handlers from catching the M-PESA payment button.
+// Uses a unique payment button class/id and sends the STK Push directly.
+// ================================
+(function initStage20LPaymentButtonIsolationFix() {
+  if (window.__sokoyetuStage20LInstalled) return;
+  window.__sokoyetuStage20LInstalled = true;
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  function ensureGreenPaymentStyles() {
+    if (document.getElementById("syStage20LPaymentStyles")) return;
+
+    var style = document.createElement("style");
+    style.id = "syStage20LPaymentStyles";
+    style.textContent =
+      ".sy-pay-action{border:none;border-radius:14px;background:#16a34a!important;color:#fff!important;font-weight:900;padding:12px 15px;cursor:pointer}" +
+      ".sy-pay-action.secondary{background:#064e3b!important;color:#fff!important}" +
+      ".sy-payment-result-ok{background:#dcfce7;color:#166534;border:1px solid #86efac;border-radius:14px;padding:12px;font-weight:800;line-height:1.5}" +
+      ".sy-payment-result-err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;border-radius:14px;padding:12px;font-weight:800;line-height:1.5}";
+    document.head.appendChild(style);
+  }
+
+  async function postJson(url, payload) {
+    var response = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {})
+    });
+
+    var data = await response.json().catch(function () { return {}; });
+
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed.");
+    }
+
+    return data;
+  }
+
+  async function sendDirectMpesaPayment() {
+    var message = document.getElementById("syCheckoutMessage");
+    var phoneInput = document.getElementById("syCheckoutPhone");
+    var addressInput = document.getElementById("syCheckoutAddress");
+
+    if (!message) return;
+
+    var phone = phoneInput ? phoneInput.value.trim() : "";
+    var deliveryAddress = addressInput ? addressInput.value.trim() : "";
+
+    if (!phone) {
+      message.innerHTML = "<div class='sy-payment-result-err'>M-PESA phone number is required.</div>";
+      return;
+    }
+
+    if (!deliveryAddress) {
+      message.innerHTML = "<div class='sy-payment-result-err'>Delivery address is required.</div>";
+      return;
+    }
+
+    try {
+      message.innerHTML = "<div class='sy-payment-result-ok'>Creating order and sending M-PESA STK Push...</div>";
+
+      var orderData = await postJson("/api/orders", {
+        phone: phone,
+        deliveryAddress: deliveryAddress
+      });
+
+      var order = orderData.order || orderData;
+      var orderId = order.id;
+
+      if (!orderId) {
+        throw new Error("Order was created but no order ID was returned.");
+      }
+
+      var stkData = await postJson("/api/payments/mpesa/stk-push", {
+        orderId: orderId,
+        phone: phone
+      });
+
+      message.innerHTML =
+        "<div class='sy-payment-result-ok'>" +
+          "<b>M-PESA STK Push sent.</b><br>" +
+          "Check the customer phone, enter the M-PESA PIN, then wait for payment confirmation." +
+          (stkData.checkoutRequestId ? "<br><small>Checkout Request ID: " + escapeHtml(stkData.checkoutRequestId) + "</small>" : "") +
+        "</div>";
+    } catch (error) {
+      message.innerHTML =
+        "<div class='sy-payment-result-err'><b>Checkout could not continue.</b><br>" +
+        escapeHtml(error.message || "Please check Daraja settings and try again.") +
+        "</div>";
+    }
+  }
+
+  function rewritePaymentButtons() {
+    ensureGreenPaymentStyles();
+
+    var form = document.getElementById("syCustomerCheckoutForm");
+    if (!form) return;
+
+    // Any submit button inside this form becomes a direct payment button with no cart-related class.
+    Array.from(form.querySelectorAll("button")).forEach(function (button) {
+      var text = String(button.textContent || "").toLowerCase();
+
+      if (text.includes("m-pesa") || text.includes("stk") || button.type === "submit") {
+        button.type = "button";
+        button.id = "syDirectMpesaPayBtn";
+        button.className = "sy-pay-action";
+        button.textContent = "Send M-PESA STK Push";
+      }
+
+      if (button.id === "syRefreshCartBtn") {
+        button.className = "sy-pay-action secondary";
+      }
+    });
+
+    var payBtn = document.getElementById("syDirectMpesaPayBtn");
+    if (payBtn && !payBtn.__stage20LBound) {
+      payBtn.__stage20LBound = true;
+      payBtn.addEventListener("click", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        sendDirectMpesaPayment();
+      }, true);
+    }
+
+    if (!form.__stage20LBound) {
+      form.__stage20LBound = true;
+      form.addEventListener("submit", function (event) {
+        event.preventDefault();
+        event.stopPropagation();
+        event.stopImmediatePropagation();
+        sendDirectMpesaPayment();
+      }, true);
+    }
+  }
+
+  document.addEventListener("click", function (event) {
+    var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+    if (!clicked) return;
+
+    if (clicked.id === "syDirectMpesaPayBtn") {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      sendDirectMpesaPayment();
+      return;
+    }
+
+    setTimeout(rewritePaymentButtons, 80);
+    setTimeout(rewritePaymentButtons, 450);
+  }, true);
+
+  var observer = new MutationObserver(function () {
+    rewritePaymentButtons();
+  });
+
+  document.addEventListener("DOMContentLoaded", function () {
+    ensureGreenPaymentStyles();
+    rewritePaymentButtons();
+    if (document.body) observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(rewritePaymentButtons, 800);
+    setTimeout(rewritePaymentButtons, 1800);
+  });
+
+  if (document.body) {
+    ensureGreenPaymentStyles();
+    observer.observe(document.body, { childList: true, subtree: true });
+    setTimeout(rewritePaymentButtons, 300);
+  }
+
+  window.sokoyetuSendDirectMpesaPayment = sendDirectMpesaPayment;
+  window.sokoyetuRewritePaymentButtons = rewritePaymentButtons;
+})();
+`;
+
+code += patch;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20L payment button isolation fix installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("Class/text replacements made:", changes);
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally. In Network, clicking Send M-PESA STK Push must show /api/payments/mpesa/stk-push.");
+console.log("");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Isolate payment button from add to cart handlers\"");
+console.log("git push");

@@ -1,4 +1,4 @@
-# SokoYetu Stage 26B: Admin Order Tracking and Status Updates
+﻿# SokoYetu Mtaani Stage 26B: Admin Order Tracking and Status Updates
 
 Stage 26B adds a protected admin order operations page.
 
@@ -20,7 +20,7 @@ POST /api/admin/orders/:id/status
 Add this to local `.env` and Render Environment Variables:
 
 ```env
-ADMIN_ORDER_TOKEN=sokoyetu_admin_orders_2026_change_this_secret
+ADMIN_ORDER_TOKEN=SokoYetu Mtaani_admin_orders_2026_change_this_secret
 ```
 
 Use a stronger secret in production.
@@ -52,3 +52,4 @@ REFUNDED
 ## Soft launch rule
 
 Do not fulfil orders with failed or pending payments. Admin should manually confirm payment, seller availability and delivery details before dispatch.
+

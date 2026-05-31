@@ -1,0 +1,69 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20H: Removed customer-facing M-PESA demo copy")) {
+  console.log("No change needed. Stage 20H demo wording removal is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20h-remove-demo-copy-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+let changes = 0;
+
+const replacements = [
+  {
+    from: 'modalShell("M-PESA checkout demo", renderMpesaModal(), "small")',
+    to: 'modalShell("M-PESA checkout", renderMpesaModal(), "small")'
+  },
+  {
+    from: "Checkout now creates a real database order and prepares a pending M-PESA payment record. Live STK Push will be added in the Daraja step.",
+    to: "Complete your order by entering a valid M-PESA phone number and delivery address. In Daraja mode, the system sends a real STK Push prompt to the customer phone."
+  },
+  {
+    from: "M-PESA checkout demo",
+    to: "M-PESA checkout"
+  },
+  {
+    from: "Live STK Push will be added in the Daraja step.",
+    to: "A real STK Push will be sent when Daraja is configured."
+  }
+];
+
+for (const item of replacements) {
+  while (code.includes(item.from)) {
+    code = code.replace(item.from, item.to);
+    changes += 1;
+  }
+}
+
+code += `
+
+// SokoYetu Stage 20H: Removed customer-facing M-PESA demo copy
+// Customer checkout text now describes the real Daraja STK Push flow instead of demo-only wording.
+`;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20H customer-facing M-PESA demo wording removed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("Text replacements made:", changes);
+console.log("");
+console.log("Verify with:");
+console.log('findstr /n /i /c:"M-PESA checkout demo" app.js index.html');
+console.log('findstr /n /i /c:"Live STK Push will be added" app.js index.html');
+console.log("");
+console.log("Then:");
+console.log('git add app.js');
+console.log('git commit -m "Remove customer-facing M-PESA demo checkout copy"');
+console.log('git push');

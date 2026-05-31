@@ -1,4 +1,4 @@
-# SokoYetu Stage 36A: Self-Pickup Checkout Option
+﻿# SokoYetu Mtaani Stage 36A: Self-Pickup Checkout Option
 
 Stage 36A adds a buyer-facing self-pickup option in checkout.
 
@@ -18,3 +18,4 @@ npm run dev
 ```
 
 Manual test: add product to cart, open checkout, select Self-pickup, confirm delivery fee is KES 0, submit controlled test order, check Admin Orders and Track Order.
+

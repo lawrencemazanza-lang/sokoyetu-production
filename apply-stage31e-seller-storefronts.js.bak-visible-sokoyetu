@@ -1,0 +1,501 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const productDetailPath = path.join(root, "product-detail.html");
+const categoriesPath = path.join(root, "categories.html");
+const sitemapPath = path.join(root, "sitemap.xml");
+const indexPath = path.join(root, "index.html");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage31e-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(productDetailPath, "product-detail");
+backup(categoriesPath, "categories");
+backup(sitemapPath, "sitemap");
+backup(indexPath, "index");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage31e:check"] = "node scripts/check-stage31e-seller-storefronts.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const sharedCss = `
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:28px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:32px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5;max-width:820px}
+    main{display:grid;gap:16px;padding:22px 0 42px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .seller,.product{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:9px;text-decoration:none;color:#111827}
+    .seller:hover,.product:hover{outline:3px solid #86efac}
+    .seller b,.product b{color:#064e3b;font-size:18px}
+    .seller span,.product span{color:#475569;line-height:1.45}
+    .product{background:#fff;border-color:#e5e7eb;overflow:hidden;padding:0}
+    .product img,.noimg{width:100%;height:170px;object-fit:cover;background:#e5e7eb}
+    .noimg{display:grid;place-items:center;color:#64748b;font-weight:900}
+    .pbody{padding:12px;display:grid;gap:7px}
+    .price{font-weight:900;color:#064e3b}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .linkbtn,button{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button{background:#16a34a}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:27px}}
+`;
+
+fs.writeFileSync(path.join(root, "seller-stores.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Browse SokoYetu seller storefronts and discover products grouped by seller.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Seller Stores</title>
+  <style>${sharedCss}</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Seller Stores</h1>
+    <p>Explore sellers on SokoYetu and view the products currently listed under each seller.</p>
+  </div>
+</header>
+
+<main>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="linkbtn" href="/">← Back to shop</a>
+    <a class="linkbtn secondary" href="/categories.html">Browse categories</a>
+    <a class="linkbtn secondary" href="/help-center.html">Help Center</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Find a seller</div>
+    <div class="body">
+      <input id="searchBox" placeholder="Search seller ID, category, product name">
+      <div id="message" class="note">Loading seller stores...</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller directory</div>
+    <div class="body">
+      <div id="sellerList" class="grid"></div>
+    </div>
+  </section>
+</main>
+
+<footer>SokoYetu · Seller stores · SokoYetu Mtaani@gmail.com</footer>
+
+<script>
+let products = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function sellerKey(product){ return String(product.sellerId || "unknown"); }
+function sellerName(id){ return id === "unknown" ? "Marketplace seller" : "Seller #" + id; }
+
+async function loadProducts(){
+  const message = document.getElementById("message");
+  try {
+    const res = await fetch("/api/products", { credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Could not load products.");
+    const raw = Array.isArray(data) ? data : (data.products || data.data || []);
+    products = raw.map(p => ({
+      id: p.id,
+      name: p.name || p.title || "Unnamed product",
+      description: p.description || "",
+      category: p.category || "Other",
+      price: p.price || 0,
+      stock: p.stock ?? null,
+      imageUrl: p.imageUrl || p.image || p.photoUrl || "",
+      sellerId: p.sellerId || "unknown"
+    }));
+    renderSellers();
+    message.className = "note";
+    message.textContent = products.length ? "Seller stores loaded successfully." : "No seller products are available yet.";
+  } catch (error) {
+    message.className = "err";
+    message.textContent = error.message || "Could not load seller stores.";
+  }
+}
+
+function groupedSellers(){
+  const q = document.getElementById("searchBox").value.trim().toLowerCase();
+  const map = new Map();
+
+  for (const p of products) {
+    const searchText = (p.sellerId + " " + p.name + " " + p.category + " " + p.description).toLowerCase();
+    if (q && !searchText.includes(q)) continue;
+    const key = sellerKey(p);
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(p);
+  }
+
+  return Array.from(map.entries()).sort((a,b) => String(a[0]).localeCompare(String(b[0])));
+}
+
+function renderSellers(){
+  const wrap = document.getElementById("sellerList");
+  const sellers = groupedSellers();
+
+  if (!sellers.length) {
+    wrap.innerHTML = '<div class="note">No sellers match this search.</div>';
+    return;
+  }
+
+  wrap.innerHTML = sellers.map(([sellerId, items]) => {
+    const categories = Array.from(new Set(items.map(p => p.category || "Other"))).slice(0, 5).join(", ");
+    const available = items.filter(p => p.stock === null || Number(p.stock) > 0).length;
+    const totalValue = items.reduce((sum, p) => sum + Number(p.price || 0), 0);
+
+    return '<a class="seller" href="/seller-store.html?sellerId=' + encodeURIComponent(sellerId) + '">' +
+      '<b>' + esc(sellerName(sellerId)) + '</b>' +
+      '<span>' + items.length + ' product(s), ' + available + ' available.</span>' +
+      '<span>Categories: ' + esc(categories || "Other") + '</span>' +
+      '<span>Listed value: ' + money(totalValue) + '</span>' +
+      '<em class="pill">Open seller store</em>' +
+    '</a>';
+  }).join("");
+}
+
+document.getElementById("searchBox").addEventListener("input", renderSellers);
+loadProducts();
+</script>
+</body>
+</html>`, "utf8");
+
+fs.writeFileSync(path.join(root, "seller-store.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="View a SokoYetu seller storefront and browse products from this seller.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Seller Store</title>
+  <style>${sharedCss}</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1 id="sellerTitle">Seller Store</h1>
+    <p id="sellerSubtitle">Browse available products from this SokoYetu seller.</p>
+  </div>
+</header>
+
+<main>
+  <div style="display:flex;gap:10px;flex-wrap:wrap">
+    <a class="linkbtn" href="/seller-stores.html">← All seller stores</a>
+    <a class="linkbtn secondary" href="/categories.html">Browse categories</a>
+    <a class="linkbtn secondary" href="/">Back to shop</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Seller products</div>
+    <div class="body">
+      <div id="message" class="note">Loading seller products...</div>
+      <div id="productList" class="grid"></div>
+    </div>
+  </section>
+</main>
+
+<footer>SokoYetu · Seller storefront · SokoYetu Mtaani@gmail.com</footer>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function sellerId(){ return new URLSearchParams(location.search).get("sellerId") || "unknown"; }
+function sellerName(id){ return id === "unknown" ? "Marketplace seller" : "Seller #" + id; }
+
+async function loadStore(){
+  const id = sellerId();
+  const message = document.getElementById("message");
+  document.getElementById("sellerTitle").textContent = sellerName(id);
+  document.title = sellerName(id) + " · SokoYetu Seller Store";
+
+  try {
+    const res = await fetch("/api/products", { credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Could not load products.");
+
+    const raw = Array.isArray(data) ? data : (data.products || data.data || []);
+    const products = raw.map(p => ({
+      id: p.id,
+      name: p.name || p.title || "Unnamed product",
+      description: p.description || "",
+      category: p.category || "Other",
+      price: p.price || 0,
+      stock: p.stock ?? null,
+      imageUrl: p.imageUrl || p.image || p.photoUrl || "",
+      sellerId: String(p.sellerId || "unknown")
+    })).filter(p => p.sellerId === String(id));
+
+    renderProducts(products);
+    message.className = "note";
+    message.textContent = products.length ? products.length + " product(s) loaded for this seller." : "No products are currently listed for this seller.";
+  } catch (error) {
+    message.className = "err";
+    message.textContent = error.message || "Could not load seller store.";
+  }
+}
+
+function renderProducts(products){
+  const wrap = document.getElementById("productList");
+
+  if (!products.length) {
+    wrap.innerHTML = '<div class="note">No products found for this seller.</div>';
+    return;
+  }
+
+  wrap.innerHTML = products.map(p => {
+    const img = p.imageUrl
+      ? '<img src="' + esc(p.imageUrl) + '" alt="' + esc(p.name) + '">'
+      : '<div class="noimg">No image</div>';
+    const stockText = p.stock === null ? "Stock not shown" : (Number(p.stock) > 0 ? p.stock + " in stock" : "Out of stock");
+    const stockClass = p.stock !== null && Number(p.stock) <= 0 ? "pill warn" : "pill";
+
+    return '<article class="product">' +
+      img +
+      '<div class="pbody">' +
+        '<b>' + esc(p.name) + '</b>' +
+        '<span>' + esc(p.category) + '</span>' +
+        '<span class="price">' + money(p.price) + '</span>' +
+        '<span class="' + stockClass + '">' + esc(stockText) + '</span>' +
+        '<span>' + esc((p.description || "").slice(0, 100)) + (p.description && p.description.length > 100 ? "..." : "") + '</span>' +
+        '<a class="linkbtn" href="/product-detail.html?id=' + encodeURIComponent(p.id) + '">Product details</a>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+}
+
+loadStore();
+</script>
+</body>
+</html>`, "utf8");
+
+// Update product-detail page with seller store link if possible.
+if (fs.existsSync(productDetailPath)) {
+  let detail = fs.readFileSync(productDetailPath, "utf8");
+  if (!detail.includes("/seller-store.html?sellerId=")) {
+    detail = detail.replace(
+      `'<div class="smallcard"><b>Seller</b><br><span class="muted">Seller #' + esc(product.sellerId || "-") + '</span></div>' +`,
+      `'<div class="smallcard"><b>Seller</b><br><a class="linkbtn" href="/seller-store.html?sellerId=' + encodeURIComponent(product.sellerId || "unknown") + '">View seller store</a></div>' +`
+    );
+    fs.writeFileSync(productDetailPath, detail, "utf8");
+    console.log("Updated product-detail.html with seller store link.");
+  } else {
+    console.log("product-detail.html already links to seller store.");
+  }
+}
+
+// Add homepage link block if not present.
+if (fs.existsSync(indexPath)) {
+  let index = fs.readFileSync(indexPath, "utf8");
+  if (!index.includes("/seller-stores.html")) {
+    const block = `
+<!-- SokoYetu Stage 31E: Seller stores link -->
+<div style="width:min(1120px,94vw);margin:18px auto;padding:15px;border:1px solid #bbf7d0;border-radius:20px;background:#f0fdf4;font-family:Arial,Helvetica,sans-serif">
+  <b style="color:#064e3b">Browse seller stores</b>
+  <p style="margin:6px 0 10px;color:#475569">View products grouped by seller and discover more items from the same marketplace seller.</p>
+  <a href="/seller-stores.html" style="display:inline-flex;background:#064e3b;color:white;text-decoration:none;border-radius:14px;padding:10px 13px;font-weight:900">Open Seller Stores</a>
+</div>
+<!-- End SokoYetu Stage 31E -->
+`;
+    if (index.includes("</body>")) index = index.replace("</body>", block + "\n</body>");
+    else index += block;
+    fs.writeFileSync(indexPath, index, "utf8");
+    console.log("Added seller stores link to index.html.");
+  } else {
+    console.log("index.html already links to seller-stores.html.");
+  }
+}
+
+// Update categories page to include seller store link in product cards if possible.
+if (fs.existsSync(categoriesPath)) {
+  let categories = fs.readFileSync(categoriesPath, "utf8");
+  if (!categories.includes("/seller-store.html?sellerId=")) {
+    categories = categories.replace(
+      `'<a class="linkbtn" href="/product-detail.html?id=' + encodeURIComponent(p.id) + '">Product details</a>' +`,
+      `'<a class="linkbtn" href="/product-detail.html?id=' + encodeURIComponent(p.id) + '">Product details</a>' + '<a class="linkbtn" href="/seller-store.html?sellerId=' + encodeURIComponent(p.sellerId || "unknown") + '">Seller store</a>' +`
+    );
+    fs.writeFileSync(categoriesPath, categories, "utf8");
+    console.log("Updated categories.html with seller store links.");
+  } else {
+    console.log("categories.html already links to seller stores.");
+  }
+}
+
+// Update sitemap.
+let sitemap = fs.existsSync(sitemapPath)
+  ? fs.readFileSync(sitemapPath, "utf8")
+  : `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/</loc>\n  </url>\n</urlset>\n`;
+
+for (const url of ["https://www.mysokoyetu.co.ke/seller-stores.html", "https://www.mysokoyetu.co.ke/seller-store.html"]) {
+  if (!sitemap.includes(url)) {
+    const block = `\n  <url>\n    <loc>${url}</loc>\n  </url>\n`;
+    if (sitemap.includes("</urlset>")) sitemap = sitemap.replace("</urlset>", block + "</urlset>");
+    else sitemap += block;
+  }
+}
+fs.writeFileSync(sitemapPath, sitemap, "utf8");
+console.log("Seller store pages confirmed in sitemap.xml.");
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage31e-seller-storefronts.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 31E Seller Storefronts Check");
+console.log("------------------------------------------");
+
+let warnings = 0;
+
+const files = [
+  ["seller-stores.html", ["/api/products", "SokoYetu Seller Stores", "/seller-store.html?sellerId="]],
+  ["seller-store.html", ["/api/products", "Seller Store", "/product-detail.html?id="]],
+];
+
+for (const [file, required] of files) {
+  const filePath = path.join(root, file);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN:", file, "missing:", item);
+      warnings += 1;
+    } else {
+      console.log("OK:", file, "includes", item);
+    }
+  }
+}
+
+const sitemapPath = path.join(root, "sitemap.xml");
+if (fs.existsSync(sitemapPath)) {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  for (const link of ["/seller-stores.html", "/seller-store.html"]) {
+    if (!sitemap.includes(link)) {
+      console.log("WARN: sitemap.xml missing:", link);
+      warnings += 1;
+    } else {
+      console.log("OK: sitemap.xml includes", link);
+    }
+  }
+} else {
+  console.log("WARN: sitemap.xml is missing.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 31E seller storefronts check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE31E_SELLER_STOREFRONTS_GUIDE.md"), `# SokoYetu Stage 31E: Public Seller Storefronts and Seller Directory
+
+Stage 31E adds public seller-store discovery.
+
+## New pages
+
+\`\`\`text
+/seller-stores.html
+/seller-store.html?sellerId=SELLER_ID
+\`\`\`
+
+## What it does
+
+- Fetches products from \`/api/products\`
+- Groups products by seller ID
+- Shows a seller directory
+- Shows seller-specific product listings
+- Links seller products to \`/product-detail.html?id=PRODUCT_ID\`
+- Adds seller-store links where possible
+
+## Updated files
+
+\`\`\`text
+package.json
+seller-stores.html
+seller-store.html
+product-detail.html
+categories.html
+index.html
+sitemap.xml
+scripts/check-stage31e-seller-storefronts.js
+STAGE31E_SELLER_STOREFRONTS_GUIDE.md
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage31e:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/seller-stores.html
+\`\`\`
+
+Then open a seller store.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 31E seller storefronts installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage31e:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/seller-stores.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json index.html sitemap.xml scripts/check-stage31e-seller-storefronts.js seller-stores.html seller-store.html product-detail.html categories.html STAGE31E_SELLER_STOREFRONTS_GUIDE.md");
+console.log('git commit -m "Add public seller storefronts"');
+console.log("git push");
+

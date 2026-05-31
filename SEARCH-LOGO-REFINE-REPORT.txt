@@ -1,0 +1,25 @@
+﻿SokoYetu Search + Logo Refinement Report
+
+Changes:
+- Search bar reduced to a maximum width of about 620px on desktop.
+- Search bar is pushed to the right using extra left margin.
+- Brand container reserves about 248px so the search bar cannot cover Mtaani.
+- Logo text is smaller and more polished.
+- Three-color wordmark:
+  - Soko = black (#111827)
+  - Yetu = green (#057a55)
+  - Mtaani = orange (#f97316)
+- Decorative three-color underline added under the wordmark.
+- Small orange spark added above the wordmark.
+- SEO runtime tags are kept active.
+
+How to test:
+1. npm run dev
+2. Open http://localhost:5173/
+3. Press Ctrl + F5
+4. Confirm Mtaani is fully visible and the search bar starts after the full name.
+
+Deploy:
+git add .
+git commit -m "Refine SokoYetu logo artwork and search bar spacing"
+git push

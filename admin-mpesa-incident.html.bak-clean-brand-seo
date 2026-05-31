@@ -1,0 +1,402 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani M-PESA Incident Response</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#991b1b);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#fee2e2;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#fef2f2;color:#991b1b;padding:15px 18px;font-weight:900;border-bottom:1px solid #fecaca}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:92px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .danger{background:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .info{background:#dbeafe;color:#1e40af}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .checkitem{border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:flex-start}
+    .checkitem input{width:auto;min-height:auto;margin-top:3px}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-brand-seo.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani M-PESA Incident Response</h1>
+    <p>Rollback checklist, incident log, escalation template and evidence capture for M-PESA live-test or production payment problems. No database records are changed.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-live-test.html">Live test runbook</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-reconciliation.html">Reconciliation</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-evidence.html">Evidence export</a>
+    <a class="linkbtn secondary" href="/admin-orders.html">Admin orders</a>
+    <a class="linkbtn secondary" href="/admin-support.html">Support queue</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Immediate response rules</div>
+    <div class="body">
+      <div class="badBox">
+        If a customer has an M-PESA receipt but the order is still pending, do not ask the customer to pay again. Capture evidence, check reconciliation, check Render logs, and handle the order manually until the callback issue is understood.
+      </div>
+      <div class="grid">
+        <div class="metric">Priority 1<b>Receipt exists but order unpaid</b></div>
+        <div class="metric">Priority 2<b>STK Push fails repeatedly</b></div>
+        <div class="metric">Priority 3<b>Amount mismatch</b></div>
+        <div class="metric">Priority 4<b>Duplicate customer payment</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Rollback checklist</div>
+    <div class="body">
+      <div class="warnBox">
+        Rollback should mean stopping new live payment exposure, preserving evidence, and returning to safe operation. It does not mean deleting payment records.
+      </div>
+      <div id="rollbackChecklist"></div>
+      <div class="actions">
+        <button id="saveRollbackBtn" type="button">Save rollback checklist</button>
+        <button id="clearRollbackBtn" class="danger" type="button">Clear rollback checklist</button>
+      </div>
+      <div id="rollbackMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Incident log</div>
+    <div class="body">
+      <div class="note">This log is stored in this browser using localStorage only. It is a manual operations log and export tool. It does not write to the server or database.</div>
+      <div class="grid">
+        <div>
+          <label>Incident type</label>
+          <select id="incidentType">
+            <option value="receipt-order-pending">Receipt exists but order pending</option>
+            <option value="stk-failure">STK Push failure</option>
+            <option value="callback-delay">Callback delay or no callback</option>
+            <option value="amount-mismatch">Amount mismatch</option>
+            <option value="duplicate-payment">Duplicate payment</option>
+            <option value="customer-dispute">Customer dispute</option>
+            <option value="refund-review">Refund review</option>
+            <option value="other">Other</option>
+          </select>
+        </div>
+        <div>
+          <label>Severity</label>
+          <select id="severity">
+            <option value="P1">P1 - payment/customer impact</option>
+            <option value="P2">P2 - degraded checkout</option>
+            <option value="P3">P3 - single record review</option>
+            <option value="P4">P4 - monitoring note</option>
+          </select>
+        </div>
+        <div>
+          <label>Order ID</label>
+          <input id="orderId" placeholder="Order ID">
+        </div>
+        <div>
+          <label>Payment ID</label>
+          <input id="paymentId" placeholder="Payment ID">
+        </div>
+        <div>
+          <label>Customer phone</label>
+          <input id="phone" placeholder="Customer/payment phone">
+        </div>
+        <div>
+          <label>M-PESA receipt</label>
+          <input id="mpesaReceipt" placeholder="Receipt number">
+        </div>
+        <div>
+          <label>Checkout request ID</label>
+          <input id="checkoutRequestId" placeholder="CheckoutRequestID">
+        </div>
+        <div>
+          <label>Status</label>
+          <select id="status">
+            <option value="open">open</option>
+            <option value="investigating">investigating</option>
+            <option value="customer-contacted">customer contacted</option>
+            <option value="resolved">resolved</option>
+            <option value="refund-review">refund review</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label>Incident notes</label>
+        <textarea id="notes" placeholder="What happened, what evidence exists, what was checked, what was communicated to the customer, and what remains unresolved?"></textarea>
+      </div>
+      <div class="actions">
+        <button id="addIncidentBtn" type="button">Add incident log</button>
+        <button id="exportCsvBtn" class="secondary" type="button">Export CSV</button>
+        <button id="exportJsonBtn" class="secondary" type="button">Export JSON</button>
+        <button id="clearIncidentsBtn" class="danger" type="button">Clear incident logs</button>
+      </div>
+      <div id="incidentMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Escalation note template</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Recipient</label>
+          <select id="recipient">
+            <option value="internal">Internal admin/support</option>
+            <option value="safaricom">Safaricom/Daraja follow-up</option>
+            <option value="customer">Customer update</option>
+          </select>
+        </div>
+        <div>
+          <label>Reference</label>
+          <input id="templateRef" placeholder="Order ID, receipt, ticket number">
+        </div>
+      </div>
+      <button id="buildTemplateBtn" type="button">Build escalation note</button>
+      <textarea id="templateOutput" readonly placeholder="Escalation note appears here."></textarea>
+      <button id="copyTemplateBtn" class="secondary" type="button">Copy escalation note</button>
+      <div id="templateMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Saved incidents</div>
+    <div class="body">
+      <div id="summary" class="grid"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date/time</th>
+            <th>Type</th>
+            <th>Severity</th>
+            <th>Order/payment</th>
+            <th>Phone</th>
+            <th>Receipt / checkout</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="incidents"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const INCIDENT_KEY = "sokoyetu_stage33f_mpesa_incidents";
+const ROLLBACK_KEY = "sokoyetu_stage33f_mpesa_rollback_checks";
+
+const rollbackItems = [
+  "Pause public promotion or buyer testing while the issue is investigated.",
+  "Do not ask affected customers to repeat payment if they have a receipt.",
+  "Capture order ID, payment ID, phone, amount, receipt and checkout request ID.",
+  "Open M-PESA reconciliation and check whether receipt, amount and order status match.",
+  "Export issue evidence from M-PESA evidence export page.",
+  "Check admin orders page for order status and payment status.",
+  "Check Render logs for callback or payment errors.",
+  "Record customer communication in support queue/manual notes.",
+  "If production credentials were just changed, revert only after preserving evidence.",
+  "If required, set M-PESA environment back to sandbox/test in Render and redeploy.",
+  "Confirm checkout is not accepting new live payments until the incident is understood.",
+  "Prepare Safaricom/Daraja follow-up note with receipt and checkout request ID."
+];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(id, html){ document.getElementById(id).innerHTML = html; }
+function getIncidents(){
+  try { return JSON.parse(localStorage.getItem(INCIDENT_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveIncidents(items){ localStorage.setItem(INCIDENT_KEY, JSON.stringify(items)); }
+function getRollback(){
+  try { return JSON.parse(localStorage.getItem(ROLLBACK_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveRollback(items){ localStorage.setItem(ROLLBACK_KEY, JSON.stringify(items)); }
+function renderRollback(){
+  const checks = getRollback();
+  document.getElementById("rollbackChecklist").innerHTML = rollbackItems.map((text, i) => {
+    const id = "rollback-" + i;
+    return '<label class="checkitem" for="' + id + '"><input type="checkbox" id="' + id + '" ' + (checks[i] ? "checked" : "") + '><span>' + esc(text) + '</span></label>';
+  }).join("");
+}
+function collectRollback(){
+  const checks = {};
+  rollbackItems.forEach((_, i) => checks[i] = document.getElementById("rollback-" + i).checked);
+  return checks;
+}
+function addIncident(){
+  const items = getIncidents();
+  const entry = {
+    createdAt: new Date().toISOString(),
+    incidentType: document.getElementById("incidentType").value,
+    severity: document.getElementById("severity").value,
+    orderId: document.getElementById("orderId").value.trim(),
+    paymentId: document.getElementById("paymentId").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    mpesaReceipt: document.getElementById("mpesaReceipt").value.trim(),
+    checkoutRequestId: document.getElementById("checkoutRequestId").value.trim(),
+    status: document.getElementById("status").value,
+    notes: document.getElementById("notes").value.trim()
+  };
+
+  if (!entry.orderId && !entry.paymentId && !entry.mpesaReceipt) {
+    msg("incidentMessage", '<div class="err">Add at least an order ID, payment ID or M-PESA receipt.</div>');
+    return;
+  }
+
+  items.unshift(entry);
+  saveIncidents(items);
+  renderIncidents();
+  msg("incidentMessage", '<div class="ok">Incident log saved in this browser.</div>');
+}
+function renderIncidents(){
+  const items = getIncidents();
+  const p1 = items.filter(x => x.severity === "P1").length;
+  const open = items.filter(x => x.status !== "resolved").length;
+  const resolved = items.filter(x => x.status === "resolved").length;
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Incidents saved<b>' + items.length + '</b></div>' +
+    '<div class="metric">P1 incidents<b>' + p1 + '</b></div>' +
+    '<div class="metric">Open / active<b>' + open + '</b></div>' +
+    '<div class="metric">Resolved<b>' + resolved + '</b></div>';
+
+  document.getElementById("incidents").innerHTML = items.length ? items.map(item => {
+    const sevClass = item.severity === "P1" ? "pill bad" : item.severity === "P2" ? "pill warn" : "pill info";
+    const statusClass = item.status === "resolved" ? "pill" : "pill warn";
+    return '<tr>' +
+      '<td>' + esc(new Date(item.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(item.incidentType) + '</td>' +
+      '<td><span class="' + sevClass + '">' + esc(item.severity) + '</span></td>' +
+      '<td>Order: #' + esc(item.orderId || "-") + '<br>Payment: #' + esc(item.paymentId || "-") + '</td>' +
+      '<td>' + esc(item.phone || "-") + '</td>' +
+      '<td>Receipt: <code>' + esc(item.mpesaReceipt || "-") + '</code><br>Checkout: <code>' + esc(item.checkoutRequestId || "-") + '</code></td>' +
+      '<td><span class="' + statusClass + '">' + esc(item.status) + '</span></td>' +
+      '<td>' + esc(item.notes || "-") + '</td>' +
+    '</tr>';
+  }).join("") : '<tr><td colspan="8">No incident logs saved yet.</td></tr>';
+}
+function csvEscape(value){
+  const text = String(value ?? "");
+  if (/[",\r\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+function exportFile(format){
+  const items = getIncidents();
+  if (!items.length) {
+    msg("incidentMessage", '<div class="err">No incident logs to export.</div>');
+    return;
+  }
+  const stamp = new Date().toISOString().slice(0,10);
+  let blob;
+  let filename;
+  if (format === "json") {
+    blob = new Blob([JSON.stringify({ generatedAt:new Date().toISOString(), incidents: items }, null, 2)], { type:"application/json" });
+    filename = "sokoyetu-mpesa-incident-log-" + stamp + ".json";
+  } else {
+    const headers = Object.keys(items[0]);
+    const csv = headers.join(",") + "\n" + items.map(row => headers.map(h => csvEscape(row[h])).join(",")).join("\n");
+    blob = new Blob([csv], { type:"text/csv" });
+    filename = "sokoyetu-mpesa-incident-log-" + stamp + ".csv";
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  msg("incidentMessage", '<div class="ok">Export started: ' + esc(filename) + '</div>');
+}
+function buildTemplate(){
+  const recipient = document.getElementById("recipient").value;
+  const ref = document.getElementById("templateRef").value.trim() || "[reference]";
+  let text = "";
+
+  if (recipient === "safaricom") {
+    text = "Hello Safaricom/Daraja Support,\n\nWe are reviewing an M-PESA transaction issue for SokoYetu Mtaani. Reference: " + ref + ".\n\nPlease help verify the transaction status using the available evidence below:\n- Order ID:\n- Payment ID:\n- Customer phone:\n- M-PESA receipt:\n- CheckoutRequestID:\n- Expected amount:\n- Actual amount:\n- Callback time, if available:\n\nIssue observed:\n\nAction requested: Please confirm whether the transaction was successful and whether callback delivery was completed.\n\nRegards,\nSokoYetu Mtaani Operations";
+  } else if (recipient === "customer") {
+    text = "Hello,\n\nThank you for contacting SokoYetu Mtaani. We are reviewing your M-PESA payment/order issue. Reference: " + ref + ".\n\nPlease do not make another payment while we verify the transaction. If you have an M-PESA confirmation message, keep it safely. We will check the payment receipt, order status and reconciliation record, then update you.\n\nRegards,\nSokoYetu Mtaani Support";
+  } else {
+    text = "Internal M-PESA incident note\n\nReference: " + ref + "\nPriority:\nIncident type:\nOrder ID:\nPayment ID:\nCustomer phone:\nM-PESA receipt:\nCheckoutRequestID:\nExpected amount:\nActual amount:\nObserved issue:\nEvidence checked:\nCustomer communication:\nNext action:\nOwner:\nDeadline:";
+  }
+
+  document.getElementById("templateOutput").value = text;
+}
+async function copyTemplate(){
+  const text = document.getElementById("templateOutput").value;
+  if (!text) {
+    msg("templateMessage", '<div class="err">Build a template first.</div>');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    msg("templateMessage", '<div class="ok">Escalation note copied.</div>');
+  } catch {
+    msg("templateMessage", '<div class="warnBox">Could not copy automatically. Select and copy the text manually.</div>');
+  }
+}
+document.getElementById("saveRollbackBtn").onclick = () => {
+  saveRollback(collectRollback());
+  msg("rollbackMessage", '<div class="ok">Rollback checklist saved in this browser.</div>');
+};
+document.getElementById("clearRollbackBtn").onclick = () => {
+  if (!confirm("Clear rollback checklist?")) return;
+  localStorage.removeItem(ROLLBACK_KEY);
+  renderRollback();
+  msg("rollbackMessage", '<div class="ok">Rollback checklist cleared.</div>');
+};
+document.getElementById("addIncidentBtn").onclick = addIncident;
+document.getElementById("exportCsvBtn").onclick = () => exportFile("csv");
+document.getElementById("exportJsonBtn").onclick = () => exportFile("json");
+document.getElementById("clearIncidentsBtn").onclick = () => {
+  if (!confirm("Clear all incident logs from this browser?")) return;
+  localStorage.removeItem(INCIDENT_KEY);
+  renderIncidents();
+  msg("incidentMessage", '<div class="ok">Incident logs cleared from this browser.</div>');
+};
+document.getElementById("buildTemplateBtn").onclick = buildTemplate;
+document.getElementById("copyTemplateBtn").onclick = copyTemplate;
+renderRollback();
+renderIncidents();
+</script>
+  <script src="/sokoyetu-brand-seo.js" defer></script>
+</body>
+</html>
+
+

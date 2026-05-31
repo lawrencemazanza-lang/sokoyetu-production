@@ -1,0 +1,10 @@
+﻿{
+  "name": "SokoYetu Mtaani",
+  "short_name": "SokoYetu",
+  "description": "Your local online marketplace in Kenya.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#f97316",
+  "lang": "en-KE"
+}

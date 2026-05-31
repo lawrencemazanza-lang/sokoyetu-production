@@ -1,6 +1,6 @@
-# SokoYetu Stage 26A: Order Operations Workflow
+﻿# SokoYetu Mtaani Stage 26A: Order Operations Workflow
 
-Stage 26A defines how SokoYetu should handle orders during soft launch.
+Stage 26A defines how SokoYetu Mtaani should handle orders during soft launch.
 
 This stage does not change checkout, M-PESA, DNS, email forwarding, product import or LiveKit logic.
 
@@ -36,3 +36,4 @@ Refunded
 ## Soft launch rule
 
 During soft launch, fulfilment should stay manual. Admin must verify every paid order before seller dispatch.
+

@@ -1,0 +1,124 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Order Operations</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .step{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:16px;padding:12px}
+    .step b{color:#064e3b}
+    .status{display:inline-flex;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534;margin:3px}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    textarea{width:100%;min-height:95px;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Order Operations</h1>
+    <p>Manual workflow for paid orders, seller coordination, delivery, failed payments and refunds.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Recommended order status workflow</div>
+    <div class="body">
+      <div>
+        <span class="status warn">Pending Payment</span>
+        <span class="status">Paid</span>
+        <span class="status">Processing</span>
+        <span class="status">Ready for Delivery</span>
+        <span class="status">Out for Delivery</span>
+        <span class="status">Delivered</span>
+        <span class="status bad">Failed Payment</span>
+        <span class="status bad">Cancelled</span>
+        <span class="status warn">Refund Requested</span>
+        <span class="status">Refunded</span>
+      </div>
+      <div class="note">For soft launch, keep fulfilment manual: confirm payment, contact seller, confirm item availability, contact customer, arrange delivery, then mark the order as delivered in admin notes.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Daily admin order checklist</div>
+    <div class="body grid">
+      <div class="step"><b>1. Check new orders</b><br>Open admin/order list and identify orders created today.</div>
+      <div class="step"><b>2. Confirm payment</b><br>Check status, M-PESA request, callback and receipt where available.</div>
+      <div class="step"><b>3. Contact seller</b><br>Confirm item exists, price is correct and seller can fulfil.</div>
+      <div class="step"><b>4. Contact customer</b><br>Confirm delivery location and phone number.</div>
+      <div class="step"><b>5. Arrange delivery</b><br>Manual rider, seller delivery, customer pickup or courier.</div>
+      <div class="step"><b>6. Close order</b><br>Record delivered, cancelled, failed or refunded outcome.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Status decision table</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Situation</th><th>Status</th><th>Admin action</th></tr></thead>
+        <tbody>
+          <tr><td>Customer starts checkout but does not pay</td><td>Pending Payment</td><td>Wait, then follow up if customer contacts support.</td></tr>
+          <tr><td>M-PESA confirms successful payment</td><td>Paid</td><td>Confirm seller availability and start fulfilment.</td></tr>
+          <tr><td>Seller confirms item is available</td><td>Processing</td><td>Prepare for pickup or delivery.</td></tr>
+          <tr><td>Item packed and ready</td><td>Ready for Delivery</td><td>Assign delivery method.</td></tr>
+          <tr><td>Item has left seller/admin</td><td>Out for Delivery</td><td>Track delivery and keep customer informed.</td></tr>
+          <tr><td>Customer receives item</td><td>Delivered</td><td>Close the order and invite feedback.</td></tr>
+          <tr><td>Payment fails or customer has insufficient balance</td><td>Failed Payment</td><td>Do not fulfil. Ask customer to retry checkout.</td></tr>
+          <tr><td>Customer cancels before fulfilment</td><td>Cancelled</td><td>Cancel order; refund only if payment was already received.</td></tr>
+          <tr><td>Customer requests refund</td><td>Refund Requested</td><td>Review reason, order evidence and seller response.</td></tr>
+          <tr><td>Refund has been processed</td><td>Refunded</td><td>Record refund reference and close support case.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Quick message templates</div>
+    <div class="body grid">
+      <div><b>Customer payment received</b><textarea readonly>Hello [Name], we have received your SokoYetu Mtaani payment for order #[Order ID]. We are confirming seller availability and will update you shortly about delivery.</textarea></div>
+      <div><b>Seller order alert</b><textarea readonly>Hello [Seller], a SokoYetu Mtaani order has been placed for [Product]. Please confirm availability, final price and pickup/delivery readiness.</textarea></div>
+      <div><b>Failed payment</b><textarea readonly>Hello [Name], your SokoYetu Mtaani payment did not complete. Please retry checkout when your M-PESA line has enough balance, or contact SokoYetu Mtaani@gmail.com for help.</textarea></div>
+      <div><b>Delivery update</b><textarea readonly>Hello [Name], your order #[Order ID] is being prepared for delivery. We will contact you before dispatch to confirm your location.</textarea></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Soft launch rule</div>
+    <div class="body">
+      <div class="note danger">Do not let sellers fulfil orders automatically during soft launch. Admin should manually verify payment, seller availability and delivery details until the process is stable.</div>
+    </div>
+  </section>
+</main>
+
+<!-- SokoYetu Mtaani internal operations page: noindex/nofollow enabled in Stage 30C -->
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+
+

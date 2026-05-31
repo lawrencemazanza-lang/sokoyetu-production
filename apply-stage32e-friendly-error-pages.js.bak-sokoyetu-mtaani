@@ -1,0 +1,385 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage32e-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+backup(sitemapPath, "sitemap");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage32e:check"] = "node scripts/check-stage32e-error-pages.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const commonStyle = `
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:32px}
+    header .wrap,main{width:min(980px,94vw);margin:0 auto}
+    h1{margin:0;font-size:34px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:24px 0 42px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .body{padding:18px;display:grid;gap:14px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:8px;text-decoration:none;color:#111827}
+    .tile b{color:#064e3b}
+    .tile span{color:#475569;line-height:1.45}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .code{font-size:72px;font-weight:900;color:#064e3b;line-height:1}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:28px}.code{font-size:56px}}
+`;
+
+fs.writeFileSync(path.join(root, "404.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,follow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Page Not Found · SokoYetu</title>
+  <meta name="description" content="The SokoYetu page you opened could not be found. Return to the shop, categories, seller stores, help center or order tracking.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/public-nav.css">
+  <link rel="stylesheet" href="/public-a11y.css">
+  <style>${commonStyle}</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="code">404</div>
+    <h1>Page not found</h1>
+    <p>The page may have moved, been renamed, or the link may be incomplete.</p>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="card">
+    <div class="body">
+      <div class="note">Use one of the recovery links below to continue shopping or get support.</div>
+      <div class="grid">
+        <a class="tile" href="/"><b>Return to shop</b><span>Go back to the SokoYetu homepage.</span></a>
+        <a class="tile" href="/categories.html"><b>Browse categories</b><span>Find products grouped by category.</span></a>
+        <a class="tile" href="/seller-stores.html"><b>Seller stores</b><span>Browse products by seller.</span></a>
+        <a class="tile" href="/help-center.html"><b>Help Center</b><span>Find support links and marketplace policies.</span></a>
+        <a class="tile" href="/track-order.html"><b>Track order</b><span>Check an existing order using order ID and phone number.</span></a>
+        <a class="tile" href="/support-request.html"><b>Submit support request</b><span>Report delivery, payment, product, cancellation or refund issues.</span></a>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="linkbtn" href="/">Open shop</a>
+        <a class="linkbtn secondary" href="/help-center.html">Open Help Center</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>SokoYetu · mysokoyetu@gmail.com</footer>
+<script src="/public-nav.js" defer></script>
+<script src="/public-a11y.js" defer></script>
+</body>
+</html>`, "utf8");
+
+fs.writeFileSync(path.join(root, "500.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Temporary Service Issue · SokoYetu</title>
+  <meta name="description" content="SokoYetu is temporarily unable to complete this request. Please retry, return to the shop, or contact support.">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/public-nav.css">
+  <link rel="stylesheet" href="/public-a11y.css">
+  <style>${commonStyle}</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="code">500</div>
+    <h1>Temporary service issue</h1>
+    <p>Something went wrong while processing this request. Please retry shortly or use the support links below.</p>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="card">
+    <div class="body">
+      <div class="note">If you were checking out or tracking an order, do not repeatedly submit the same action. Wait briefly, then confirm order or payment status.</div>
+      <div class="grid">
+        <a class="tile" href="/"><b>Return to shop</b><span>Go back to the homepage and continue browsing.</span></a>
+        <a class="tile" href="/track-order.html"><b>Track order</b><span>Check whether your order was recorded.</span></a>
+        <a class="tile" href="/support-request.html"><b>Submit support request</b><span>Report a payment, product, delivery or refund issue.</span></a>
+        <a class="tile" href="/help-center.html"><b>Help Center</b><span>Find customer support and policy links.</span></a>
+      </div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap">
+        <a class="linkbtn" href="/">Open shop</a>
+        <a class="linkbtn secondary" href="/support-request.html">Get support</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<footer>SokoYetu · mysokoyetu@gmail.com</footer>
+<script src="/public-nav.js" defer></script>
+<script src="/public-a11y.js" defer></script>
+</body>
+</html>`, "utf8");
+
+// Patch server.js with final 404 and error handlers before listen.
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 32E: Friendly Error Pages")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
+// Final fallback only. Does not affect existing defined routes.
+// ================================
+app.use((req, res, next) => {
+  if (res.headersSent) return next();
+
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(404).json({
+      message: "API endpoint not found.",
+      path: req.path,
+    });
+  }
+
+  if (req.method !== "GET" && req.method !== "HEAD") {
+    return res.status(404).send("Not found");
+  }
+
+  return res.status(404).sendFile(path.join(__dirname, "404.html"));
+});
+
+app.use((err, req, res, next) => {
+  console.error("Unhandled server error:", err);
+
+  if (res.headersSent) return next(err);
+
+  if (req.path && req.path.startsWith("/api/")) {
+    return res.status(500).json({
+      message: "Internal server error.",
+    });
+  }
+
+  return res.status(500).sendFile(path.join(__dirname, "500.html"));
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 32E friendly error fallback to server.js.");
+} else {
+  console.log("Stage 32E error fallback already exists in server.js.");
+}
+
+// Ensure sitemap does not add 404/500; these are noindex and should not be indexed.
+let sitemap = fs.existsSync(sitemapPath) ? fs.readFileSync(sitemapPath, "utf8") : "";
+if (sitemap.includes("/404.html") || sitemap.includes("/500.html")) {
+  sitemap = sitemap.replace(/\\s*<url>\\s*<loc>https:\\/\\/www\\.mysokoyetu\\.co\\.ke\\/(404|500)\\.html<\\/loc>\\s*<\\/url>/g, "");
+  fs.writeFileSync(sitemapPath, sitemap, "utf8");
+  console.log("Removed error pages from sitemap.xml.");
+}
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage32e-error-pages.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 32E Friendly Error Pages Check");
+console.log("--------------------------------------------");
+
+let warnings = 0;
+
+const requiredFiles = ["404.html", "500.html"];
+
+for (const file of requiredFiles) {
+  const filePath = path.join(root, file);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+  const required = [
+    "SokoYetu",
+    "/help-center.html",
+    "/track-order.html",
+    "/support-request.html",
+    "noindex",
+    "/public-nav.js",
+    "/public-a11y.js"
+  ];
+
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN:", file, "missing:", item);
+      warnings += 1;
+    }
+  }
+
+  if (required.every((item) => html.includes(item))) {
+    console.log("OK:", file, "has recovery links and noindex.");
+  }
+}
+
+const serverPath = path.join(root, "server.js");
+if (!fs.existsSync(serverPath)) {
+  console.log("WARN: server.js is missing.");
+  warnings += 1;
+} else {
+  const server = fs.readFileSync(serverPath, "utf8");
+  const requiredServer = [
+    "SokoYetu Stage 32E: Friendly Error Pages",
+    "API endpoint not found",
+    "404.html",
+    "500.html"
+  ];
+
+  for (const item of requiredServer) {
+    if (!server.includes(item)) {
+      console.log("WARN: server.js missing:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: server.js includes", item);
+    }
+  }
+}
+
+const sitemapPath = path.join(root, "sitemap.xml");
+if (fs.existsSync(sitemapPath)) {
+  const sitemap = fs.readFileSync(sitemapPath, "utf8");
+  if (sitemap.includes("/404.html") || sitemap.includes("/500.html")) {
+    console.log("WARN: sitemap.xml should not include 404.html or 500.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: sitemap.xml does not include error pages.");
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 32E friendly error pages check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE32E_FRIENDLY_ERROR_PAGES_GUIDE.md"), `# SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
+
+Stage 32E adds friendly recovery pages for broken or unavailable routes.
+
+## New pages
+
+\`\`\`text
+/404.html
+/500.html
+\`\`\`
+
+## Server fallback
+
+The final fallback in \`server.js\` now does the following:
+
+\`\`\`text
+Missing /api/* route → JSON 404 response
+Missing public GET route → 404.html
+Unhandled public error → 500.html
+Unhandled API error → JSON 500 response
+\`\`\`
+
+## Why this matters
+
+Buyers should not land on a blank or confusing error page. They should be able to return to:
+
+\`\`\`text
+Homepage
+Categories
+Seller stores
+Help Center
+Track Order
+Support Request
+\`\`\`
+
+## Search indexing
+
+The error pages use:
+
+\`\`\`text
+noindex
+\`\`\`
+
+They are not added to the sitemap.
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage32e:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/not-a-real-page
+http://localhost:5173/api/not-a-real-endpoint
+http://localhost:5173/404.html
+http://localhost:5173/500.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 32E friendly error pages installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage32e:check");
+console.log("node --check server.js");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/not-a-real-page");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js sitemap.xml 404.html 500.html scripts/check-stage32e-error-pages.js STAGE32E_FRIENDLY_ERROR_PAGES_GUIDE.md");
+console.log('git commit -m "Add friendly error recovery pages"');
+console.log("git push");

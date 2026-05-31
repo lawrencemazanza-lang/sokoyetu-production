@@ -1,4 +1,4 @@
-# SokoYetu Stage 36B: Checkout Routing and STK Repair
+﻿# SokoYetu Mtaani Stage 36B: Checkout Routing and STK Repair
 
 Stage 36B fixes the issue where the cart still opens the old M-PESA modal instead of the full checkout page.
 
@@ -49,3 +49,4 @@ Manual test:
 6. Confirm delivery fee is KES 0.
 7. Submit controlled order.
 8. Confirm STK Push is sent or the exact Daraja error is displayed.
+

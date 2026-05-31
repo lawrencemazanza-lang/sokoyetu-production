@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 30A Soft Launch Check");
+console.log("SokoYetu Mtaani Stage 30A Soft Launch Check");
 console.log("-----------------------------------");
 
 let warnings = 0;
@@ -46,3 +46,4 @@ console.log("- STAGE30A_FINAL_TEST_SCRIPT.md");
 console.log("- STAGE30A_OPERATIONS_CALENDAR.md");
 console.log("");
 console.log("Warnings:", warnings);
+

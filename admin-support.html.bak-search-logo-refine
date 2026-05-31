@@ -1,0 +1,234 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Admin Support Queue</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:75px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .requests{display:grid;gap:14px}
+    .request{border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;background:#fff}
+    .requestTop{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .requestBody{padding:14px;display:grid;gap:12px}
+    .title{font-weight:900}
+    .muted{color:#64748b;font-size:13px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:800px){.requestTop{grid-template-columns:1fr}table{font-size:12px}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Admin Support Queue</h1>
+    <p>Review customer support, delivery, payment, product, cancellation and refund requests.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Admin access and filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Request filter</label>
+          <select id="filter">
+            <option value="">All support requests</option>
+            <option value="REFUND_REQUESTED">Refund requests</option>
+            <option value="CUSTOMER_SUPPORT_REQUESTED">General support requests</option>
+            <option value="SUPPORT_RESOLVED">Resolved notes</option>
+            <option value="SUPPORT_CONTACTED_CUSTOMER">Customer contacted</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Order ID, phone, email, note">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load support queue</button>
+        <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+      </div>
+      <div class="note">This page reuses your admin order token. Support requests are recorded as delivery-tracking notes, so no database migration is needed.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Support requests</div>
+    <div class="body">
+      <div id="summary" class="note">No support requests loaded yet.</div>
+      <div id="requests" class="requests"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let requestList = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pillClass(status){
+  const s = String(status || "").toUpperCase();
+  if (s.includes("FAILED") || s.includes("CANCELLED") || s.includes("REJECT")) return "pill bad";
+  if (s.includes("REFUND") || s.includes("REQUEST") || s.includes("PENDING")) return "pill warn";
+  return "pill";
+}
+async function api(url, options={}){
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {"Content-Type":"application/json","x-admin-order-token": token(), ...(options.headers || {})},
+    ...options
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || "Request failed.");
+  return data;
+}
+function buildUrl(){
+  const params = new URLSearchParams();
+  const filter = document.getElementById("filter").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (filter) params.set("filter", filter);
+  if (q) params.set("q", q);
+  return "/api/admin/support-queue" + (params.toString() ? "?" + params.toString() : "");
+}
+async function loadQueue(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading support queue...</div>');
+  try {
+    const data = await api(buildUrl());
+    requestList = data.requests || [];
+    renderRequests();
+    msg('<div class="ok">Support queue loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load support queue.") + '</div>');
+  }
+}
+function renderRequests(){
+  const wrap = document.getElementById("requests");
+  const summary = document.getElementById("summary");
+
+  if (!requestList.length) {
+    summary.textContent = "No support requests found.";
+    wrap.innerHTML = "";
+    return;
+  }
+
+  const refunds = requestList.filter(r => String(r.status || "").includes("REFUND")).length;
+  summary.innerHTML = '<b>' + requestList.length + '</b> support entries loaded. <b>' + refunds + '</b> refund-related.';
+
+  wrap.innerHTML = requestList.map(req => {
+    const order = req.order || {};
+    const payment = order.payment || {};
+    const user = order.user || {};
+    const items = (order.items || []).map(item => {
+      const product = item.product || {};
+      return '<tr><td>' + esc(product.name || ("Product #" + item.productId)) + '</td><td>' + esc(item.quantity) + '</td><td>' + money(item.price) + '</td></tr>';
+    }).join("") || '<tr><td colspan="3">No items found.</td></tr>';
+
+    return '<article class="request">' +
+      '<div class="requestTop">' +
+        '<div>' +
+          '<div class="title">Support Entry #' + req.id + ' · Order #' + esc(order.id || "-") + '</div>' +
+          '<div class="muted">' + esc(user.email || "Customer") + ' · Phone: ' + esc(order.phone || payment.phone || "-") + ' · ' + esc(req.createdAt ? new Date(req.createdAt).toLocaleString() : "-") + '</div>' +
+        '</div>' +
+        '<div><span class="' + pillClass(req.status) + '">' + esc(req.status) + '</span><span class="' + pillClass(order.orderStatus) + '">' + esc(order.orderStatus || "-") + '</span></div>' +
+      '</div>' +
+      '<div class="requestBody">' +
+        '<div><b>Customer message / admin note</b><br><span class="muted">' + esc(req.note || "-") + '</span></div>' +
+        '<div class="grid">' +
+          '<div><b>Order total</b><br>' + money(order.totalAmount) + '</div>' +
+          '<div><b>Payment status</b><br>' + esc(order.paymentStatus || payment.status || "-") + '</div>' +
+          '<div><b>M-PESA receipt</b><br>' + esc(payment.mpesaReceipt || "-") + '</div>' +
+          '<div><b>Delivery address</b><br>' + esc(order.deliveryAddress || "-") + '</div>' +
+        '</div>' +
+        '<div><b>Items</b><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead><tbody>' + items + '</tbody></table></div>' +
+        '<div class="grid">' +
+          '<div><label>Admin action</label><select id="action-' + req.id + '">' +
+            '<option value="CONTACT_CUSTOMER">Contact customer</option>' +
+            '<option value="CONTACT_SELLER">Contact seller</option>' +
+            '<option value="MARK_RESOLVED">Mark support resolved</option>' +
+            '<option value="KEEP_REFUND_REVIEW">Keep refund under review</option>' +
+            '<option value="MARK_REFUND_REQUESTED">Mark refund requested</option>' +
+            '<option value="CANCEL_ORDER">Cancel order</option>' +
+          '</select></div>' +
+          '<div><label>Admin response note</label><textarea id="note-' + req.id + '" placeholder="Record what admin did or will do next."></textarea></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" onclick="saveAction(' + req.id + ')">Save support action</button></div>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+}
+async function saveAction(trackingId){
+  const action = document.getElementById("action-" + trackingId).value;
+  const note = document.getElementById("note-" + trackingId).value.trim();
+
+  if (!note) {
+    msg('<div class="err">Enter an admin response note before saving.</div>');
+    return;
+  }
+
+  try {
+    msg('<div class="note">Saving support action...</div>');
+    await api("/api/admin/support-queue/" + trackingId + "/action", {
+      method: "POST",
+      body: JSON.stringify({ action, note })
+    });
+    msg('<div class="ok">Support action saved.</div>');
+    await loadQueue();
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not save support action.") + '</div>');
+  }
+}
+document.getElementById("loadBtn").onclick = loadQueue;
+document.getElementById("refreshBtn").onclick = loadQueue;
+window.saveAction = saveAction;
+</script>
+
+<!-- SokoYetu Mtaani internal operations page: noindex/nofollow enabled in Stage 30C -->
+  <script src="/sokoyetu-final-seo.js" defer></script>
+</body>
+</html>
+
+
+

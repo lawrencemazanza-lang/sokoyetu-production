@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 28A Customer Order Tracking Check");
+console.log("SokoYetu Mtaani Stage 28A Customer Order Tracking Check");
 console.log("-----------------------------------------------");
 
 let warnings = 0;
@@ -22,3 +22,4 @@ if (!process.env.SUPPORT_EMAIL) {
 console.log("OK: track-order.html should be available after server restart/deployment.");
 console.log("OK: POST /api/orders/track should be available after server restart/deployment.");
 console.log("Warnings:", warnings);
+

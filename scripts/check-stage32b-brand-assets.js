@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 32B Brand Assets and Manifest Check");
+console.log("SokoYetu Mtaani Stage 32B Brand Assets and Manifest Check");
 console.log("-------------------------------------------------");
 
 let warnings = 0;
@@ -54,7 +54,7 @@ for (const page of pages) {
   const required = [
     "/favicon.svg",
     "/site.webmanifest",
-    "SokoYetu Stage 32B Brand start",
+    "SokoYetu Mtaani Stage 32B Brand start",
     "sokoyetu-share.svg",
     "application-name"
   ];
@@ -90,3 +90,5 @@ if (fs.existsSync(manifestPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 32B brand assets and manifest check passed.");
+
+

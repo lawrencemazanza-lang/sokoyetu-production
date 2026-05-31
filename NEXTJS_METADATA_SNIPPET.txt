@@ -1,0 +1,25 @@
+﻿// Use this in app/layout.js or app/layout.tsx if your project uses Next.js
+
+export const metadata = {
+  title: "SokoYetu Mtaani | Online Shopping & Marketplace in Kenya",
+  description:
+    "Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.",
+  alternates: {
+    canonical: "https://www.mySokoYetu Mtaani.co.ke/",
+  },
+  openGraph: {
+    title: "SokoYetu Mtaani | Online Shopping & Marketplace in Kenya",
+    description:
+      "Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.",
+    url: "https://www.mySokoYetu Mtaani.co.ke/",
+    siteName: "SokoYetu Mtaani",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "SokoYetu Mtaani | Online Shopping & Marketplace in Kenya",
+    description:
+      "Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.",
+  },
+};
+

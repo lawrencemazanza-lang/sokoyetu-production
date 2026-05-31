@@ -1,4 +1,4 @@
-# SokoYetu Stage 31D: Public Product Detail and Share Page
+﻿# SokoYetu Mtaani Stage 31D: Public Product Detail and Share Page
 
 Stage 31D adds a public product-detail page.
 
@@ -60,3 +60,4 @@ Then click a product detail link, or open:
 ```text
 http://localhost:5173/product-detail.html?id=1
 ```
+

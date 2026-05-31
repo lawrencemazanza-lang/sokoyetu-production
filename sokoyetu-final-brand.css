@@ -1,0 +1,154 @@
+﻿/* Final SokoYetu Mtaani header wordmark: 3 colors + search-bar spacing */
+:root {
+  --sy-soko: #111827;      /* black */
+  --sy-yetu: #006b5a;      /* deep marketplace green */
+  --sy-mtaani: #f97316;    /* orange */
+  --sy-mtaani-dark: #ea580c;
+}
+
+/* The original green cart/logo icon remains visible. This styles only the words. */
+.sy-final-wordmark {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 0 !important;
+  white-space: nowrap !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.045em !important;
+  line-height: 1 !important;
+  font-size: clamp(1.18rem, 1.75vw, 1.58rem) !important;
+  font-family: inherit !important;
+  vertical-align: middle !important;
+  text-decoration: none !important;
+}
+
+.sy-final-soko {
+  color: var(--sy-soko) !important;
+}
+
+.sy-final-yetu {
+  color: var(--sy-yetu) !important;
+}
+
+.sy-final-mtaani {
+  color: var(--sy-mtaani) !important;
+  margin-left: 0.08em !important;
+}
+
+/* Reserve enough width for the cart icon + full brand name, so the search bar cannot cover Mtaani. */
+.sy-final-brand-anchor {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.55rem !important;
+  flex: 0 0 265px !important;
+  width: 265px !important;
+  min-width: 265px !important;
+  max-width: 265px !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  z-index: 20 !important;
+  text-decoration: none !important;
+  padding-right: 0.75rem !important;
+}
+
+.sy-final-brand-anchor img,
+.sy-final-brand-anchor svg,
+.sy-final-brand-anchor .logo-icon,
+.sy-final-brand-anchor .brand-icon,
+.sy-final-brand-anchor [class*="icon"] {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+}
+
+/* Make common header layouts respect the reserved brand width. */
+header:has(.sy-final-wordmark),
+.site-header:has(.sy-final-wordmark),
+.main-header:has(.sy-final-wordmark),
+.header-main:has(.sy-final-wordmark),
+.navbar:has(.sy-final-wordmark),
+.top-header:has(.sy-final-wordmark) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 0.75rem !important;
+  overflow: visible !important;
+}
+
+header:has(.sy-final-wordmark) form,
+.site-header:has(.sy-final-wordmark) form,
+.main-header:has(.sy-final-wordmark) form,
+.header-main:has(.sy-final-wordmark) form,
+.navbar:has(.sy-final-wordmark) form,
+.top-header:has(.sy-final-wordmark) form,
+header:has(.sy-final-wordmark) .search-bar,
+header:has(.sy-final-wordmark) .search-box,
+header:has(.sy-final-wordmark) .search-form {
+  flex: 1 1 auto !important;
+  min-width: 260px !important;
+  max-width: none !important;
+  margin-left: 0.25rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Prevent input fields from sitting over the brand name. */
+header:has(.sy-final-wordmark) input[type="search"],
+header:has(.sy-final-wordmark) input[placeholder*="Search"],
+header:has(.sy-final-wordmark) input[placeholder*="search"] {
+  min-width: 0 !important;
+}
+
+/* Previous scripts/classes are normalized into this final look. */
+.sy-wordmark,
+.sy-brand-logo,
+.brand-logo,
+.logo-text {
+  overflow: visible !important;
+}
+
+/* Smaller screen behavior */
+@media (max-width: 900px) {
+  .sy-final-brand-anchor {
+    flex-basis: 215px !important;
+    width: 215px !important;
+    min-width: 215px !important;
+    max-width: 215px !important;
+    gap: 0.38rem !important;
+    padding-right: 0.35rem !important;
+  }
+
+  .sy-final-wordmark {
+    font-size: 1.06rem !important;
+    letter-spacing: -0.035em !important;
+  }
+
+  header:has(.sy-final-wordmark) form,
+  .site-header:has(.sy-final-wordmark) form,
+  .main-header:has(.sy-final-wordmark) form,
+  .header-main:has(.sy-final-wordmark) form,
+  .navbar:has(.sy-final-wordmark) form,
+  .top-header:has(.sy-final-wordmark) form,
+  header:has(.sy-final-wordmark) .search-bar,
+  header:has(.sy-final-wordmark) .search-box,
+  header:has(.sy-final-wordmark) .search-form {
+    min-width: 160px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  header:has(.sy-final-wordmark),
+  .site-header:has(.sy-final-wordmark),
+  .main-header:has(.sy-final-wordmark),
+  .header-main:has(.sy-final-wordmark),
+  .navbar:has(.sy-final-wordmark),
+  .top-header:has(.sy-final-wordmark) {
+    flex-wrap: wrap !important;
+  }
+
+  .sy-final-brand-anchor {
+    flex-basis: auto !important;
+    width: auto !important;
+    min-width: 205px !important;
+    max-width: none !important;
+  }
+}

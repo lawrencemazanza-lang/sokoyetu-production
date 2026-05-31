@@ -1,0 +1,301 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Admin Control Center</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:26px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:30px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 38px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(245px,1fr));gap:14px}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:9px;text-decoration:none;color:#111827;min-height:128px}
+    .tile:hover{outline:3px solid #86efac}
+    .tile b{color:#064e3b;font-size:17px}
+    .tile span{color:#475569;line-height:1.45}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Admin Control Center</h1>
+    <p>One navigation hub for soft-launch operations, order handling, seller review, support, backup, system health and final readiness checks.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to public shop</a>
+
+  <section class="card">
+    <div class="head">Core admin operations</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-orders.html">
+        <b>Admin Orders</b>
+        <span>View orders, payment details, order items, delivery address and update order status.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+      <a class="tile" href="/admin-support.html">
+        <b>Support Queue</b>
+        <span>Review customer support, delivery issue, cancellation and refund requests.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+      <a class="tile" href="/admin-backup.html">
+        <b>Backup and Export</b>
+        <span>Export products, orders, payments, sellers, support notes and user summaries.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+      <a class="tile" href="/admin-system-health.html">
+        <b>System Health</b>
+        <span>Check database health, operational counts, recent orders and launch warnings.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+      <a class="tile" href="/admin-launch.html">
+        <b>Launch Readiness</b>
+        <span>Final go/no-go view for controlled soft launch and first-user testing.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  
+      <a class="tile" href="/admin-product-editor.html">
+        <b>Product Editor</b>
+        <span>Fix product names, categories, descriptions, prices, stock and image URLs after catalogue audit.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller operations</div>
+    <div class="body grid">
+      <a class="tile" href="/seller-onboarding.html">
+        <b>Seller Onboarding Guide</b>
+        <span>Manual seller approval workflow, seller risk rules and message templates.</span>
+        <em class="pill warn">Operations guide</em>
+      </a>
+      <a class="tile" href="/seller-verification.html">
+        <b>Seller Verification Dashboard</b>
+        <span>Review sellers, recent products and risk flags using the safe dashboard.</span>
+        <em class="pill">SELLER_VERIFICATION_TOKEN</em>
+      </a>
+      <a class="tile" href="/seller-verification-persistent.html">
+        <b>Persistent Seller Verification</b>
+        <span>Save seller approval, risk level, decision and admin notes in the database.</span>
+        <em class="pill">SELLER_VERIFICATION_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Customer-facing service pages</div>
+    <div class="body grid">
+      <a class="tile" href="/track-order.html">
+        <b>Track Order</b>
+        <span>Customer order tracking using order ID and checkout phone number.</span>
+        <em class="pill">Public</em>
+      </a>
+      <a class="tile" href="/support-request.html">
+        <b>Support Request</b>
+        <span>Customer support, delivery issue, payment issue, cancellation and refund request portal.</span>
+        <em class="pill">Public</em>
+      </a>
+      <a class="tile" href="/contact-support.html">
+        <b>Contact Support</b>
+        <span>Public support information and customer contact details.</span>
+        <em class="pill">Public</em>
+      </a>
+      <a class="tile" href="/privacy-policy.html">
+        <b>Privacy Policy</b>
+        <span>Customer-facing privacy information.</span>
+        <em class="pill">Public</em>
+      </a>
+      <a class="tile" href="/returns-policy.html">
+        <b>Returns Policy</b>
+        <span>Customer-facing return and refund expectations.</span>
+        <em class="pill">Public</em>
+      </a>
+      <a class="tile" href="/terms-of-service.html">
+        <b>Terms of Service</b>
+        <span>Marketplace terms and customer obligations.</span>
+        <em class="pill">Public</em>
+      </a>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Important soft-launch notes</div>
+    <div class="body">
+      <div class="warnBox">
+        Keep M-PESA in sandbox until production Daraja credentials are issued. Do not invite real buyers to make real payments until production PayBill/Till, shortcode, passkey, consumer key, consumer secret and callback URL are confirmed.
+      </div>
+      <table>
+        <thead><tr><th>Area</th><th>Token or access</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Admin order/support/backup/launch</td><td>ADMIN_ORDER_TOKEN</td><td>Operations and launch control</td></tr>
+          <tr><td>Seller verification</td><td>SELLER_VERIFICATION_TOKEN</td><td>Seller approval review</td></tr>
+          <tr><td>Customer tracking/support</td><td>Order ID + phone number</td><td>Customer privacy protection</td></tr>
+          <tr><td>Public site</td><td>No token</td><td>Buyer browsing and checkout</td></tr>
+        </tbody>
+      </table>
+      <div class="note">This hub does not create new permissions by itself. It only links the pages you have already added, so keep tokens private and rotate them if exposed.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Quality assurance</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-public-audit.html">
+        <b>Public Site QA Audit</b>
+        <span>Check public pages, assets, sitemap, manifest and product API reachability before wider buyer testing.</span>
+        <em class="pill">No secrets exposed</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">Accessibility and mobile usability</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-accessibility-audit.html">
+        <b>Accessibility Audit</b>
+        <span>Check public pages for basic accessibility signals, labels, image alt text, headings and mobile usability assets.</span>
+        <em class="pill">No secrets exposed</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">Payments readiness</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-readiness.html">
+        <b>Production M-PESA Readiness</b>
+        <span>Review Daraja production credentials, callback URL, recent payments and the safe switch plan.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">M-PESA switch safety</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-env-guard.html">
+        <b>M-PESA Environment Guard</b>
+        <span>Map exact M-PESA variables used by server.js and detect missing or unsafe production/live settings.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">M-PESA reconciliation</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-reconciliation.html">
+        <b>M-PESA Reconciliation</b>
+        <span>Review payment records against orders, flag missing receipts, amount mismatches and pending payment evidence.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">M-PESA evidence export</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-evidence.html">
+        <b>M-PESA Evidence Export</b>
+        <span>Download read-only payment and order evidence as CSV or JSON for audit, refund review and Safaricom follow-up.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">M-PESA live test runbook</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-live-test.html">
+        <b>M-PESA Live Test Runbook</b>
+        <span>Use a controlled checklist and local manual log for the first small production payment test.</span>
+        <em class="pill">Local log only</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">M-PESA incident response</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-incident.html">
+        <b>M-PESA Incident Response</b>
+        <span>Use rollback checklist, incident log, evidence capture and escalation templates for payment issues.</span>
+        <em class="pill">Local log only</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">Launch operations</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-launch-war-room.html">
+        <b>Launch War Room</b>
+        <span>Central launch-day dashboard for health checks, operations links, launch checklist and local launch logs.</span>
+        <em class="pill">Local log only</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">Core production readiness</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-core-readiness.html">
+        <b>Core Production Readiness Audit</b>
+        <span>Run a hard audit of launch-critical files, routes, environment variables, database counts, route order and secret exposure.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+
+  <section class="card">
+    <div class="head">Controlled buyer testing</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-buyer-smoke-test.html">
+        <b>Buyer Journey Smoke Test</b>
+        <span>Run read-only checks and record manual buyer-flow test results before launch.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+
+</main>
+
+<!-- SokoYetu Mtaani internal operations page: noindex/nofollow enabled in Stage 30C -->
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+

@@ -1,6 +1,6 @@
-# SokoYetu Stage 30A: Soft Launch and Final Handover
+﻿# SokoYetu Mtaani Stage 30A: Soft Launch and Final Handover
 
-Stage 30A prepares SokoYetu for controlled soft launch.
+Stage 30A prepares SokoYetu Mtaani for controlled soft launch.
 
 ## New page
 
@@ -57,3 +57,4 @@ Soft launch means the site can be tested with trusted users while admin closely 
  /admin-system-health.html
  /admin-launch.html
 ```
+

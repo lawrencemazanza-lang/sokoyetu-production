@@ -1,0 +1,570 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+const robotsPath = path.join(root, "robots.txt");
+const adminControlPath = path.join(root, "admin-control.html");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside the SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage35c-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+backup(robotsPath, "robots");
+backup(adminControlPath, "admin-control");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage35c:check"] = "node scripts/check-stage35c-buyer-smoke.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage35c-buyer-smoke.js"), `const fs = require("fs");
+const path = require("path");
+require("dotenv").config();
+
+const root = process.cwd();
+console.log("SokoYetu Stage 35C Buyer Journey Smoke Test Check");
+console.log("------------------------------------------------");
+let warnings = 0;
+
+const files = [
+  "admin-buyer-smoke-test.html",
+  "scripts/check-stage35c-buyer-smoke.js",
+  "STAGE35C_BUYER_JOURNEY_SMOKE_TEST_GUIDE.md",
+  "STAGE35C_MANUAL_TEST_LOG_TEMPLATE.md"
+];
+
+for (const file of files) {
+  if (!fs.existsSync(path.join(root, file))) {
+    console.log("WARN:", file, "is missing.");
+    warnings++;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const serverPath = path.join(root, "server.js");
+if (fs.existsSync(serverPath)) {
+  const server = fs.readFileSync(serverPath, "utf8");
+  const required = [
+    "SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API",
+    "/api/admin/buyer-journey-smoke",
+    "stage35cBuyerSmokeCounts"
+  ];
+  for (const item of required) {
+    if (!server.includes(item)) {
+      console.log("WARN: server.js missing:", item);
+      warnings++;
+    } else {
+      console.log("OK: server.js includes", item);
+    }
+  }
+  const fallback = server.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
+  const stage = server.indexOf("SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API");
+  if (fallback !== -1 && stage !== -1 && stage > fallback) {
+    console.log("WARN: Stage 35C endpoint appears after final fallback.");
+    warnings++;
+  } else if (fallback !== -1 && stage !== -1) {
+    console.log("OK: Stage 35C endpoint appears before final fallback.");
+  }
+}
+
+if (!process.env.ADMIN_ORDER_TOKEN) {
+  console.log("WARN: ADMIN_ORDER_TOKEN is not set.");
+  warnings++;
+} else {
+  console.log("OK: ADMIN_ORDER_TOKEN =", process.env.ADMIN_ORDER_TOKEN.slice(0, 4) + "...hidden");
+}
+
+if (fs.existsSync(path.join(root, "admin-control.html"))) {
+  const html = fs.readFileSync(path.join(root, "admin-control.html"), "utf8");
+  if (!html.includes("/admin-buyer-smoke-test.html")) {
+    console.log("WARN: admin-control.html does not link admin-buyer-smoke-test.html.");
+    warnings++;
+  } else {
+    console.log("OK: admin-control.html links admin-buyer-smoke-test.html.");
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 35C buyer journey smoke test check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-buyer-smoke-test.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Buyer Journey Smoke Test</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:white;padding:24px}
+    header div,main{width:min(1180px,94vw);margin:0 auto}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    h1{margin:0;font-size:28px} header p{color:#dcfce7}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:20px;box-shadow:0 14px 34px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:14px 16px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:88px}
+    button,.linkbtn{border:0;border-radius:14px;background:#16a34a;color:white;padding:11px 14px;font-weight:900;text-decoration:none;cursor:pointer;width:fit-content}
+    .secondary{background:#111827}.danger{background:#991b1b}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px}
+    .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px}
+    .bad{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px}
+    .metric{border:1px solid #e5e7eb;border-radius:16px;padding:14px;background:#f8fafc}.metric b{display:block;font-size:22px;color:#064e3b}
+    table{width:100%;border-collapse:collapse;font-size:13px}th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}th{background:#f1f5f9}
+    .pill{display:inline-flex;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:900;background:#dcfce7;color:#166534}.pill.bad{background:#fee2e2;color:#991b1b}.pill.warn{background:#fef3c7;color:#92400e}
+    .checkitem{border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;padding:10px;display:flex;gap:10px}.checkitem input{width:auto}
+  </style>
+</head>
+<body>
+<header><div><h1>SokoYetu Buyer Journey Smoke Test</h1><p>Controlled test for homepage, categories, product detail, cart, checkout, tracking, admin order visibility and payment-status review.</p></div></header>
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">Back to admin control</a>
+    <a class="linkbtn secondary" href="/">Homepage</a>
+    <a class="linkbtn secondary" href="/categories.html">Categories</a>
+    <a class="linkbtn secondary" href="/checkout.html">Checkout</a>
+    <a class="linkbtn secondary" href="/track-order.html">Track order</a>
+    <a class="linkbtn secondary" href="/admin-orders.html">Admin orders</a>
+  </div>
+
+  <section class="card"><div class="head">Read-only checks</div><div class="body">
+    <div><label>Admin order token</label><input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN"></div>
+    <div class="actions"><button onclick="runApi()">Run API smoke check</button><button class="secondary" onclick="runBrowser()">Run browser page checks</button></div>
+    <div class="warn">This page does not automatically create orders or trigger M-PESA. The final order test is manual.</div>
+    <div id="message"></div>
+  </div></section>
+
+  <section class="card" id="summaryCard" style="display:none"><div class="head">Summary</div><div class="body"><div id="decision"></div><div id="summary" class="grid"></div></div></section>
+  <section class="card" id="detailsCard" style="display:none"><div class="head">Details</div><div class="body" id="details"></div></section>
+
+  <section class="card"><div class="head">Manual buyer journey checklist</div><div class="body">
+    <div id="checklist"></div>
+    <div class="actions"><button onclick="saveChecklist()">Save checklist</button><button class="danger" onclick="clearChecklist()">Clear checklist</button></div>
+    <div id="checkMsg"></div>
+  </div></section>
+
+  <section class="card"><div class="head">Manual test log</div><div class="body">
+    <div class="grid">
+      <div><label>Tester</label><input id="tester"></div>
+      <div><label>Result</label><select id="result"><option>pass</option><option>review</option><option>fail</option></select></div>
+      <div><label>Order ID</label><input id="orderId"></div>
+      <div><label>Checkout phone</label><input id="phone"></div>
+      <div><label>Product ID</label><input id="productId"></div>
+      <div><label>Payment status</label><input id="paymentStatus"></div>
+    </div>
+    <label>Notes</label><textarea id="notes"></textarea>
+    <div class="actions"><button onclick="addLog()">Add log</button><button class="secondary" onclick="exportLogs('csv')">Export CSV</button><button class="secondary" onclick="exportLogs('json')">Export JSON</button><button class="danger" onclick="clearLogs()">Clear logs</button></div>
+    <div id="logMsg"></div>
+  </div></section>
+
+  <section class="card"><div class="head">Saved logs</div><div class="body"><div id="logSummary" class="grid"></div><table><thead><tr><th>Date</th><th>Tester</th><th>Result</th><th>Order</th><th>Phone</th><th>Product</th><th>Payment</th><th>Notes</th></tr></thead><tbody id="logs"></tbody></table></div></section>
+</main>
+
+<script>
+const CHECK_KEY = "sokoyetu_stage35c_checks";
+const LOG_KEY = "sokoyetu_stage35c_logs";
+const checklistItems = [
+  "Homepage opens.",
+  "Categories page opens.",
+  "Products load on categories page.",
+  "Product detail opens from a product card.",
+  "Product can be added to cart.",
+  "Cart total looks correct.",
+  "Checkout opens.",
+  "Checkout accepts controlled test details.",
+  "Order can be submitted through normal buyer flow.",
+  "Order ID is recorded.",
+  "Track Order finds the order.",
+  "Admin Orders shows the order.",
+  "Payment status is visible and consistent.",
+  "M-PESA sandbox/live behaviour matches current mode.",
+  "Evidence or screenshots are saved if issue appears."
+];
+
+function esc(v){return String(v??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;"}[m]));}
+function pill(kind,text){return '<span class="pill '+(kind||"")+'">'+esc(text)+'</span>';}
+function msg(html){document.getElementById("message").innerHTML=html;}
+function table(headers,rows){return '<table><thead><tr>'+headers.map(h=>'<th>'+esc(h)+'</th>').join("")+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(c=>'<td>'+c+'</td>').join("")+'</tr>').join("")+'</tbody></table>';}
+async function runApi(){
+  const token=document.getElementById("token").value.trim();
+  if(!token){msg('<div class="bad">Admin token is required.</div>');return;}
+  msg('<div class="note">Running smoke check...</div>');
+  try{
+    const res=await fetch("/api/admin/buyer-journey-smoke",{headers:{"x-admin-order-token":token},cache:"no-store"});
+    const data=await res.json();
+    if(!res.ok)throw new Error(data.message||"Smoke check failed.");
+    renderApi(data);
+    msg('<div class="ok">Smoke check completed.</div>');
+  }catch(e){msg('<div class="bad">'+esc(e.message)+'</div>');}
+}
+function renderApi(data){
+  const blockers=data.blockers||[], warnings=data.warnings||[], files=data.fileChecks||[], routes=data.routeChecks||[], counts=data.counts||[];
+  document.getElementById("decision").innerHTML=blockers.length?'<div class="bad"><b>Decision: HOLD</b></div>':warnings.length?'<div class="warn"><b>Decision: REVIEW</b></div>':'<div class="ok"><b>Decision: READY FOR CONTROLLED MANUAL BUYER TEST</b></div>';
+  const prod=(counts.find(c=>c.model==="product")||{}).count ?? "-";
+  document.getElementById("summary").innerHTML='<div class="metric">Blockers<b>'+blockers.length+'</b></div><div class="metric">Warnings<b>'+warnings.length+'</b></div><div class="metric">Products<b>'+esc(prod)+'</b></div><div class="metric">Sample product<b>'+(data.sampleProduct?("#"+esc(data.sampleProduct.id)):"-")+'</b></div>';
+  const sample=data.sampleProduct?'<div class="note">Sample product: #'+esc(data.sampleProduct.id)+' '+esc(data.sampleProduct.name||data.sampleProduct.title||"")+'<br><a target="_blank" href="/product-detail.html?id='+esc(data.sampleProduct.id)+'">Open sample product</a></div>':'<div class="warn">No sample product returned.</div>';
+  document.getElementById("details").innerHTML=sample+
+    '<h3>Blockers</h3><div>'+(blockers.length?blockers.map(esc).join("<br>"):"None")+'</div>'+
+    '<h3>Warnings</h3><div>'+(warnings.length?warnings.map(esc).join("<br>"):"None")+'</div>'+
+    '<h3>Files</h3>'+table(["File","Status","Note"],files.map(f=>[esc(f.file),f.exists?pill("", "EXISTS"):pill(f.critical?"bad":"warn","MISSING"),esc(f.note||"")]))+
+    '<h3>Routes</h3>'+table(["Pattern","Status","Note"],routes.map(r=>[esc(r.pattern),r.found?pill("","FOUND"):pill(r.critical?"bad":"warn","MISSING"),esc(r.note||"")]))+
+    '<h3>Counts</h3>'+table(["Model","Status","Count"],counts.map(c=>[esc(c.model),c.available?pill("","AVAILABLE"):pill("warn","NOT FOUND"),esc(c.count??"-")]));
+  document.getElementById("summaryCard").style.display="block";document.getElementById("detailsCard").style.display="block";
+}
+async function runBrowser(){
+  const checks=[["Homepage","/"],["Categories","/categories.html"],["Checkout","/checkout.html"],["Track order","/track-order.html"],["Products API","/api/products"],["Health API","/api/health"]];
+  const rows=[];
+  for(const [name,url] of checks){
+    try{const r=await fetch(url,{cache:"no-store"});rows.push([esc(name),'<a target="_blank" href="'+esc(url)+'">'+esc(url)+'</a>',r.ok?pill("","OK"):pill("bad","FAIL"),"HTTP "+r.status]);}
+    catch(e){rows.push([esc(name),esc(url),pill("bad","FAIL"),esc(e.message)]);}
+  }
+  document.getElementById("decision").innerHTML='<div class="note">Browser checks completed.</div>';
+  document.getElementById("summary").innerHTML='<div class="metric">Checks<b>'+rows.length+'</b></div>';
+  document.getElementById("details").innerHTML=table(["Area","URL","Status","Note"],rows);
+  document.getElementById("summaryCard").style.display="block";document.getElementById("detailsCard").style.display="block";
+}
+function getChecks(){try{return JSON.parse(localStorage.getItem(CHECK_KEY)||"{}")}catch{return {}}}
+function renderChecklist(){const c=getChecks();document.getElementById("checklist").innerHTML=checklistItems.map((t,i)=>'<label class="checkitem"><input type="checkbox" id="c'+i+'" '+(c[i]?"checked":"")+'> <span>'+esc(t)+'</span></label>').join("");}
+function saveChecklist(){const c={};checklistItems.forEach((_,i)=>c[i]=document.getElementById("c"+i).checked);localStorage.setItem(CHECK_KEY,JSON.stringify(c));document.getElementById("checkMsg").innerHTML='<div class="ok">Checklist saved.</div>';}
+function clearChecklist(){localStorage.removeItem(CHECK_KEY);renderChecklist();}
+function getLogs(){try{return JSON.parse(localStorage.getItem(LOG_KEY)||"[]")}catch{return []}}
+function saveLogs(l){localStorage.setItem(LOG_KEY,JSON.stringify(l))}
+function addLog(){const logs=getLogs();const row={createdAt:new Date().toISOString(),tester:tester.value.trim(),result:result.value,orderId:orderId.value.trim(),phone:phone.value.trim(),productId:productId.value.trim(),paymentStatus:paymentStatus.value.trim(),notes:notes.value.trim()};if(!row.tester||!row.notes){logMsg.innerHTML='<div class="bad">Tester and notes are required.</div>';return;}logs.unshift(row);saveLogs(logs);renderLogs();logMsg.innerHTML='<div class="ok">Log saved.</div>';}
+function renderLogs(){const logs=getLogs();logSummary.innerHTML='<div class="metric">Logs<b>'+logs.length+'</b></div>';document.getElementById("logs").innerHTML=logs.length?logs.map(l=>'<tr><td>'+esc(new Date(l.createdAt).toLocaleString())+'</td><td>'+esc(l.tester)+'</td><td>'+esc(l.result)+'</td><td>'+esc(l.orderId||"-")+'</td><td>'+esc(l.phone||"-")+'</td><td>'+esc(l.productId||"-")+'</td><td>'+esc(l.paymentStatus||"-")+'</td><td>'+esc(l.notes||"-")+'</td></tr>').join(""):'<tr><td colspan="8">No logs saved.</td></tr>';}
+function exportLogs(format){const logs=getLogs();if(!logs.length)return;let data, type, filename;if(format==="json"){data=JSON.stringify({generatedAt:new Date().toISOString(),logs},null,2);type="application/json";filename="sokoyetu-stage35c-smoke-log.json";}else{const h=Object.keys(logs[0]);data=h.join(",")+"\\n"+logs.map(r=>h.map(k=>String(r[k]??"").replace(/"/g,'""')).join(",")).join("\\n");type="text/csv";filename="sokoyetu-stage35c-smoke-log.csv";}const blob=new Blob([data],{type});const a=document.createElement("a");a.href=URL.createObjectURL(blob);a.download=filename;a.click();}
+function clearLogs(){localStorage.removeItem(LOG_KEY);renderLogs();}
+renderChecklist();renderLogs();
+</script>
+</body>
+</html>`, "utf8");
+
+// Patch server.js
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API
+// Read-only buyer journey smoke test. Does not create orders or trigger payments.
+// ================================
+function requireStage35cBuyerSmokeToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+async function stage35cSafeCount(modelName) {
+  try {
+    let client = null;
+    try { if (typeof prisma !== "undefined") client = prisma; } catch (_) {}
+    if (!client && global.prisma) client = global.prisma;
+
+    if (!client || !client[modelName] || typeof client[modelName].count !== "function") {
+      return { model: modelName, available: false, count: null, note: "Model not found on Prisma client." };
+    }
+
+    const count = await client[modelName].count();
+    return { model: modelName, available: true, count, note: count === 0 ? "No records found." : "Records found." };
+  } catch (error) {
+    return { model: modelName, available: false, count: null, note: error.message };
+  }
+}
+
+async function stage35cBuyerSmokeCounts() {
+  const models = ["product", "order", "payment", "user"];
+  const out = [];
+  for (const model of models) out.push(await stage35cSafeCount(model));
+  return out;
+}
+
+function stage35cFileChecks(rootDir) {
+  const files = [
+    { file: "index.html", critical: true, note: "Homepage must open." },
+    { file: "categories.html", critical: true, note: "Product browsing page must open." },
+    { file: "product-detail.html", critical: true, note: "Product detail page must open." },
+    { file: "checkout.html", critical: true, note: "Checkout page must open." },
+    { file: "track-order.html", critical: true, note: "Order tracking page must open." },
+    { file: "support-request.html", critical: false, note: "Support request page should exist." },
+    { file: "admin-orders.html", critical: true, note: "Admin order monitoring must open." },
+    { file: "admin-mpesa-reconciliation.html", critical: true, note: "Payment reconciliation must open." },
+  ];
+
+  return files.map((item) => ({
+    ...item,
+    exists: require("fs").existsSync(require("path").join(rootDir, item.file)),
+  }));
+}
+
+function stage35cRouteChecks(serverText) {
+  const checks = [
+    { pattern: "/api/health", critical: true, note: "Health endpoint must exist." },
+    { pattern: "/api/products", critical: true, note: "Products API must exist." },
+    { pattern: "/api/products/:id", critical: true, note: "Product detail API must exist." },
+    { pattern: "/api/cart", critical: true, note: "Cart API pattern should exist." },
+    { pattern: "/api/orders", critical: true, note: "Order API pattern should exist." },
+    { pattern: "/api/orders/track", critical: true, note: "Order tracking route should exist." },
+    { pattern: "/api/payments/:orderId/status", critical: true, note: "Payment status route should exist." },
+    { pattern: "/api/admin/orders", critical: true, note: "Admin orders route should exist." },
+    { pattern: "ADMIN_ORDER_TOKEN", critical: true, note: "Admin token protection should exist." },
+  ];
+
+  return checks.map((item) => ({ ...item, found: serverText.includes(item.pattern) }));
+}
+
+async function stage35cSampleProduct() {
+  try {
+    let client = null;
+    try { if (typeof prisma !== "undefined") client = prisma; } catch (_) {}
+    if (!client && global.prisma) client = global.prisma;
+    if (!client || !client.product || typeof client.product.findFirst !== "function") return null;
+
+    return await client.product.findFirst({
+      orderBy: { id: "asc" },
+      select: { id: true, name: true, title: true, price: true, stock: true, imageUrl: true },
+    });
+  } catch (_) {
+    return null;
+  }
+}
+
+app.get("/api/admin/buyer-journey-smoke", async (req, res) => {
+  try {
+    if (!requireStage35cBuyerSmokeToken(req, res)) return;
+
+    const fs = require("fs");
+    const pathModule = require("path");
+    const rootDir = __dirname;
+    const serverText = fs.readFileSync(pathModule.join(rootDir, "server.js"), "utf8");
+
+    const blockers = [];
+    const warnings = [];
+    const fileChecks = stage35cFileChecks(rootDir);
+    const routeChecks = stage35cRouteChecks(serverText);
+
+    for (const item of fileChecks) {
+      if (!item.exists && item.critical) blockers.push("Critical buyer-flow file missing: " + item.file);
+      else if (!item.exists) warnings.push("Optional buyer-flow file missing: " + item.file);
+    }
+
+    for (const item of routeChecks) {
+      if (!item.found && item.critical) blockers.push("Critical buyer-flow route/code pattern missing: " + item.pattern);
+      else if (!item.found) warnings.push("Optional buyer-flow route/code pattern missing: " + item.pattern);
+    }
+
+    const counts = await stage35cBuyerSmokeCounts();
+    const productCount = counts.find((item) => item.model === "product");
+
+    if (!productCount || !productCount.available) blockers.push("Could not verify product count.");
+    else if (productCount.count === 0) blockers.push("Product table has zero products.");
+
+    const sampleProduct = await stage35cSampleProduct();
+    if (!sampleProduct) blockers.push("No sample product could be selected.");
+
+    const mpesaMode = process.env.MPESA_ENV || process.env.MPESA_MODE || "";
+    if (!mpesaMode) warnings.push("M-PESA mode is not set; confirm expected checkout/payment behaviour manually.");
+
+    const decision = blockers.length ? "HOLD" : warnings.length ? "REVIEW" : "READY_FOR_CONTROLLED_MANUAL_BUYER_TEST";
+
+    return res.json({
+      message: "Buyer journey smoke test loaded.",
+      generatedAt: new Date().toISOString(),
+      decision,
+      blockers,
+      warnings,
+      mpesaMode,
+      fileChecks,
+      routeChecks,
+      counts,
+      sampleProduct,
+      note: "Read-only API. No order or payment was created by this smoke check.",
+    });
+  } catch (error) {
+    console.error("Buyer journey smoke test error:", error);
+    return res.status(500).json({ message: "Could not run buyer journey smoke test.", details: error.message });
+  }
+});
+`;
+
+  const fallbackIndex = server.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
+  let insertIndex = -1;
+  if (fallbackIndex !== -1) {
+    const lineStart = server.lastIndexOf("\n", fallbackIndex);
+    insertIndex = lineStart === -1 ? fallbackIndex : lineStart + 1;
+  } else {
+    insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  }
+
+  if (insertIndex !== -1) server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  else server += endpoint;
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 35C buyer journey smoke test endpoint to server.js.");
+} else {
+  console.log("Stage 35C endpoint already exists.");
+}
+
+if (fs.existsSync(adminControlPath)) {
+  let control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-buyer-smoke-test.html")) {
+    const section = `
+  <section class="card">
+    <div class="head">Controlled buyer testing</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-buyer-smoke-test.html">
+        <b>Buyer Journey Smoke Test</b>
+        <span>Run read-only checks and record manual buyer-flow test results before launch.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+`;
+    if (control.includes("</main>")) control = control.replace("</main>", section + "\n</main>");
+    else control += section;
+    fs.writeFileSync(adminControlPath, control, "utf8");
+    console.log("Added buyer smoke test link to admin-control.html.");
+  }
+}
+
+let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, "utf8") : "User-agent: *\nAllow: /\n";
+if (!robots.includes("Disallow: /admin-buyer-smoke-test.html")) {
+  robots += "\nDisallow: /admin-buyer-smoke-test.html\n";
+  fs.writeFileSync(robotsPath, robots, "utf8");
+  console.log("Updated robots.txt.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE35C_BUYER_JOURNEY_SMOKE_TEST_GUIDE.md"), `# SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test
+
+Stage 35C checks the real buyer journey before production launch.
+
+## New page
+
+\`\`\`text
+/admin-buyer-smoke-test.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/buyer-journey-smoke
+\`\`\`
+
+## What it checks
+
+\`\`\`text
+Homepage
+Categories
+Product detail
+Checkout
+Track order
+Support request
+Admin orders
+M-PESA reconciliation
+Product count
+Sample product
+Core API route patterns
+\`\`\`
+
+## What it does not do
+
+\`\`\`text
+It does not automatically create orders.
+It does not trigger M-PESA.
+It does not modify payments.
+It does not edit products.
+It does not change database schema.
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage35c:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/admin-buyer-smoke-test.html
+\`\`\`
+`);
+
+fs.writeFileSync(path.join(root, "STAGE35C_MANUAL_TEST_LOG_TEMPLATE.md"), `# Stage 35C: Manual Buyer Journey Test Log Template
+
+## Test result
+
+\`\`\`text
+PASS / REVIEW / FAIL
+\`\`\`
+
+## Evidence
+
+\`\`\`text
+Product ID:
+Order ID:
+Checkout phone:
+Payment status:
+Admin order status:
+Track order status:
+Notes:
+\`\`\`
+
+## Checklist
+
+- [ ] Homepage opens.
+- [ ] Categories load products.
+- [ ] Product detail opens.
+- [ ] Product can be added to cart.
+- [ ] Checkout opens.
+- [ ] Test order is submitted.
+- [ ] Order ID is recorded.
+- [ ] Track order works.
+- [ ] Admin orders shows the order.
+- [ ] Payment status is visible.
+- [ ] M-PESA/sandbox behaviour is understood.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 35C buyer journey smoke test installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage35c:check");
+console.log("node --check server.js");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-buyer-smoke-test.html");

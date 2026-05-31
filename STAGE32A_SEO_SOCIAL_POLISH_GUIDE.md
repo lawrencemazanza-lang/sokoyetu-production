@@ -1,4 +1,4 @@
-# SokoYetu Stage 32A: SEO, Social Sharing and Public Metadata Polish
+﻿# SokoYetu Mtaani Stage 32A: SEO, Social Sharing and Public Metadata Polish
 
 Stage 32A improves metadata on public-facing pages.
 
@@ -41,7 +41,7 @@ seller-policy.html
 ## Additional file
 
 ```text
-sokoyetu-structured-data.json
+SokoYetu Mtaani-structured-data.json
 ```
 
 ## What this stage does not touch
@@ -74,3 +74,4 @@ http://localhost:5173/
 http://localhost:5173/categories.html
 http://localhost:5173/help-center.html
 ```
+

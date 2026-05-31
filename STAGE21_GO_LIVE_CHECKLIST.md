@@ -1,4 +1,4 @@
-# SokoYetu Stage 21 Go-Live Checklist
+﻿# SokoYetu Mtaani Stage 21 Go-Live Checklist
 
 ## Deployment
 
@@ -88,3 +88,4 @@
 - [ ] Support email works.
 - [ ] Domain works.
 - [ ] Ready for soft launch.
+

@@ -1,0 +1,619 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage29b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage29b:check"] = "node scripts/check-stage29b-backup-export.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage29b-backup-export.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 29B Admin Backup and Export Check");
+console.log("-----------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.ADMIN_ORDER_TOKEN) {
+  console.log("WARN: ADMIN_ORDER_TOKEN is not set. Backup/export page reuses this token.");
+  warnings += 1;
+} else {
+  console.log("OK: ADMIN_ORDER_TOKEN =", process.env.ADMIN_ORDER_TOKEN.slice(0, 4) + "...hidden");
+}
+
+if (!process.env.DATABASE_URL) {
+  console.log("WARN: DATABASE_URL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: DATABASE_URL =", process.env.DATABASE_URL.slice(0, 4) + "...hidden");
+}
+
+console.log("OK: admin-backup.html should be available after server restart/deployment.");
+console.log("OK: /api/admin/export/:type should be available after server restart/deployment.");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-backup.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Admin Backup and Export</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .small{font-size:13px;color:#64748b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left}
+    th{background:#f1f5f9}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}table{font-size:12px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Admin Backup and Export</h1>
+    <p>Protected operational exports for products, orders, payments, sellers, support notes and users.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Export access</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Data type</label>
+          <select id="type">
+            <option value="orders">Orders</option>
+            <option value="payments">Payments</option>
+            <option value="products">Products</option>
+            <option value="sellers">Sellers</option>
+            <option value="support">Support notes</option>
+            <option value="users">Users summary</option>
+          </select>
+        </div>
+        <div>
+          <label>Format</label>
+          <select id="format">
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions">
+        <button id="previewBtn" type="button">Preview export</button>
+        <button id="downloadBtn" class="secondary" type="button">Download export</button>
+      </div>
+      <div class="warn">Treat exported files as sensitive business data. Store them safely and do not share them publicly.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Export preview</div>
+    <div class="body">
+      <div id="summary" class="note">No export loaded yet.</div>
+      <div id="preview"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Backup routine</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Frequency</th><th>Action</th><th>Purpose</th></tr></thead>
+        <tbody>
+          <tr><td>Daily during soft launch</td><td>Export orders and payments</td><td>Keep a manual operational record</td></tr>
+          <tr><td>Weekly</td><td>Export products, sellers and support notes</td><td>Track catalogue and seller activity</td></tr>
+          <tr><td>Before major changes</td><td>Export all available data</td><td>Have a restore reference before deployments</td></tr>
+          <tr><td>Monthly</td><td>Check database provider backup settings</td><td>Confirm full database recovery route</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function type(){ return document.getElementById("type").value; }
+function format(){ return document.getElementById("format").value; }
+
+async function fetchExport(){
+  if (!token()) throw new Error("Admin order token is required.");
+  const url = "/api/admin/export/" + encodeURIComponent(type()) + "?format=" + encodeURIComponent(format());
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {"x-admin-order-token": token()}
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || "Export failed.");
+  }
+  return response;
+}
+
+async function previewExport(){
+  msg('<div class="note">Loading export preview...</div>');
+  document.getElementById("preview").innerHTML = "";
+  try {
+    const currentFormat = format();
+    const response = await fetchExport();
+    const text = await response.text();
+    const rows = currentFormat === "json" ? JSON.parse(text) : parseCsv(text);
+    renderPreview(rows, currentFormat);
+    msg('<div class="ok">Preview loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not preview export.") + '</div>');
+  }
+}
+
+function parseCsv(text){
+  const lines = String(text || "").split(/\\r?\\n/).filter(Boolean);
+  if (!lines.length) return [];
+  const headers = splitCsvLine(lines[0]);
+  return lines.slice(1, 26).map(line => {
+    const values = splitCsvLine(line);
+    const row = {};
+    headers.forEach((h, i) => row[h] = values[i] || "");
+    return row;
+  });
+}
+
+function splitCsvLine(line){
+  const out = [];
+  let cur = "";
+  let quote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    const n = line[i + 1];
+    if (c === '"' && quote && n === '"') { cur += '"'; i++; continue; }
+    if (c === '"') { quote = !quote; continue; }
+    if (c === "," && !quote) { out.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+
+function renderPreview(rows, currentFormat){
+  const summary = document.getElementById("summary");
+  const preview = document.getElementById("preview");
+  const list = Array.isArray(rows) ? rows : (rows.data || []);
+  summary.innerHTML = '<b>' + list.length + '</b> preview row(s) loaded. CSV preview is limited to the first 25 rows.';
+
+  if (!list.length) {
+    preview.innerHTML = '<div class="note">No rows found.</div>';
+    return;
+  }
+
+  const keys = Object.keys(list[0]).slice(0, 8);
+  preview.innerHTML = '<table><thead><tr>' + keys.map(k => '<th>' + esc(k) + '</th>').join("") + '</tr></thead><tbody>' +
+    list.slice(0, 25).map(row => '<tr>' + keys.map(k => '<td>' + esc(row[k]) + '</td>').join("") + '</tr>').join("") +
+    '</tbody></table>';
+}
+
+async function downloadExport(){
+  msg('<div class="note">Preparing download...</div>');
+  try {
+    const response = await fetchExport();
+    const blob = await response.blob();
+    const contentDisposition = response.headers.get("Content-Disposition") || "";
+    const fallback = "sokoyetu-" + type() + "-export." + format();
+    const match = contentDisposition.match(/filename="?([^"]+)"?/i);
+    const filename = match ? match[1] : fallback;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    msg('<div class="ok">Download started: ' + esc(filename) + '</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not download export.") + '</div>');
+  }
+}
+
+document.getElementById("previewBtn").onclick = previewExport;
+document.getElementById("downloadBtn").onclick = downloadExport;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 29B: Admin Backup Export API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 29B: Admin Backup Export API
+// Protected by ADMIN_ORDER_TOKEN. Exports operational data without exposing secrets.
+// ================================
+function requireAdminBackupToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage29bFlatten(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString();
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function stage29bCsv(rows) {
+  if (!rows.length) return "message\\nNo records found\\n";
+  const headers = Object.keys(rows[0]);
+  const escape = (value) => {
+    const text = stage29bFlatten(value);
+    if (/[",\\n\\r]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+    return text;
+  };
+  return headers.join(",") + "\\n" + rows.map((row) => headers.map((h) => escape(row[h])).join(",")).join("\\n");
+}
+
+function stage29bSendExport(req, res, type, rows) {
+  const format = String(req.query.format || "csv").toLowerCase() === "json" ? "json" : "csv";
+  const stamp = new Date().toISOString().slice(0, 10);
+  const filename = \`sokoyetu-\${type}-export-\${stamp}.\${format}\`;
+
+  res.setHeader("Content-Disposition", \`attachment; filename="\${filename}"\`);
+
+  if (format === "json") {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.send(JSON.stringify(rows, null, 2));
+  }
+
+  res.setHeader("Content-Type", "text/csv; charset=utf-8");
+  return res.send(stage29bCsv(rows));
+}
+
+app.get("/api/admin/export/:type", async (req, res) => {
+  try {
+    if (!requireAdminBackupToken(req, res)) return;
+
+    const type = String(req.params.type || "").toLowerCase();
+    let rows = [];
+
+    if (type === "products") {
+      const products = await prisma.product.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        select: {
+          id: true,
+          name: true,
+          description: true,
+          category: true,
+          price: true,
+          oldPrice: true,
+          stock: true,
+          imageUrl: true,
+          sellerId: true,
+          createdAt: true,
+        },
+      });
+
+      rows = products.map((p) => ({
+        id: p.id,
+        name: p.name,
+        category: p.category,
+        price: p.price,
+        oldPrice: p.oldPrice,
+        stock: p.stock,
+        sellerId: p.sellerId,
+        hasImage: Boolean(p.imageUrl),
+        imageUrl: p.imageUrl,
+        createdAt: p.createdAt,
+        description: p.description,
+      }));
+    } else if (type === "orders") {
+      const orders = await prisma.order.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: {
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          payment: true,
+          items: true,
+        },
+      });
+
+      rows = orders.map((o) => ({
+        id: o.id,
+        userId: o.userId,
+        customerName: o.user?.name,
+        customerEmail: o.user?.email,
+        customerPhone: o.phone || o.user?.phone || o.payment?.phone,
+        totalAmount: o.totalAmount,
+        deliveryFee: o.deliveryFee,
+        paymentMethod: o.paymentMethod,
+        paymentStatus: o.paymentStatus,
+        orderStatus: o.orderStatus,
+        deliveryAddress: o.deliveryAddress,
+        itemCount: o.items?.length || 0,
+        checkoutRequestId: o.payment?.checkoutRequestId,
+        mpesaReceipt: o.payment?.mpesaReceipt,
+        createdAt: o.createdAt,
+      }));
+    } else if (type === "payments") {
+      const payments = await prisma.payment.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: { order: { select: { id: true, orderStatus: true, paymentStatus: true, totalAmount: true } } },
+      });
+
+      rows = payments.map((p) => ({
+        id: p.id,
+        orderId: p.orderId,
+        provider: p.provider,
+        phone: p.phone,
+        amount: p.amount,
+        status: p.status,
+        checkoutRequestId: p.checkoutRequestId,
+        mpesaReceipt: p.mpesaReceipt,
+        orderStatus: p.order?.orderStatus,
+        orderPaymentStatus: p.order?.paymentStatus,
+        createdAt: p.createdAt,
+      }));
+    } else if (type === "sellers") {
+      const sellers = await prisma.user.findMany({
+        where: { role: "seller" },
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: { products: { select: { id: true, name: true, stock: true, price: true } } },
+      });
+
+      rows = sellers.map((s) => ({
+        id: s.id,
+        name: s.name,
+        email: s.email,
+        phone: s.phone,
+        role: s.role,
+        productCount: s.products?.length || 0,
+        totalStock: (s.products || []).reduce((sum, p) => sum + Number(p.stock || 0), 0),
+        createdAt: s.createdAt,
+      }));
+    } else if (type === "support") {
+      const supportNotes = await prisma.deliveryTracking.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        include: {
+          order: {
+            select: {
+              id: true,
+              phone: true,
+              orderStatus: true,
+              paymentStatus: true,
+              totalAmount: true,
+              user: { select: { email: true, name: true } },
+            },
+          },
+        },
+      });
+
+      rows = supportNotes.map((t) => ({
+        id: t.id,
+        orderId: t.orderId,
+        status: t.status,
+        note: t.note,
+        orderStatus: t.order?.orderStatus,
+        paymentStatus: t.order?.paymentStatus,
+        orderPhone: t.order?.phone,
+        customerEmail: t.order?.user?.email,
+        createdAt: t.createdAt,
+      }));
+    } else if (type === "users") {
+      const users = await prisma.user.findMany({
+        orderBy: { id: "desc" },
+        take: 5000,
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          phone: true,
+          role: true,
+          createdAt: true,
+        },
+      });
+
+      rows = users.map((u) => ({
+        id: u.id,
+        name: u.name,
+        email: u.email,
+        phone: u.phone,
+        role: u.role,
+        createdAt: u.createdAt,
+      }));
+    } else {
+      return res.status(400).json({
+        message: "Invalid export type. Use products, orders, payments, sellers, support, or users.",
+      });
+    }
+
+    return stage29bSendExport(req, res, type, rows);
+  } catch (error) {
+    console.error("Admin export error:", error);
+    return res.status(500).json({
+      message: "Could not export data.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 29B admin export endpoint to server.js.");
+} else {
+  console.log("Stage 29B endpoint already exists.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE29B_BACKUP_EXPORT_GUIDE.md"), `# SokoYetu Stage 29B: Admin Backup and Data Export
+
+Stage 29B adds protected operational exports.
+
+## New page
+
+\`\`\`text
+/admin-backup.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/export/:type
+\`\`\`
+
+## Token
+
+This page reuses:
+
+\`\`\`env
+ADMIN_ORDER_TOKEN
+\`\`\`
+
+## Export types
+
+\`\`\`text
+products
+orders
+payments
+sellers
+support
+users
+\`\`\`
+
+## Export formats
+
+\`\`\`text
+CSV
+JSON
+\`\`\`
+
+## Recommended backup routine
+
+| Frequency | Export |
+|---|---|
+| Daily during soft launch | Orders and payments |
+| Weekly | Products, sellers and support notes |
+| Before major deployments | All available exports |
+| Monthly | Confirm database provider backup/recovery route |
+
+## Security note
+
+Exported files may include customer emails, phone numbers, delivery addresses, payment references and order information. Store them safely and do not upload them publicly.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE29B_BACKUP_RECOVERY_RUNBOOK.md"), `# SokoYetu Stage 29B: Backup and Recovery Runbook
+
+## Before major changes
+
+1. Export products.
+2. Export orders.
+3. Export payments.
+4. Export sellers.
+5. Export support notes.
+6. Confirm Git status is clean.
+7. Confirm Render latest deployment is stable.
+
+## If a deployment fails
+
+1. Check Render deploy logs.
+2. If the site is down, redeploy the last known working commit.
+3. Check /api/health.
+4. Check admin-system-health.html.
+5. Avoid changing DNS unless the domain itself is failing.
+6. Do not rotate M-PESA credentials unless the issue is clearly payment configuration.
+
+## If database records look wrong
+
+1. Stop adding new records.
+2. Export the current affected dataset.
+3. Compare with the latest saved export.
+4. Restore manually only after identifying the exact issue.
+5. Keep a note of what was changed and when.
+
+## Sensitive data handling
+
+Do not share customer exports publicly. Exports may include phone numbers, addresses, emails and payment references.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 29B admin backup and export installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage29b:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-backup.html");
+console.log("Use the same ADMIN_ORDER_TOKEN used for admin-orders.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage29b-backup-export.js admin-backup.html STAGE29B_BACKUP_EXPORT_GUIDE.md STAGE29B_BACKUP_RECOVERY_RUNBOOK.md");
+console.log('git commit -m "Add admin backup and export tools"');
+console.log("git push");

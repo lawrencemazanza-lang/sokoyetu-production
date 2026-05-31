@@ -1,13 +1,15 @@
-{
+﻿{
   "@context": "https://schema.org",
   "@type": "Organization",
-  "name": "SokoYetu",
-  "url": "https://www.mysokoyetu.co.ke",
+  "name": "sokoyetu",
+  "url": "https://www.mySokoYetu Mtaani.co.ke",
   "contactPoint": {
     "@type": "ContactPoint",
-    "email": "mysokoyetu@gmail.com",
+    "email": "SokoYetu Mtaani@gmail.com",
     "contactType": "customer support",
     "areaServed": "KE"
   },
   "sameAs": []
 }
+
+

@@ -1,4 +1,4 @@
-# SokoYetu Stage 30A: First 30 Days Operations Calendar
+﻿# SokoYetu Mtaani Stage 30A: First 30 Days Operations Calendar
 
 ## Daily
 
@@ -33,3 +33,4 @@
 - Test a very small real payment.
 - Confirm money settlement destination.
 - Confirm refund handling process.
+

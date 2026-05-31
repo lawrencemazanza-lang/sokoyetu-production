@@ -1,0 +1,49 @@
+# SokoYetu Stage 37D: Jumia-Style Marketplace Homepage
+
+This stage restores a fuller marketplace homepage with:
+
+```text
+Left category sidebar
+Large campaign hero
+Right advert/support column
+Flash Sale with timer
+Live Shopping section
+Advertisement strip
+Sponsored Products
+Recommended products
+Floating WhatsApp button
+Mobile bottom navigation
+M-PESA Till visibility
+```
+
+It avoids public technical wording such as:
+
+```text
+Daraja
+fallback
+not working
+M-PESA STK Push failed
+stage notes
+```
+
+## Values
+
+```text
+WhatsApp number: 254714565555
+M-PESA Buy Goods Till: 6923522
+Business email: mysokoyetu@gmail.com
+```
+
+## Test
+
+```cmd
+npm run stage37d:check
+node --check server.js
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:5173/
+```

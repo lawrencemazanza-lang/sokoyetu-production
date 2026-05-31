@@ -1,4 +1,4 @@
-# SokoYetu Stage 31A: Product Catalogue Quality Audit
+﻿# SokoYetu Mtaani Stage 31A: Product Catalogue Quality Audit
 
 Stage 31A adds a protected read-only product catalogue audit page.
 
@@ -50,3 +50,4 @@ support queue logic
 LiveKit
 payment logic
 ```
+

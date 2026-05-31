@@ -1,0 +1,372 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage28a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage28a:check"] = "node scripts/check-stage28a-tracking.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage28a-tracking.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 28A Customer Order Tracking Check");
+console.log("-----------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.PUBLIC_SITE_URL) {
+  console.log("WARN: PUBLIC_SITE_URL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: PUBLIC_SITE_URL =", process.env.PUBLIC_SITE_URL);
+}
+
+if (!process.env.SUPPORT_EMAIL) {
+  console.log("WARN: SUPPORT_EMAIL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: SUPPORT_EMAIL =", process.env.SUPPORT_EMAIL);
+}
+
+console.log("OK: track-order.html should be available after server restart/deployment.");
+console.log("OK: POST /api/orders/track should be available after server restart/deployment.");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "track-order.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Track Your SokoYetu Order</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1100px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:white;padding:12px 15px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;margin:3px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .timeline{display:grid;gap:10px}
+    .event{border-left:4px solid #16a34a;background:#f8fafc;border-radius:12px;padding:10px 12px}
+    .muted{color:#64748b;font-size:13px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Track Your Order</h1>
+    <p>Use your order number and M-PESA phone number to check the latest order status.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Order lookup</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Order ID</label>
+          <input id="orderId" inputmode="numeric" placeholder="Example: 12">
+        </div>
+        <div>
+          <label>M-PESA phone number used at checkout</label>
+          <input id="phone" inputmode="tel" placeholder="Example: 254714565555 or 0714565555">
+        </div>
+      </div>
+      <button id="trackBtn" type="button">Track order</button>
+      <div class="note">For privacy, order details are shown only when the phone number matches the order or payment record.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">Order status</div>
+    <div class="body" id="result"></div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function pillClass(status){
+  const s = String(status || "").toUpperCase();
+  if (s.includes("FAILED") || s.includes("CANCELLED") || s.includes("REJECT")) return "pill bad";
+  if (s.includes("PENDING") || s.includes("REFUND")) return "pill warn";
+  return "pill";
+}
+async function trackOrder(){
+  const orderId = document.getElementById("orderId").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+
+  if (!orderId || !phone) {
+    msg('<div class="err">Enter both order ID and phone number.</div>');
+    return;
+  }
+
+  msg('<div class="note">Checking order...</div>');
+  document.getElementById("resultCard").style.display = "none";
+
+  try {
+    const response = await fetch("/api/orders/track", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ orderId, phone })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not track order.");
+
+    renderOrder(data.order);
+    msg('<div class="ok">Order loaded successfully.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not track order.") + '</div>');
+  }
+}
+function renderOrder(order){
+  const result = document.getElementById("result");
+  const items = (order.items || []).map(item => {
+    return '<tr><td>' + esc(item.name) + '</td><td>' + esc(item.quantity) + '</td><td>' + money(item.price) + '</td><td>' + money(Number(item.price || 0) * Number(item.quantity || 0)) + '</td></tr>';
+  }).join("");
+
+  const tracking = (order.tracking || []).map(t => {
+    const date = t.createdAt ? new Date(t.createdAt).toLocaleString() : "";
+    return '<div class="event"><b>' + esc(t.status) + '</b><br><span>' + esc(t.note || "Status updated.") + '</span><br><span class="muted">' + esc(date) + '</span></div>';
+  }).join("") || '<div class="event"><b>' + esc(order.orderStatus) + '</b><br><span>Your order has been created. Updates will appear here.</span></div>';
+
+  result.innerHTML =
+    '<div class="grid">' +
+      '<div><b>Order</b><br>#' + esc(order.id) + '</div>' +
+      '<div><b>Total</b><br>' + money(order.totalAmount) + '</div>' +
+      '<div><b>Order status</b><br><span class="' + pillClass(order.orderStatus) + '">' + esc(order.orderStatus) + '</span></div>' +
+      '<div><b>Payment status</b><br><span class="' + pillClass(order.paymentStatus) + '">' + esc(order.paymentStatus) + '</span></div>' +
+    '</div>' +
+    '<div><b>Delivery address</b><br><span class="muted">' + esc(order.deliveryAddress || "Not provided") + '</span></div>' +
+    '<div><b>M-PESA receipt</b><br><span class="muted">' + esc(order.mpesaReceipt || "Not available yet") + '</span></div>' +
+    '<div><b>Items</b><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>' + items + '</tbody></table></div>' +
+    '<div><b>Tracking timeline</b><div class="timeline">' + tracking + '</div></div>' +
+    '<div class="note">Need help? Contact SokoYetu Mtaani@gmail.com with your order number.</div>';
+
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("trackBtn").onclick = trackOrder;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 28A: Customer Order Tracking API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 28A: Customer Order Tracking API
+// Public lookup protected by order ID + matching phone number.
+// Does not change checkout or payment flow.
+// ================================
+function normalizeKenyanPhoneForTracking(value) {
+  const digits = String(value || "").replace(/\\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("254")) return digits;
+  if (digits.startsWith("0") && digits.length === 10) return "254" + digits.slice(1);
+  if (digits.startsWith("7") && digits.length === 9) return "254" + digits;
+  if (digits.startsWith("1") && digits.length === 9) return "254" + digits;
+  return digits;
+}
+
+app.post("/api/orders/track", async (req, res) => {
+  try {
+    const orderId = Number(req.body?.orderId);
+    const phone = normalizeKenyanPhoneForTracking(req.body?.phone);
+
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ message: "A valid order ID is required." });
+    }
+
+    if (!phone) {
+      return res.status(400).json({ message: "A valid checkout phone number is required." });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: {
+        items: {
+          include: {
+            product: {
+              select: { id: true, name: true, category: true, imageUrl: true },
+            },
+          },
+        },
+        payment: true,
+        tracking: {
+          orderBy: { createdAt: "desc" },
+          take: 20,
+        },
+      },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order was not found." });
+    }
+
+    const orderPhone = normalizeKenyanPhoneForTracking(order.phone);
+    const paymentPhone = normalizeKenyanPhoneForTracking(order.payment?.phone);
+
+    if (phone !== orderPhone && phone !== paymentPhone) {
+      return res.status(403).json({ message: "The phone number does not match this order." });
+    }
+
+    return res.json({
+      message: "Order tracking loaded.",
+      order: {
+        id: order.id,
+        totalAmount: order.totalAmount,
+        deliveryFee: order.deliveryFee,
+        paymentMethod: order.paymentMethod,
+        paymentStatus: order.paymentStatus,
+        orderStatus: order.orderStatus,
+        deliveryAddress: order.deliveryAddress,
+        createdAt: order.createdAt,
+        mpesaReceipt: order.payment?.mpesaReceipt || null,
+        checkoutRequestId: order.payment?.checkoutRequestId || null,
+        items: order.items.map((item) => ({
+          productId: item.productId,
+          name: item.product?.name || \`Product #\${item.productId}\`,
+          category: item.product?.category || null,
+          imageUrl: item.product?.imageUrl || null,
+          quantity: item.quantity,
+          price: item.price,
+        })),
+        tracking: order.tracking.map((event) => ({
+          status: event.status,
+          note: event.note,
+          createdAt: event.createdAt,
+        })),
+      },
+    });
+  } catch (error) {
+    console.error("Customer order tracking error:", error);
+    return res.status(500).json({
+      message: "Could not load order tracking.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 28A customer order tracking endpoint to server.js.");
+} else {
+  console.log("Stage 28A endpoint already exists.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE28A_CUSTOMER_ORDER_TRACKING_GUIDE.md"), `# SokoYetu Stage 28A: Customer Order Tracking
+
+Stage 28A adds a public customer order-tracking page.
+
+## New page
+
+\`\`\`text
+/track-order.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+POST /api/orders/track
+\`\`\`
+
+## Privacy protection
+
+The customer must enter:
+
+\`\`\`text
+Order ID
+Phone number used at checkout
+\`\`\`
+
+The API returns order details only if the phone number matches the order or payment phone.
+
+## What customers can see
+
+- Order ID
+- Total amount
+- Order status
+- Payment status
+- Delivery address
+- M-PESA receipt if available
+- Items ordered
+- Tracking timeline
+
+## Test locally
+
+\`\`\`text
+http://localhost:5173/track-order.html
+\`\`\`
+
+Use a real order ID from admin orders and the phone used during checkout.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 28A customer order tracking installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage28a:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/track-order.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage28a-tracking.js track-order.html STAGE28A_CUSTOMER_ORDER_TRACKING_GUIDE.md");
+console.log('git commit -m "Add customer order tracking"');
+console.log("git push");
+

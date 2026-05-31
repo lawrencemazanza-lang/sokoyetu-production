@@ -1,0 +1,38 @@
+User-agent: *
+Allow: /
+Disallow: /admin-control.html
+Disallow: /admin-orders.html
+Disallow: /admin-support.html
+Disallow: /admin-backup.html
+Disallow: /admin-system-health.html
+Disallow: /admin-launch.html
+Disallow: /seller-verification.html
+Disallow: /seller-verification-persistent.html
+Disallow: /order-operations.html
+Disallow: /seller-onboarding.html
+
+Sitemap: https://www.mysokoyetu.co.ke/sitemap.xml
+
+Disallow: /admin-product-editor.html
+
+Disallow: /admin-public-audit.html
+
+Disallow: /admin-accessibility-audit.html
+
+Disallow: /admin-mpesa-readiness.html
+
+Disallow: /admin-mpesa-env-guard.html
+
+Disallow: /admin-mpesa-reconciliation.html
+
+Disallow: /admin-mpesa-evidence.html
+
+Disallow: /admin-mpesa-live-test.html
+
+Disallow: /admin-mpesa-incident.html
+
+Disallow: /admin-launch-war-room.html
+
+Disallow: /admin-core-readiness.html
+
+Disallow: /admin-buyer-smoke-test.html

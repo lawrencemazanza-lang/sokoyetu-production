@@ -1,9 +1,9 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>SokoYetu Live Room</title>
+  <title>SokoYetu Mtaani Live Room</title>
   <style>
     * { box-sizing: border-box; }
     body { margin:0; font-family:Arial,Helvetica,sans-serif; background:#050816; color:#fff; min-height:100vh; }
@@ -22,12 +22,15 @@
     .dark { background:#111827; color:#fff; border:1px solid rgba(255,255,255,.2); }
     .notice { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.15); border-radius:16px; padding:14px; color:#cbd5e1; line-height:1.55; }
   </style>
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+  <link rel="stylesheet" href="/sokoyetu-search-logo-refine.css">
+  <link rel="stylesheet" href="/sokoyetu-plain-logo-no-artwork.css">
 </head>
 <body>
-  <!-- SokoYetu Stage 17B No Camera Host Fix -->
+  <!-- SokoYetu Mtaani Stage 17B No Camera Host Fix -->
   <header>
     <div>
-      <h1>🔴 SokoYetu Live</h1>
+      <h1>🔴 SokoYetu Mtaani Live</h1>
       <div class="status" id="status">Connecting...</div>
     </div>
     <div class="controls">
@@ -58,7 +61,7 @@
     const url = params.get("url");
     const token = params.get("token");
     const canPublish = params.get("publish") === "true";
-    const roomName = params.get("room") || "SokoYetu live room";
+    const roomName = params.get("room") || "SokoYetu Mtaani live room";
 
     const statusEl = document.getElementById("status");
     const noticeEl = document.getElementById("notice");
@@ -174,7 +177,7 @@
     async function connect() {
       if (!url || !token) {
         statusEl.textContent = "Missing LiveKit URL or token.";
-        noticeEl.textContent = "Close this tab and rejoin from SokoYetu.";
+        noticeEl.textContent = "Close this tab and rejoin from SokoYetu Mtaani.";
         return;
       }
 
@@ -309,5 +312,13 @@
       noticeEl.textContent = error.message || "Could not connect to the live room.";
     });
   </script>
+  <script src="/sokoyetu-final-seo.js" defer></script>
+  <script src="/sokoyetu-search-logo-refine.js" defer></script>
+  <script src="/sokoyetu-plain-logo-no-artwork.js" defer></script>
 </body>
 </html>
+
+
+
+
+

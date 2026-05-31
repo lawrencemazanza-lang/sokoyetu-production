@@ -1,0 +1,738 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+const robotsPath = path.join(root, "robots.txt");
+const adminControlPath = path.join(root, "admin-control.html");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage33d-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+backup(robotsPath, "robots");
+backup(adminControlPath, "admin-control");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage33d:check"] = "node scripts/check-stage33d-mpesa-evidence.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage33d-mpesa-evidence.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 33D M-PESA Evidence Export Check");
+console.log("-----------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.ADMIN_ORDER_TOKEN) {
+  console.log("WARN: ADMIN_ORDER_TOKEN is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: ADMIN_ORDER_TOKEN =", process.env.ADMIN_ORDER_TOKEN.slice(0, 4) + "...hidden");
+}
+
+if (!process.env.DATABASE_URL) {
+  console.log("WARN: DATABASE_URL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: DATABASE_URL =", process.env.DATABASE_URL.slice(0, 4) + "...hidden");
+}
+
+const fs = require("fs");
+const path = require("path");
+const root = process.cwd();
+
+const requiredFiles = [
+  "admin-mpesa-evidence.html",
+  "scripts/check-stage33d-mpesa-evidence.js",
+  "STAGE33D_MPESA_EVIDENCE_EXPORT_GUIDE.md",
+  "STAGE33D_MPESA_AUDIT_PACK_TEMPLATE.md"
+];
+
+for (const file of requiredFiles) {
+  if (!fs.existsSync(path.join(root, file))) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const serverPath = path.join(root, "server.js");
+if (fs.existsSync(serverPath)) {
+  const server = fs.readFileSync(serverPath, "utf8");
+  const requiredServer = [
+    "SokoYetu Stage 33D: M-PESA Evidence Export API",
+    "/api/admin/mpesa-evidence/export",
+    "stage33dCsv",
+    "mpesa-evidence"
+  ];
+
+  for (const item of requiredServer) {
+    if (!server.includes(item)) {
+      console.log("WARN: server.js missing:", item);
+      warnings += 1;
+    } else {
+      console.log("OK: server.js includes", item);
+    }
+  }
+}
+
+const adminControlPath = path.join(root, "admin-control.html");
+if (fs.existsSync(adminControlPath)) {
+  const control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-mpesa-evidence.html")) {
+    console.log("WARN: admin-control.html does not link admin-mpesa-evidence.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: admin-control.html links admin-mpesa-evidence.html.");
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 33D M-PESA evidence export check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-mpesa-evidence.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu M-PESA Evidence Export</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu M-PESA Evidence Export</h1>
+    <p>Download read-only payment and order evidence for reconciliation, customer support, refund review, Safaricom follow-up, and production switch audit records.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-reconciliation.html">Open reconciliation</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Access and export filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Filter</label>
+          <select id="filter">
+            <option value="">All recent evidence</option>
+            <option value="issues">Only issue records</option>
+            <option value="paid">Paid/success records</option>
+            <option value="pending">Pending payments</option>
+            <option value="failed">Failed/cancelled payments</option>
+            <option value="missing-receipt">Missing M-PESA receipt</option>
+            <option value="amount-mismatch">Amount mismatch</option>
+          </select>
+        </div>
+        <div>
+          <label>Format</label>
+          <select id="format">
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Order ID, phone, receipt, checkout ID">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="previewBtn" type="button">Preview evidence</button>
+        <button id="downloadBtn" class="secondary" type="button">Download evidence file</button>
+      </div>
+      <div class="warnBox">Exported files may include customer emails, phone numbers, M-PESA receipts, order IDs, checkout request IDs and payment evidence. Store them safely.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="summaryCard" class="card" style="display:none">
+    <div class="head">Evidence summary</div>
+    <div class="body">
+      <div id="summary" class="grid"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Preview</div>
+    <div class="body">
+      <div id="preview" class="note">No evidence loaded yet.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function buildUrl(){
+  const params = new URLSearchParams();
+  const filter = document.getElementById("filter").value;
+  const format = document.getElementById("format").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (filter) params.set("filter", filter);
+  if (format) params.set("format", format);
+  if (q) params.set("q", q);
+  return "/api/admin/mpesa-evidence/export?" + params.toString();
+}
+async function fetchEvidence(){
+  if (!token()) throw new Error("Admin order token is required.");
+  const response = await fetch(buildUrl(), {
+    headers: {"x-admin-order-token": token()},
+    credentials: "include",
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || "Evidence export failed.");
+  }
+  return response;
+}
+function parseCsv(text){
+  const lines = String(text || "").split(/\\r?\\n/).filter(Boolean);
+  if (!lines.length) return [];
+  const headers = splitCsvLine(lines[0]);
+  return lines.slice(1, 26).map(line => {
+    const values = splitCsvLine(line);
+    const row = {};
+    headers.forEach((h, i) => row[h] = values[i] || "");
+    return row;
+  });
+}
+function splitCsvLine(line){
+  const out = [];
+  let cur = "";
+  let quote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    const n = line[i + 1];
+    if (c === '"' && quote && n === '"') { cur += '"'; i++; continue; }
+    if (c === '"') { quote = !quote; continue; }
+    if (c === "," && !quote) { out.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+async function previewEvidence(){
+  msg('<div class="note">Loading evidence preview...</div>');
+  try {
+    const format = document.getElementById("format").value;
+    const response = await fetchEvidence();
+    const text = await response.text();
+    const rows = format === "json" ? JSON.parse(text).records || JSON.parse(text) : parseCsv(text);
+    renderPreview(rows);
+    msg('<div class="ok">Evidence preview loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not preview evidence.") + '</div>');
+  }
+}
+function renderPreview(rows){
+  const list = Array.isArray(rows) ? rows : [];
+  document.getElementById("summaryCard").style.display = "block";
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Preview rows<b>' + esc(list.length) + '</b></div>' +
+    '<div class="metric">Filter<b>' + esc(document.getElementById("filter").value || "all") + '</b></div>' +
+    '<div class="metric">Format<b>' + esc(document.getElementById("format").value.toUpperCase()) + '</b></div>';
+
+  if (!list.length) {
+    document.getElementById("preview").innerHTML = '<div class="note">No evidence records found for this filter.</div>';
+    return;
+  }
+
+  const keys = Object.keys(list[0]).slice(0, 9);
+  document.getElementById("preview").innerHTML =
+    '<table><thead><tr>' + keys.map(k => '<th>' + esc(k) + '</th>').join("") + '</tr></thead><tbody>' +
+    list.slice(0, 25).map(row => '<tr>' + keys.map(k => '<td>' + esc(row[k]) + '</td>').join("") + '</tr>').join("") +
+    '</tbody></table>';
+}
+async function downloadEvidence(){
+  msg('<div class="note">Preparing evidence download...</div>');
+  try {
+    const response = await fetchEvidence();
+    const blob = await response.blob();
+    const cd = response.headers.get("Content-Disposition") || "";
+    const match = cd.match(/filename="?([^"]+)"?/i);
+    const fallback = "sokoyetu-mpesa-evidence." + document.getElementById("format").value;
+    const filename = match ? match[1] : fallback;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    msg('<div class="ok">Download started: ' + esc(filename) + '</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not download evidence.") + '</div>');
+  }
+}
+document.getElementById("previewBtn").onclick = previewEvidence;
+document.getElementById("downloadBtn").onclick = downloadEvidence;
+</script>
+</body>
+</html>`, "utf8");
+
+// Patch server endpoint.
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 33D: M-PESA Evidence Export API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 33D: M-PESA Evidence Export API
+// Read-only evidence export. Does not update payments or orders.
+// ================================
+function requireMpesaEvidenceToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+function stage33dStatusCategory(value) {
+  const text = String(value || "").toLowerCase();
+
+  if (text.includes("paid") || text.includes("success") || text.includes("complete") || text.includes("confirmed")) {
+    return "paid";
+  }
+
+  if (text.includes("fail") || text.includes("cancel") || text.includes("error") || text.includes("decline")) {
+    return "failed";
+  }
+
+  return "pending";
+}
+
+function stage33dFlags(payment, order) {
+  const flags = [];
+  const paymentAmount = Number(payment?.amount || 0);
+  const orderAmount = Number(order?.totalAmount || 0);
+  const paymentCategory = stage33dStatusCategory(payment?.status);
+  const orderPaymentCategory = stage33dStatusCategory(order?.paymentStatus);
+  const hasReceipt = Boolean(payment?.mpesaReceipt);
+
+  if (!order) flags.push("Payment has no linked order");
+  if (order && paymentAmount && orderAmount && Math.round(paymentAmount) !== Math.round(orderAmount)) flags.push("amountMismatch");
+  if (paymentCategory === "paid" && !hasReceipt) flags.push("missingReceipt");
+  if (paymentCategory === "pending") flags.push("Pending payment");
+  if (paymentCategory === "failed") flags.push("Failed/cancelled payment");
+  if (order && paymentCategory === "paid" && orderPaymentCategory !== "paid") flags.push("Order payment status not marked paid");
+  if (order && paymentCategory !== "paid" && orderPaymentCategory === "paid") flags.push("Order says paid but payment record is not paid");
+
+  return flags;
+}
+
+function stage33dFlatten(value) {
+  if (value === null || value === undefined) return "";
+  if (value instanceof Date) return value.toISOString();
+  if (Array.isArray(value)) return value.join(" | ");
+  if (typeof value === "object") return JSON.stringify(value);
+  return String(value);
+}
+
+function stage33dCsv(rows) {
+  if (!rows.length) return "message\\nNo evidence records found\\n";
+  const headers = Object.keys(rows[0]);
+  const escape = (value) => {
+    const text = stage33dFlatten(value);
+    if (text.includes(",") || text.includes('"') || text.includes("\\n") || text.includes("\\r")) {
+      return '"' + text.replace(/"/g, '""') + '"';
+    }
+    return text;
+  };
+  return headers.join(",") + "\\n" + rows.map((row) => headers.map((header) => escape(row[header])).join(",")).join("\\n");
+}
+
+app.get("/api/admin/mpesa-evidence/export", async (req, res) => {
+  try {
+    if (!requireMpesaEvidenceToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+    const format = String(req.query.format || "csv").toLowerCase() === "json" ? "json" : "csv";
+
+    const where = {};
+
+    if (q) {
+      const numeric = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numeric) && numeric > 0 ? [{ id: numeric }, { orderId: numeric }] : []),
+        { phone: { contains: q, mode: "insensitive" } },
+        { status: { contains: q, mode: "insensitive" } },
+        { mpesaReceipt: { contains: q, mode: "insensitive" } },
+        { checkoutRequestId: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const payments = await prisma.payment.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 1000,
+      include: {
+        order: {
+          select: {
+            id: true,
+            totalAmount: true,
+            deliveryFee: true,
+            paymentStatus: true,
+            orderStatus: true,
+            phone: true,
+            deliveryAddress: true,
+            createdAt: true,
+            user: {
+              select: {
+                id: true,
+                email: true,
+                name: true,
+                phone: true,
+              },
+            },
+          },
+        },
+      },
+    });
+
+    let rows = payments.map((payment) => {
+      const order = payment.order || null;
+      const flags = stage33dFlags(payment, order);
+      const paymentStatusCategory = stage33dStatusCategory(payment.status);
+
+      return {
+        paymentId: payment.id,
+        orderId: payment.orderId || order?.id || "",
+        customerName: order?.user?.name || "",
+        customerEmail: order?.user?.email || "",
+        phone: payment.phone || order?.phone || order?.user?.phone || "",
+        paymentAmount: payment.amount || 0,
+        orderAmount: order?.totalAmount || 0,
+        deliveryFee: order?.deliveryFee || 0,
+        paymentStatus: payment.status || "",
+        paymentStatusCategory,
+        orderPaymentStatus: order?.paymentStatus || "",
+        orderStatus: order?.orderStatus || "",
+        mpesaReceipt: payment.mpesaReceipt || "",
+        checkoutRequestId: payment.checkoutRequestId || "",
+        deliveryAddress: order?.deliveryAddress || "",
+        flags,
+        paymentCreatedAt: payment.createdAt,
+        orderCreatedAt: order?.createdAt || "",
+      };
+    });
+
+    if (filter === "issues") rows = rows.filter((row) => row.flags.length > 0);
+    if (filter === "paid") rows = rows.filter((row) => row.paymentStatusCategory === "paid");
+    if (filter === "pending") rows = rows.filter((row) => row.paymentStatusCategory === "pending");
+    if (filter === "failed") rows = rows.filter((row) => row.paymentStatusCategory === "failed");
+    if (filter === "missing-receipt") rows = rows.filter((row) => row.flags.includes("missingReceipt"));
+    if (filter === "amount-mismatch") rows = rows.filter((row) => row.flags.includes("amountMismatch"));
+
+    const stamp = new Date().toISOString().slice(0, 10);
+    const safeFilter = filter || "all";
+    const filename = "sokoyetu-mpesa-evidence-" + safeFilter + "-" + stamp + "." + format;
+
+    res.setHeader("Content-Disposition", 'attachment; filename="' + filename + '"');
+
+    if (format === "json") {
+      res.setHeader("Content-Type", "application/json; charset=utf-8");
+      return res.send(JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        filter: safeFilter,
+        count: rows.length,
+        records: rows,
+      }, null, 2));
+    }
+
+    res.setHeader("Content-Type", "text/csv; charset=utf-8");
+    return res.send(stage33dCsv(rows));
+  } catch (error) {
+    console.error("M-PESA evidence export error:", error);
+    return res.status(500).json({
+      message: "Could not export M-PESA evidence.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const listenIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (listenIndex !== -1) {
+    server = server.slice(0, listenIndex) + endpoint + "\n" + server.slice(listenIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 33D M-PESA evidence export endpoint to server.js.");
+} else {
+  console.log("Stage 33D endpoint already exists.");
+}
+
+// Add admin-control link.
+if (fs.existsSync(adminControlPath)) {
+  let control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-mpesa-evidence.html")) {
+    const section = `
+  <section class="card">
+    <div class="head">M-PESA evidence export</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-mpesa-evidence.html">
+        <b>M-PESA Evidence Export</b>
+        <span>Download read-only payment and order evidence as CSV or JSON for audit, refund review and Safaricom follow-up.</span>
+        <em class="pill">ADMIN_ORDER_TOKEN</em>
+      </a>
+    </div>
+  </section>
+`;
+    if (control.includes("</main>")) control = control.replace("</main>", section + "\n</main>");
+    else control += section;
+    fs.writeFileSync(adminControlPath, control, "utf8");
+    console.log("Added M-PESA evidence export link to admin-control.html.");
+  } else {
+    console.log("admin-control.html already links to admin-mpesa-evidence.html.");
+  }
+}
+
+// Update robots.txt.
+let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, "utf8") : "User-agent: *\nAllow: /\n";
+if (!robots.includes("Disallow: /admin-mpesa-evidence.html")) {
+  robots += "\nDisallow: /admin-mpesa-evidence.html\n";
+  fs.writeFileSync(robotsPath, robots, "utf8");
+  console.log("Updated robots.txt to disallow admin-mpesa-evidence.html.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE33D_MPESA_EVIDENCE_EXPORT_GUIDE.md"), `# SokoYetu Stage 33D: M-PESA Evidence Export and Payment Audit Pack
+
+Stage 33D is read-only. It exports payment and order evidence for audit records.
+
+## New page
+
+\`\`\`text
+/admin-mpesa-evidence.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/mpesa-evidence/export
+\`\`\`
+
+## Export formats
+
+\`\`\`text
+CSV
+JSON
+\`\`\`
+
+## Filters
+
+\`\`\`text
+all
+issues
+paid
+pending
+failed
+missing-receipt
+amount-mismatch
+\`\`\`
+
+## Evidence fields
+
+\`\`\`text
+paymentId
+orderId
+customerName
+customerEmail
+phone
+paymentAmount
+orderAmount
+deliveryFee
+paymentStatus
+paymentStatusCategory
+orderPaymentStatus
+orderStatus
+mpesaReceipt
+checkoutRequestId
+deliveryAddress
+flags
+paymentCreatedAt
+orderCreatedAt
+\`\`\`
+
+## Use cases
+
+\`\`\`text
+pre-production payment audit
+post-production payment audit
+Safaricom follow-up
+refund review
+customer dispute evidence
+manual reconciliation records
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+M-PESA callback logic
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage33d:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/admin-mpesa-evidence.html
+\`\`\`
+
+Then preview and download CSV and JSON.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE33D_MPESA_AUDIT_PACK_TEMPLATE.md"), `# Stage 33D: M-PESA Audit Pack Template
+
+Use this template when reviewing payments before or after production switch.
+
+## Audit date
+
+\`\`\`text
+YYYY-MM-DD
+\`\`\`
+
+## Export files saved
+
+\`\`\`text
+sokoyetu-mpesa-evidence-all-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-issues-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-missing-receipt-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-amount-mismatch-YYYY-MM-DD.csv
+\`\`\`
+
+## Checks performed
+
+- [ ] Export all payment evidence.
+- [ ] Export issue-only evidence.
+- [ ] Review pending payments.
+- [ ] Review failed or cancelled payments.
+- [ ] Review missing receipt records.
+- [ ] Review amount mismatch records.
+- [ ] Compare payment amount to order amount.
+- [ ] Confirm M-PESA receipt exists for paid payments.
+- [ ] Confirm admin orders page agrees with payment status.
+- [ ] Save notes for any customer support follow-up.
+
+## Manual findings
+
+\`\`\`text
+Write findings here.
+\`\`\`
+
+## Action taken
+
+\`\`\`text
+Write actions here.
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 33D M-PESA evidence export installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage33d:check");
+console.log("node --check server.js");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-mpesa-evidence.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js robots.txt admin-control.html admin-mpesa-evidence.html scripts/check-stage33d-mpesa-evidence.js STAGE33D_MPESA_EVIDENCE_EXPORT_GUIDE.md STAGE33D_MPESA_AUDIT_PACK_TEMPLATE.md");
+console.log('git commit -m "Add M-PESA evidence export"');
+console.log("git push");

@@ -1,4 +1,4 @@
-# SokoYetu Stage 19 Security Hardening Checklist
+﻿# SokoYetu Mtaani Stage 19 Security Hardening Checklist
 
 Stage 19 adds basic security controls without changing the main business features.
 
@@ -68,3 +68,4 @@ npm run security:check
 - [ ] Test users are removed or their passwords are changed.
 - [ ] Backups are configured.
 - [ ] Logging and monitoring are configured.
+

@@ -1,0 +1,115 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Seller Onboarding</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .step{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:16px;padding:12px;line-height:1.5}
+    .step b{color:#064e3b}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534;margin:3px}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    textarea{width:100%;min-height:90px;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Seller Onboarding</h1>
+    <p>Verification workflow for approving sellers before they trade on the marketplace.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Seller onboarding stages</div>
+    <div class="body">
+      <div>
+        <span class="pill warn">Application Received</span>
+        <span class="pill warn">Documents Requested</span>
+        <span class="pill">Under Review</span>
+        <span class="pill">Approved</span>
+        <span class="pill bad">Rejected</span>
+        <span class="pill warn">Suspended</span>
+      </div>
+      <div class="note">During soft launch, do not allow unknown sellers to publish freely. Admin should manually verify seller details, contact information, product category and fulfilment ability before approving product visibility.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Admin seller verification checklist</div>
+    <div class="body grid">
+      <div class="step"><b>1. Identity and contact</b><br>Confirm seller name, phone number, email and primary contact person.</div>
+      <div class="step"><b>2. Business details</b><br>Record business name, location, operating category and trading method.</div>
+      <div class="step"><b>3. Product category</b><br>Check whether the seller deals in allowed products and avoids restricted/counterfeit items.</div>
+      <div class="step"><b>4. Product quality</b><br>Request real product photos, prices, stock levels and warranty/return details where relevant.</div>
+      <div class="step"><b>5. Fulfilment readiness</b><br>Confirm whether the seller can deliver, support pickup, or hand over to a rider/courier.</div>
+      <div class="step"><b>6. Admin decision</b><br>Approve, reject, request more information, or suspend depending on risk.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller risk decision table</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Risk signal</th><th>Decision</th><th>Admin action</th></tr></thead>
+        <tbody>
+          <tr><td>Seller provides clear identity, product details and contact information.</td><td>Approve</td><td>Allow seller to list products under admin monitoring.</td></tr>
+          <tr><td>Seller details are incomplete but not suspicious.</td><td>Request more information</td><td>Ask for product photos, location, phone and category details.</td></tr>
+          <tr><td>Seller lists prohibited or suspicious counterfeit wording.</td><td>Reject or suspend</td><td>Do not publish products until reviewed.</td></tr>
+          <tr><td>Seller cannot confirm stock or delivery readiness.</td><td>Hold approval</td><td>Allow profile review but delay product promotion.</td></tr>
+          <tr><td>Customer complaints increase against a seller.</td><td>Suspend pending review</td><td>Pause seller visibility while admin investigates.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller message templates</div>
+    <div class="body grid">
+      <div><b>Application received</b><textarea readonly>Hello [Seller], thank you for applying to Sell on SokoYetu Mtaani. We are reviewing your seller details and will contact you if additional information is needed.</textarea></div>
+      <div><b>More information needed</b><textarea readonly>Hello [Seller], before approval, please send your business name, location, phone number, product categories, sample product photos and fulfilment method.</textarea></div>
+      <div><b>Seller approved</b><textarea readonly>Hello [Seller], your SokoYetu Mtaani seller profile has been approved for soft launch participation. Please keep product prices, stock and delivery details accurate.</textarea></div>
+      <div><b>Seller suspended</b><textarea readonly>Hello [Seller], your SokoYetu Mtaani seller profile is temporarily under review due to a product, fulfilment or customer-support concern. We will contact you after review.</textarea></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Restricted product warning</div>
+    <div class="body">
+      <div class="note danger">Do not approve listings that appear counterfeit, unsafe, illegal, misleading, age-restricted, or unsupported by the seller. In soft launch, admin should approve products manually.</div>
+    </div>
+  </section>
+</main>
+
+<!-- SokoYetu Mtaani internal operations page: noindex/nofollow enabled in Stage 30C -->
+  <script src="/sokoyetu-final-seo.js" defer></script>
+</body>
+</html>
+
+
+

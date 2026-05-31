@@ -1,6 +1,6 @@
-(function(){
-  if (window.__SOKOYETU_PUBLIC_NAV__) return;
-  window.__SOKOYETU_PUBLIC_NAV__ = true;
+﻿(function(){
+  if (window.__sokoyetu_PUBLIC_NAV__) return;
+  window.__sokoyetu_PUBLIC_NAV__ = true;
 
   function path(){
     return (location.pathname || "/").toLowerCase();
@@ -16,10 +16,10 @@
     var current = path();
     var nav = document.createElement("nav");
     nav.className = "sy-public-nav";
-    nav.setAttribute("aria-label", "SokoYetu public navigation");
+    nav.setAttribute("aria-label", "SokoYetu Mtaani public navigation");
     nav.innerHTML =
       '<div class="sy-wrap">' +
-        '<a class="sy-brand" href="/"><span class="sy-logo">SY</span><span>SokoYetu</span></a>' +
+        '<a class="sy-brand" href="/"><span class="sy-logo">SY</span><span>SokoYetu Mtaani</span></a>' +
         '<div class="sy-links">' +
           link("/", "Home") +
           link("/how-it-works.html", "How It Works") +
@@ -83,3 +83,5 @@
     injectFooter();
   });
 })();
+
+

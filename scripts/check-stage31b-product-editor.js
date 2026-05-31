@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 31B Admin Product Editor Check");
+console.log("SokoYetu Mtaani Stage 31B Admin Product Editor Check");
 console.log("--------------------------------------------");
 
 let warnings = 0;
@@ -23,3 +23,4 @@ console.log("OK: admin-product-editor.html should be available after server rest
 console.log("OK: /api/admin/products/manage should be available after server restart/deployment.");
 console.log("OK: /api/admin/products/:id/update should be available after server restart/deployment.");
 console.log("Warnings:", warnings);
+

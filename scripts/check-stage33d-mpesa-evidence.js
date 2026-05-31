@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 33D M-PESA Evidence Export Check");
+console.log("SokoYetu Mtaani Stage 33D M-PESA Evidence Export Check");
 console.log("-----------------------------------------------");
 
 let warnings = 0;
@@ -43,7 +43,7 @@ const serverPath = path.join(root, "server.js");
 if (fs.existsSync(serverPath)) {
   const server = fs.readFileSync(serverPath, "utf8");
   const requiredServer = [
-    "SokoYetu Stage 33D: M-PESA Evidence Export API",
+    "SokoYetu Mtaani Stage 33D: M-PESA Evidence Export API",
     "/api/admin/mpesa-evidence/export",
     "stage33dCsv",
     "mpesa-evidence"
@@ -73,3 +73,4 @@ if (fs.existsSync(adminControlPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 33D M-PESA evidence export check passed.");
+

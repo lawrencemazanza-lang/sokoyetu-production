@@ -1,11 +1,11 @@
-# SokoYetu Elite Jumia-Inspired Marketplace
+﻿# SokoYetu Mtaani Elite Jumia-Inspired Marketplace
 
 This is a clean static front-end prototype. It does not need npm install.
 
 ## Run on Windows Command Prompt
 
 ```cmd
-cd "C:\Users\PC\Desktop\soko yetu\sokoyetu-elite-jumia-inspired"
+cd "C:\Users\PC\Desktop\SokoYetu Mtaani\SokoYetu Mtaani-elite-jumia-inspired"
 npm run dev
 ```
 
@@ -17,7 +17,7 @@ http://localhost:5173/
 
 ## What is included
 
-- Creative modern SokoYetu logo using the initials SY.
+- Creative modern SokoYetu Mtaani logo using the initials SY.
 - Jumia-inspired homepage organization while remaining original.
 - Deals visible from the first screen.
 - Compact Flash Sales Live section with countdown.
@@ -36,5 +36,7 @@ http://localhost:5173/
 ## Contacts configured
 
 Phone: 0714565555
-Email: mysokoyetu@gmail.com
+Email: SokoYetu Mtaani@gmail.com
 Location: Nairobi, Kenya
+
+

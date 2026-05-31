@@ -1,0 +1,147 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Stage 32A SEO start -->
+  <title>How SokoYetu Works</title>
+  <meta name="description" content="Learn how to browse products, review sellers, checkout with M-PESA, track orders and get support on SokoYetu.">
+  <link rel="canonical" href="https://www.mysokoyetu.co.ke/how-it-works.html">
+  <meta property="og:site_name" content="SokoYetu">
+  <meta property="og:title" content="How SokoYetu Works">
+  <meta property="og:description" content="Learn how to browse products, review sellers, checkout with M-PESA, track orders and get support on SokoYetu.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mysokoyetu.co.ke/how-it-works.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="How SokoYetu Works">
+  <meta name="twitter:description" content="Learn how to browse products, review sellers, checkout with M-PESA, track orders and get support on SokoYetu.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Stage 32A SEO end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- SokoYetu Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mysokoyetu.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mysokoyetu.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-nav.css">
+  <link rel="stylesheet" href="/public-a11y.css">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:36px 24px}
+    header .wrap,main{width:min(1180px,94vw);margin:0 auto}
+    h1{margin:0;font-size:34px}
+    header p{margin:10px 0 0;color:#dcfce7;line-height:1.6;max-width:880px}
+    main{display:grid;gap:16px;padding:22px 0 42px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:18px;display:grid;gap:14px;line-height:1.62}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:7px;color:#111827;text-decoration:none}
+    .tile b{color:#064e3b;font-size:18px}
+    .tile span{color:#475569}
+    .tile:hover{outline:3px solid #86efac}
+    .step{border:1px solid #e5e7eb;border-radius:18px;background:#f8fafc;padding:14px;display:grid;gap:7px;position:relative}
+    .step b{color:#064e3b;font-size:18px}
+    .number{width:34px;height:34px;border-radius:12px;background:#16a34a;color:#fff;display:grid;place-items:center;font-weight:900}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    details{border:1px solid #e5e7eb;border-radius:16px;background:#f8fafc;padding:12px}
+    summary{font-weight:900;color:#064e3b;cursor:pointer}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9;color:#064e3b}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:28px}table{display:block;overflow-x:auto;white-space:nowrap}}
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>How SokoYetu Works</h1>
+    <p>A simple guide for browsing products, checking seller stores, paying safely, tracking orders and getting support.</p>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="card">
+    <div class="head">Buyer journey</div>
+    <div class="body">
+      <div class="grid">
+        <div class="step"><span class="number">1</span><b>Browse products</b><span>Start from the homepage, categories page or seller stores page. Compare product details, prices, stock and descriptions before ordering.</span></div>
+        <div class="step"><span class="number">2</span><b>Review product details</b><span>Open product details to confirm the item, seller, price, description and stock status before you proceed.</span></div>
+        <div class="step"><span class="number">3</span><b>Add to cart</b><span>Use the shop flow to add the product to your cart and confirm your order information.</span></div>
+        <div class="step"><span class="number">4</span><b>Checkout with M-PESA</b><span>Confirm the prompt amount before entering your M-PESA PIN and keep your confirmation receipt.</span></div>
+        <div class="step"><span class="number">5</span><b>Track your order</b><span>Use your order ID and checkout phone number to follow the order status.</span></div>
+        <div class="step"><span class="number">6</span><b>Get support</b><span>If there is a payment, delivery, product or refund issue, submit a support request with your evidence.</span></div>
+      </div>
+      <div class="actions">
+        <a class="linkbtn" href="/categories.html">Browse categories</a>
+        <a class="linkbtn secondary" href="/seller-stores.html">View seller stores</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">What to check before ordering</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Area</th><th>What to confirm</th><th>Why it matters</th></tr></thead>
+        <tbody>
+          <tr><td>Product</td><td>Name, image, description, category and stock status.</td><td>Helps reduce wrong-product or unclear-listing issues.</td></tr>
+          <tr><td>Price</td><td>Order total and any delivery or extra charges shown during checkout.</td><td>Helps you compare the checkout amount with the M-PESA prompt.</td></tr>
+          <tr><td>Phone</td><td>The phone number used for checkout and M-PESA confirmation.</td><td>It may be needed for order tracking and support review.</td></tr>
+          <tr><td>Delivery</td><td>Delivery address, contact details and availability.</td><td>Helps avoid failed or delayed delivery.</td></tr>
+          <tr><td>Support evidence</td><td>Order ID, M-PESA receipt, amount paid and product name.</td><td>Helps support investigate faster if something goes wrong.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Payment and order tracking</div>
+    <div class="body">
+      <div class="warnBox">If you receive an M-PESA receipt but the order still appears pending, do not pay again immediately. Keep the receipt and submit a support request.</div>
+      <div class="grid">
+        <a class="tile" href="/checkout.html"><b>Checkout</b><span>Review cart and payment flow.</span><em class="pill">payment</em></a>
+        <a class="tile" href="/track-order.html"><b>Track order</b><span>Check order progress using order ID and phone.</span><em class="pill">tracking</em></a>
+        <a class="tile" href="/support-request.html"><b>Support request</b><span>Submit payment, delivery, product or refund issues.</span><em class="pill">support</em></a>
+        <a class="tile" href="/trust-center.html"><b>Trust Center</b><span>Read buyer safety and M-PESA guidance.</span><em class="pill">safety</em></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Frequently asked questions</div>
+    <div class="body">
+      <details>
+        <summary>Can I contact a seller directly to pay?</summary>
+        <p>Use the SokoYetu checkout flow where possible. Be cautious with requests to pay outside the website or send money to personal numbers.</p>
+      </details>
+      <details>
+        <summary>What should I do after payment?</summary>
+        <p>Keep your order ID, checkout phone number and M-PESA confirmation message until the order is completed.</p>
+      </details>
+      <details>
+        <summary>Where do I report a delivery or product issue?</summary>
+        <p>Use the Support Request page and include the order ID, product name, issue type and any payment evidence.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>SokoYetu · How It Works · SokoYetu Mtaani@gmail.com</footer>
+<script src="/public-nav.js" defer></script>
+<script src="/public-a11y.js" defer></script>
+</body>
+</html>

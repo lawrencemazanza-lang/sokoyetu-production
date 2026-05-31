@@ -1,4 +1,4 @@
-# SokoYetu Stage 27C: Persistent Seller Verification
+﻿# SokoYetu Mtaani Stage 27C: Persistent Seller Verification
 
 Stage 27C adds database-backed seller verification.
 
@@ -24,7 +24,7 @@ POST /api/admin/sellers/:id/persistent-verification
 ## Required environment variable
 
 ```env
-SELLER_VERIFICATION_TOKEN=sokoyetu_seller_verify_2026_change_this_secret
+SELLER_VERIFICATION_TOKEN=SokoYetu Mtaani_seller_verify_2026_change_this_secret
 ```
 
 ## Required Prisma command
@@ -44,3 +44,4 @@ npx prisma generate && npx prisma db push
 ## Important
 
 This stage changes `prisma/schema.prisma`. Test locally before pushing to Render.
+

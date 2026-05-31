@@ -1,0 +1,258 @@
+﻿/* SokoYetu refined header: smaller artistic logo + shorter search bar */
+:root {
+  --sy-art-black: #111827;
+  --sy-art-green: #057a55;
+  --sy-art-orange: #f97316;
+  --sy-art-orange-dark: #ea580c;
+  --sy-art-cream: #fff7ed;
+}
+
+/* Brand container: enough room for the full wordmark, but not oversized */
+.sy-final-brand-anchor,
+.sy-refined-brand-anchor,
+a:has(.sy-refined-wordmark),
+.logo:has(.sy-refined-wordmark),
+.brand:has(.sy-refined-wordmark),
+.brand-name:has(.sy-refined-wordmark),
+[class*="logo"]:has(.sy-refined-wordmark),
+[class*="brand"]:has(.sy-refined-wordmark) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.48rem !important;
+  flex: 0 0 248px !important;
+  width: 248px !important;
+  min-width: 248px !important;
+  max-width: 248px !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  z-index: 50 !important;
+  text-decoration: none !important;
+  padding-right: 0.65rem !important;
+}
+
+/* Keep the original cart/icon visible */
+.sy-refined-brand-anchor img,
+.sy-refined-brand-anchor svg,
+.sy-refined-brand-anchor .logo-icon,
+.sy-refined-brand-anchor .brand-icon,
+.sy-refined-brand-anchor [class*="icon"],
+.sy-final-brand-anchor img,
+.sy-final-brand-anchor svg,
+.sy-final-brand-anchor .logo-icon,
+.sy-final-brand-anchor .brand-icon,
+.sy-final-brand-anchor [class*="icon"] {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+}
+
+/* Smaller but more attractive 3-color wordmark */
+.sy-refined-wordmark,
+.sy-final-wordmark {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 0 !important;
+  white-space: nowrap !important;
+  font-size: clamp(1.02rem, 1.35vw, 1.28rem) !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.052em !important;
+  line-height: 1 !important;
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+  position: relative !important;
+  padding: 0.14rem 0.12rem 0.28rem 0 !important;
+  text-decoration: none !important;
+  text-shadow: 0 1px 0 rgba(255,255,255,0.65);
+}
+
+.sy-refined-wordmark::after,
+.sy-final-wordmark::after {
+  content: "" !important;
+  position: absolute !important;
+  left: 2px !important;
+  right: 2px !important;
+  bottom: 0.03rem !important;
+  height: 3px !important;
+  border-radius: 999px !important;
+  background: linear-gradient(90deg, var(--sy-art-black) 0 33%, var(--sy-art-green) 33% 66%, var(--sy-art-orange) 66% 100%) !important;
+  opacity: 0.9 !important;
+}
+
+.sy-refined-soko,
+.sy-final-soko {
+  color: var(--sy-art-black) !important;
+}
+
+.sy-refined-yetu,
+.sy-final-yetu {
+  color: var(--sy-art-green) !important;
+}
+
+.sy-refined-mtaani,
+.sy-final-mtaani {
+  color: var(--sy-art-orange) !important;
+  margin-left: 0.10em !important;
+}
+
+/* Small orange market spark. It makes the logo feel like artwork without hiding the icon. */
+.sy-refined-wordmark::before,
+.sy-final-wordmark::before {
+  content: "â€¢" !important;
+  position: absolute !important;
+  top: -0.42rem !important;
+  right: -0.32rem !important;
+  color: var(--sy-art-orange) !important;
+  font-size: 0.65rem !important;
+  line-height: 1 !important;
+}
+
+/* Header layout: brand left, shorter search bar shifted right, account/help/cart after it */
+header:has(.sy-refined-wordmark),
+.site-header:has(.sy-refined-wordmark),
+.main-header:has(.sy-refined-wordmark),
+.header-main:has(.sy-refined-wordmark),
+.navbar:has(.sy-refined-wordmark),
+.top-header:has(.sy-refined-wordmark),
+header:has(.sy-final-wordmark),
+.site-header:has(.sy-final-wordmark),
+.main-header:has(.sy-final-wordmark),
+.header-main:has(.sy-final-wordmark),
+.navbar:has(.sy-final-wordmark),
+.top-header:has(.sy-final-wordmark) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  overflow: visible !important;
+}
+
+/* Reduce the search bar and push it away from the logo */
+header:has(.sy-refined-wordmark) form,
+.site-header:has(.sy-refined-wordmark) form,
+.main-header:has(.sy-refined-wordmark) form,
+.header-main:has(.sy-refined-wordmark) form,
+.navbar:has(.sy-refined-wordmark) form,
+.top-header:has(.sy-refined-wordmark) form,
+header:has(.sy-final-wordmark) form,
+.site-header:has(.sy-final-wordmark) form,
+.main-header:has(.sy-final-wordmark) form,
+.header-main:has(.sy-final-wordmark) form,
+.navbar:has(.sy-final-wordmark) form,
+.top-header:has(.sy-final-wordmark) form,
+header:has(.sy-refined-wordmark) .search-bar,
+header:has(.sy-refined-wordmark) .search-box,
+header:has(.sy-refined-wordmark) .search-form,
+header:has(.sy-final-wordmark) .search-bar,
+header:has(.sy-final-wordmark) .search-box,
+header:has(.sy-final-wordmark) .search-form {
+  flex: 0 1 620px !important;
+  width: min(48vw, 620px) !important;
+  max-width: 620px !important;
+  min-width: 320px !important;
+  margin-left: 1.4rem !important;
+  margin-right: 0.55rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+/* Make the input and search button match the smaller width cleanly */
+header:has(.sy-refined-wordmark) input[type="search"],
+header:has(.sy-refined-wordmark) input[placeholder*="Search"],
+header:has(.sy-refined-wordmark) input[placeholder*="search"],
+header:has(.sy-final-wordmark) input[type="search"],
+header:has(.sy-final-wordmark) input[placeholder*="Search"],
+header:has(.sy-final-wordmark) input[placeholder*="search"] {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+/* If the project uses a container around search input and button */
+header:has(.sy-refined-wordmark) .search-container,
+header:has(.sy-final-wordmark) .search-container {
+  width: min(48vw, 620px) !important;
+  max-width: 620px !important;
+  margin-left: 1.4rem !important;
+}
+
+/* Ensure right-side nav links remain visible */
+header:has(.sy-refined-wordmark) nav,
+header:has(.sy-refined-wordmark) .header-actions,
+header:has(.sy-refined-wordmark) .account-links,
+header:has(.sy-final-wordmark) nav,
+header:has(.sy-final-wordmark) .header-actions,
+header:has(.sy-final-wordmark) .account-links {
+  flex: 0 0 auto !important;
+}
+
+/* Smaller screens */
+@media (max-width: 1100px) {
+  .sy-final-brand-anchor,
+  .sy-refined-brand-anchor,
+  a:has(.sy-refined-wordmark),
+  .logo:has(.sy-refined-wordmark),
+  .brand:has(.sy-refined-wordmark),
+  .brand-name:has(.sy-refined-wordmark) {
+    flex-basis: 230px !important;
+    width: 230px !important;
+    min-width: 230px !important;
+    max-width: 230px !important;
+  }
+
+  header:has(.sy-refined-wordmark) form,
+  header:has(.sy-final-wordmark) form,
+  header:has(.sy-refined-wordmark) .search-bar,
+  header:has(.sy-final-wordmark) .search-bar,
+  header:has(.sy-refined-wordmark) .search-box,
+  header:has(.sy-final-wordmark) .search-box,
+  header:has(.sy-refined-wordmark) .search-form,
+  header:has(.sy-final-wordmark) .search-form {
+    width: min(43vw, 540px) !important;
+    max-width: 540px !important;
+    min-width: 260px !important;
+    margin-left: 0.9rem !important;
+  }
+}
+
+@media (max-width: 760px) {
+  header:has(.sy-refined-wordmark),
+  header:has(.sy-final-wordmark),
+  .site-header:has(.sy-refined-wordmark),
+  .site-header:has(.sy-final-wordmark),
+  .main-header:has(.sy-refined-wordmark),
+  .main-header:has(.sy-final-wordmark),
+  .header-main:has(.sy-refined-wordmark),
+  .header-main:has(.sy-final-wordmark) {
+    flex-wrap: wrap !important;
+    gap: 0.55rem !important;
+  }
+
+  .sy-final-brand-anchor,
+  .sy-refined-brand-anchor,
+  a:has(.sy-refined-wordmark),
+  .logo:has(.sy-refined-wordmark),
+  .brand:has(.sy-refined-wordmark),
+  .brand-name:has(.sy-refined-wordmark) {
+    flex-basis: auto !important;
+    width: auto !important;
+    min-width: 205px !important;
+    max-width: none !important;
+  }
+
+  header:has(.sy-refined-wordmark) form,
+  header:has(.sy-final-wordmark) form,
+  header:has(.sy-refined-wordmark) .search-bar,
+  header:has(.sy-final-wordmark) .search-bar,
+  header:has(.sy-refined-wordmark) .search-box,
+  header:has(.sy-final-wordmark) .search-box,
+  header:has(.sy-refined-wordmark) .search-form,
+  header:has(.sy-final-wordmark) .search-form {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+}

@@ -1,4 +1,4 @@
-# SokoYetu Stage 30B: Admin Control Center and Operations Navigation Hub
+﻿# SokoYetu Mtaani Stage 30B: Admin Control Center and Operations Navigation Hub
 
 Stage 30B adds one central admin navigation page.
 
@@ -41,3 +41,4 @@ SELLER_VERIFICATION_TOKEN
 ```
 
 Keep both private.
+

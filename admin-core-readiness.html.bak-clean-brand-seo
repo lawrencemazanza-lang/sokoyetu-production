@@ -1,0 +1,251 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Core Production Readiness Audit</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#064e3b);color:#fff;padding:24px}
+    header .wrap,main{width:min(1260px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .danger{background:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .info{background:#dbeafe;color:#1e40af}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9;color:#064e3b}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-brand-seo.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Core Production Readiness Audit</h1>
+    <p>Hard audit of launch-critical files, routes, environment variables, database counts, admin exposure risks, M-PESA switch safety and final fallback route order.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-orders.html">Admin orders</a>
+    <a class="linkbtn secondary" href="/admin-products.html">Admin products</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-reconciliation.html">M-PESA reconciliation</a>
+    <a class="linkbtn secondary" href="/admin-launch-war-room.html">Launch war room</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Run audit</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Run core readiness audit</button>
+        <button id="copyReportBtn" class="secondary" type="button">Copy gap report</button>
+      </div>
+      <div class="warnBox">This page is read-only. It does not change checkout, payments, orders, products, seller records, support tickets or database schema.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="summaryCard" class="card" style="display:none">
+    <div class="head">Launch decision summary</div>
+    <div class="body">
+      <div id="decisionBox"></div>
+      <div id="summary" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="blockerCard" class="card" style="display:none">
+    <div class="head">Critical blockers and warnings</div>
+    <div class="body">
+      <div id="blockers"></div>
+      <div id="warnings"></div>
+    </div>
+  </section>
+
+  <section id="detailCard" class="card" style="display:none">
+    <div class="head">Detailed audit</div>
+    <div class="body" id="details"></div>
+  </section>
+</main>
+
+<script>
+let lastAudit = null;
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "bad" ? "pill bad" : kind === "warn" ? "pill warn" : "pill info";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+function boolPill(value){
+  return value ? pill("ok", "OK") : pill("bad", "MISSING");
+}
+async function runAudit(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+
+  msg('<div class="note">Running core production readiness audit...</div>');
+
+  try {
+    const response = await fetch("/api/admin/core-readiness/audit", {
+      headers: { "x-admin-order-token": token() },
+      credentials: "include",
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not run core readiness audit.");
+    lastAudit = data;
+    renderAudit(data);
+    msg('<div class="ok">Core readiness audit completed.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not run core readiness audit.") + '</div>');
+  }
+}
+function listBox(items, empty, bad){
+  if (!items || !items.length) return '<div class="ok">' + esc(empty) + '</div>';
+  return '<div class="' + (bad ? "badBox" : "warnBox") + '">' + items.map(x => "• " + esc(x)).join("<br>") + '</div>';
+}
+function renderAudit(data){
+  const blockers = data.blockers || [];
+  const warnings = data.warnings || [];
+  const env = data.environment || {};
+  const files = data.fileChecks || [];
+  const routes = data.routeChecks || [];
+  const db = data.databaseCounts || [];
+  const order = data.routeOrder || {};
+  const secrets = data.secretScan || [];
+  const launchDecision = data.launchDecision || "UNKNOWN";
+
+  document.getElementById("decisionBox").innerHTML =
+    launchDecision === "HOLD"
+      ? '<div class="badBox"><b>Launch decision: HOLD</b><br>Resolve critical blockers before production launch or live M-PESA use.</div>'
+      : warnings.length
+        ? '<div class="warnBox"><b>Launch decision: REVIEW</b><br>No hard blocker was returned, but warnings need review before wider launch.</div>'
+        : '<div class="ok"><b>Launch decision: CAN PROCEED TO CONTROLLED TESTING</b><br>No blocker or warning was returned by this audit. Still run a controlled first transaction and monitor logs.</div>';
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Blockers<b>' + blockers.length + '</b></div>' +
+    '<div class="metric">Warnings<b>' + warnings.length + '</b></div>' +
+    '<div class="metric">Critical files checked<b>' + files.length + '</b></div>' +
+    '<div class="metric">Route patterns checked<b>' + routes.length + '</b></div>' +
+    '<div class="metric">Database models checked<b>' + db.length + '</b></div>' +
+    '<div class="metric">Generated<b>' + esc(data.generatedAt ? new Date(data.generatedAt).toLocaleString() : "-") + '</b></div>';
+
+  document.getElementById("blockers").innerHTML = '<b>Critical blockers</b>' + listBox(blockers, "No critical blockers returned.", true);
+  document.getElementById("warnings").innerHTML = '<b>Warnings</b>' + listBox(warnings, "No warnings returned.", false);
+
+  document.getElementById("details").innerHTML =
+    '<h3>Environment</h3>' +
+    table(["Item", "Status", "Value", "Note"], [
+      ["DATABASE_URL", env.databaseUrlSet ? pill("ok","SET") : pill("bad","MISSING"), env.databaseUrl || "-", "Must point to production database on Render."],
+      ["ADMIN_ORDER_TOKEN", env.adminOrderTokenSet ? pill("ok","SET") : pill("bad","MISSING"), env.adminOrderToken || "-", "Protects sensitive admin pages."],
+      ["PUBLIC_SITE_URL", env.publicSiteUrlSet ? pill("ok","SET") : pill("warn","NOT SET"), env.publicSiteUrl || "-", "Useful for production callback and public URL consistency."],
+      ["NODE_ENV", env.nodeEnv ? pill("info", env.nodeEnv) : pill("warn", "NOT SET"), env.nodeEnv || "-", "Should be production on Render."],
+      ["ADMIN_REGISTRATION_ENABLED", env.adminRegistrationEnabled === "true" ? pill("bad", "TRUE") : pill("ok", String(env.adminRegistrationEnabled || "false")), env.adminRegistrationEnabled || "not set", "Should not be true in production."],
+      ["M-PESA mode", env.mpesaMode ? pill("info", env.mpesaMode) : pill("warn", "NOT SET"), env.mpesaMode || "-", "Production/live requires confirmation guard."],
+      ["M-PESA production confirmed", env.mpesaProductionConfirmed ? pill("ok","TRUE") : pill("warn","FALSE"), String(env.mpesaProductionConfirmed), "Only true after live credentials are confirmed."]
+    ]) +
+    '<h3>Critical files</h3>' +
+    table(["File", "Status", "Why it matters"], files.map(f => [f.file, f.exists ? pill("ok","EXISTS") : pill(f.critical ? "bad" : "warn","MISSING"), f.note])) +
+    '<h3>Critical route patterns</h3>' +
+    table(["Pattern", "Status", "Note"], routes.map(r => [r.pattern, r.found ? pill("ok","FOUND") : pill(r.critical ? "bad" : "warn","MISSING"), r.note])) +
+    '<h3>Database counts</h3>' +
+    table(["Model", "Status", "Count", "Note"], db.map(d => [d.model, d.available ? pill("ok","AVAILABLE") : pill("warn","NOT FOUND"), d.count === null || d.count === undefined ? "-" : d.count, d.note || ""])) +
+    '<h3>Route order and 404 fallback</h3>' +
+    table(["Check", "Status", "Details"], [
+      ["Final fallback marker", order.fallbackFound ? pill("ok","FOUND") : pill("warn","NOT FOUND"), order.fallbackFound ? "Stage 32E fallback detected." : "Could not detect Stage 32E fallback marker."],
+      ["Routes after fallback", order.routesAfterFallback && order.routesAfterFallback.length ? pill("bad","FOUND") : pill("ok","NONE"), order.routesAfterFallback && order.routesAfterFallback.length ? order.routesAfterFallback.join(", ") : "No route declarations detected after final fallback."],
+      ["Stage 35A endpoint order", order.stage35aBeforeFallback ? pill("ok","BEFORE FALLBACK") : pill("warn","CHECK"), order.stage35aBeforeFallback ? "Endpoint should be reachable." : "Confirm endpoint is not after final fallback."]
+    ]) +
+    '<h3>Secret exposure scan</h3>' +
+    table(["File", "Status", "Matches"], secrets.map(s => [s.file, s.matches.length ? pill("bad","REVIEW") : pill("ok","CLEAR"), s.matches.join(", ") || "-"]));
+
+  document.getElementById("summaryCard").style.display = "block";
+  document.getElementById("blockerCard").style.display = "block";
+  document.getElementById("detailCard").style.display = "block";
+}
+function table(headers, rows){
+  return '<table><thead><tr>' + headers.map(h => '<th>' + esc(h) + '</th>').join("") + '</tr></thead><tbody>' +
+    rows.map(row => '<tr>' + row.map(cell => '<td>' + cell + '</td>').join("") + '</tr>').join("") +
+    '</tbody></table>';
+}
+function buildGapReport(){
+  if (!lastAudit) return "";
+  const blockers = lastAudit.blockers || [];
+  const warnings = lastAudit.warnings || [];
+  return [
+    "SokoYetu Mtaani Stage 35A Core Production Readiness Gap Report",
+    "Generated: " + (lastAudit.generatedAt || new Date().toISOString()),
+    "",
+    "Launch decision: " + (lastAudit.launchDecision || "UNKNOWN"),
+    "",
+    "Critical blockers:",
+    blockers.length ? blockers.map(x => "- " + x).join("\n") : "- None returned",
+    "",
+    "Warnings:",
+    warnings.length ? warnings.map(x => "- " + x).join("\n") : "- None returned",
+    "",
+    "Next action:",
+    blockers.length ? "Resolve blockers before launch or live payment testing." : warnings.length ? "Review warnings before wider launch." : "Proceed only to controlled testing and monitoring."
+  ].join("\n");
+}
+async function copyReport(){
+  const text = buildGapReport();
+  if (!text) {
+    msg('<div class="err">Run the audit first.</div>');
+    return;
+  }
+  try {
+    await navigator.clipboard.writeText(text);
+    msg('<div class="ok">Gap report copied.</div>');
+  } catch {
+    msg('<div class="warnBox">Could not copy automatically. Select the report manually from the audit output.</div>');
+  }
+}
+document.getElementById("loadBtn").onclick = runAudit;
+document.getElementById("copyReportBtn").onclick = copyReport;
+</script>
+  <script src="/sokoyetu-brand-seo.js" defer></script>
+</body>
+</html>
+

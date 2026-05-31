@@ -1,0 +1,293 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage26a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage26a:check"] = "node scripts/check-stage26a-orders.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage26a-orders.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 26A Order Operations Check");
+console.log("----------------------------------------");
+
+const checks = [
+  ["PUBLIC_SITE_URL", process.env.PUBLIC_SITE_URL],
+  ["SUPPORT_EMAIL", process.env.SUPPORT_EMAIL],
+  ["BUSINESS_NAME", process.env.BUSINESS_NAME],
+  ["MPESA_CALLBACK_URL", process.env.MPESA_CALLBACK_URL],
+  ["ADMIN_REGISTRATION_ENABLED", process.env.ADMIN_REGISTRATION_ENABLED],
+];
+
+let warnings = 0;
+
+for (const [key, value] of checks) {
+  if (!value) {
+    console.log("WARN:", key, "is not set.");
+    warnings += 1;
+  } else {
+    console.log("OK:", key, "=", value);
+  }
+}
+
+if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
+  console.log("WARN: ADMIN_REGISTRATION_ENABLED should be false for launch.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Manual order operations pages to review:");
+console.log("- STAGE26A_ORDER_OPERATIONS_WORKFLOW.md");
+console.log("- STAGE26A_SELLER_CUSTOMER_MESSAGE_TEMPLATES.md");
+console.log("- order-operations.html");
+console.log("");
+console.log("Warnings:", warnings);
+console.log("Stage 26A check completed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "order-operations.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Order Operations</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .step{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:16px;padding:12px}
+    .step b{color:#064e3b}
+    .status{display:inline-flex;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534;margin:3px}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    textarea{width:100%;min-height:95px;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Order Operations</h1>
+    <p>Manual workflow for paid orders, seller coordination, delivery, failed payments and refunds.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Recommended order status workflow</div>
+    <div class="body">
+      <div>
+        <span class="status warn">Pending Payment</span>
+        <span class="status">Paid</span>
+        <span class="status">Processing</span>
+        <span class="status">Ready for Delivery</span>
+        <span class="status">Out for Delivery</span>
+        <span class="status">Delivered</span>
+        <span class="status bad">Failed Payment</span>
+        <span class="status bad">Cancelled</span>
+        <span class="status warn">Refund Requested</span>
+        <span class="status">Refunded</span>
+      </div>
+      <div class="note">For soft launch, keep fulfilment manual: confirm payment, contact seller, confirm item availability, contact customer, arrange delivery, then mark the order as delivered in admin notes.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Daily admin order checklist</div>
+    <div class="body grid">
+      <div class="step"><b>1. Check new orders</b><br>Open admin/order list and identify orders created today.</div>
+      <div class="step"><b>2. Confirm payment</b><br>Check status, M-PESA request, callback and receipt where available.</div>
+      <div class="step"><b>3. Contact seller</b><br>Confirm item exists, price is correct and seller can fulfil.</div>
+      <div class="step"><b>4. Contact customer</b><br>Confirm delivery location and phone number.</div>
+      <div class="step"><b>5. Arrange delivery</b><br>Manual rider, seller delivery, customer pickup or courier.</div>
+      <div class="step"><b>6. Close order</b><br>Record delivered, cancelled, failed or refunded outcome.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Status decision table</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Situation</th><th>Status</th><th>Admin action</th></tr></thead>
+        <tbody>
+          <tr><td>Customer starts checkout but does not pay</td><td>Pending Payment</td><td>Wait, then follow up if customer contacts support.</td></tr>
+          <tr><td>M-PESA confirms successful payment</td><td>Paid</td><td>Confirm seller availability and start fulfilment.</td></tr>
+          <tr><td>Seller confirms item is available</td><td>Processing</td><td>Prepare for pickup or delivery.</td></tr>
+          <tr><td>Item packed and ready</td><td>Ready for Delivery</td><td>Assign delivery method.</td></tr>
+          <tr><td>Item has left seller/admin</td><td>Out for Delivery</td><td>Track delivery and keep customer informed.</td></tr>
+          <tr><td>Customer receives item</td><td>Delivered</td><td>Close the order and invite feedback.</td></tr>
+          <tr><td>Payment fails or customer has insufficient balance</td><td>Failed Payment</td><td>Do not fulfil. Ask customer to retry checkout.</td></tr>
+          <tr><td>Customer cancels before fulfilment</td><td>Cancelled</td><td>Cancel order; refund only if payment was already received.</td></tr>
+          <tr><td>Customer requests refund</td><td>Refund Requested</td><td>Review reason, order evidence and seller response.</td></tr>
+          <tr><td>Refund has been processed</td><td>Refunded</td><td>Record refund reference and close support case.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Quick message templates</div>
+    <div class="body grid">
+      <div><b>Customer payment received</b><textarea readonly>Hello [Name], we have received your SokoYetu payment for order #[Order ID]. We are confirming seller availability and will update you shortly about delivery.</textarea></div>
+      <div><b>Seller order alert</b><textarea readonly>Hello [Seller], a SokoYetu order has been placed for [Product]. Please confirm availability, final price and pickup/delivery readiness.</textarea></div>
+      <div><b>Failed payment</b><textarea readonly>Hello [Name], your SokoYetu payment did not complete. Please retry checkout when your M-PESA line has enough balance, or contact SokoYetu Mtaani@gmail.com for help.</textarea></div>
+      <div><b>Delivery update</b><textarea readonly>Hello [Name], your order #[Order ID] is being prepared for delivery. We will contact you before dispatch to confirm your location.</textarea></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Soft launch rule</div>
+    <div class="body">
+      <div class="note danger">Do not let sellers fulfil orders automatically during soft launch. Admin should manually verify payment, seller availability and delivery details until the process is stable.</div>
+    </div>
+  </section>
+</main>
+</body>
+</html>`);
+
+fs.writeFileSync(path.join(root, "STAGE26A_ORDER_OPERATIONS_WORKFLOW.md"), `# SokoYetu Stage 26A: Order Operations Workflow
+
+Stage 26A defines how SokoYetu should handle orders during soft launch.
+
+This stage does not change checkout, M-PESA, DNS, email forwarding, product import or LiveKit logic.
+
+## Core workflow
+
+\`\`\`text
+Customer pays
+→ Admin confirms payment
+→ Admin confirms seller availability
+→ Admin confirms delivery details
+→ Seller prepares item
+→ Delivery is arranged
+→ Order is marked delivered
+\`\`\`
+
+## Order statuses
+
+Use these statuses operationally:
+
+\`\`\`text
+Pending Payment
+Paid
+Processing
+Ready for Delivery
+Out for Delivery
+Delivered
+Failed Payment
+Cancelled
+Refund Requested
+Refunded
+\`\`\`
+
+## Soft launch rule
+
+During soft launch, fulfilment should stay manual. Admin must verify every paid order before seller dispatch.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE26A_SELLER_CUSTOMER_MESSAGE_TEMPLATES.md"), `# SokoYetu Stage 26A: Seller and Customer Message Templates
+
+## Customer payment received
+
+Hello [Name], we have received your SokoYetu payment for order #[Order ID]. We are confirming seller availability and will update you shortly about delivery.
+
+## Seller order alert
+
+Hello [Seller], a SokoYetu order has been placed for [Product]. Please confirm availability, final price and pickup/delivery readiness.
+
+## Failed payment
+
+Hello [Name], your SokoYetu payment did not complete. Please retry checkout when your M-PESA line has enough balance, or contact SokoYetu Mtaani@gmail.com for help.
+
+## Delivery confirmation
+
+Hello [Name], your order #[Order ID] is being prepared for delivery. Please confirm your delivery location and the phone number we should use during dispatch.
+
+## Delivery dispatched
+
+Hello [Name], your SokoYetu order #[Order ID] is now out for delivery. Please keep your phone available for the rider/courier.
+
+## Delivered
+
+Hello [Name], your SokoYetu order #[Order ID] has been delivered. Thank you for shopping with us. Please contact SokoYetu Mtaani@gmail.com if you need help.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE26A_SOFT_LAUNCH_ORDER_CHECKLIST.md"), `# SokoYetu Stage 26A: Soft Launch Order Checklist
+
+Use this checklist for every real order during soft launch.
+
+## Before fulfilment
+
+- [ ] Order is visible in admin/order records.
+- [ ] Customer phone number is available.
+- [ ] Delivery address is available.
+- [ ] M-PESA payment status is confirmed.
+- [ ] M-PESA receipt/checkout reference is recorded if available.
+- [ ] Seller has confirmed stock availability.
+- [ ] Product price matches listing.
+- [ ] Delivery method is agreed.
+
+## During fulfilment
+
+- [ ] Customer has been updated.
+- [ ] Seller has prepared the item.
+- [ ] Rider/courier/pickup method is confirmed.
+- [ ] Customer has been contacted before dispatch.
+- [ ] Delivery cost is agreed if applicable.
+
+## After fulfilment
+
+- [ ] Customer confirms receipt.
+- [ ] Order marked delivered.
+- [ ] Seller payout noted if applicable.
+- [ ] Support issue recorded if any.
+- [ ] Refund/cancellation handled if needed.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 26A order operations pack installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage26a:check");
+console.log("Open order-operations.html locally or on Render after deployment.");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json scripts/check-stage26a-orders.js order-operations.html STAGE26A_ORDER_OPERATIONS_WORKFLOW.md STAGE26A_SELLER_CUSTOMER_MESSAGE_TEMPLATES.md STAGE26A_SOFT_LAUNCH_ORDER_CHECKLIST.md");
+console.log('git commit -m "Add order operations workflow"');
+console.log("git push");
+

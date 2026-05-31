@@ -1,10 +1,10 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 35A Core Production Readiness Check");
+console.log("SokoYetu Mtaani Stage 35A Core Production Readiness Check");
 console.log("-------------------------------------------------");
 
 let warnings = 0;
@@ -32,7 +32,7 @@ if (!fs.existsSync(serverPath)) {
 } else {
   const server = fs.readFileSync(serverPath, "utf8");
   const requiredServer = [
-    "SokoYetu Stage 35A: Core Production Readiness Audit API",
+    "SokoYetu Mtaani Stage 35A: Core Production Readiness Audit API",
     "/api/admin/core-readiness/audit",
     "stage35aRouteOrder",
     "stage35aDatabaseCounts",
@@ -48,8 +48,8 @@ if (!fs.existsSync(serverPath)) {
     }
   }
 
-  const fallbackIndex = server.indexOf("SokoYetu Stage 32E: Friendly Error Pages");
-  const stage35Index = server.indexOf("SokoYetu Stage 35A: Core Production Readiness Audit API");
+  const fallbackIndex = server.indexOf("SokoYetu Mtaani Stage 32E: Friendly Error Pages");
+  const stage35Index = server.indexOf("SokoYetu Mtaani Stage 35A: Core Production Readiness Audit API");
   if (fallbackIndex !== -1 && stage35Index !== -1 && stage35Index > fallbackIndex) {
     console.log("WARN: Stage 35A endpoint appears after the 404 fallback and may be unreachable.");
     warnings += 1;
@@ -97,3 +97,4 @@ if (fs.existsSync(robotsPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 35A core production readiness check passed.");
+

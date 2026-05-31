@@ -1,4 +1,4 @@
-# SokoYetu Stage 20 Deployment Checklist
+﻿# SokoYetu Mtaani Stage 20 Deployment Checklist
 
 ## Before GitHub
 
@@ -53,3 +53,4 @@ Stage 20 deploys the app, but public commercial launch should wait until:
 - [ ] Business email is connected.
 - [ ] Test accounts are replaced or secured.
 - [ ] Backups and monitoring are configured.
+

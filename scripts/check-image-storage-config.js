@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Image Storage Configuration");
+console.log("SokoYetu Mtaani Image Storage Configuration");
 console.log("-----------------------------------");
 console.log("UPLOAD_MODE =", process.env.UPLOAD_MODE || "local");
 
@@ -33,3 +33,4 @@ if (process.env.UPLOAD_MODE === "cloudinary") {
 
 console.log("Local image storage is active. Uploaded files will remain in uploads/products on this computer.");
 console.log("For production, set UPLOAD_MODE=cloudinary and add Cloudinary credentials.");
+

@@ -1,4 +1,4 @@
-const { PrismaClient } = require("@prisma/client");
+﻿const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
 require("dotenv").config();
 
@@ -18,7 +18,7 @@ const products = [
     price: 65000,
     oldPrice: 75000,
     stock: 18,
-    imageUrl: "https://res.cloudinary.com/dx4ae8taf/image/upload/v1778838539/sokoyetu/products/whm0j4tk1ayunwmbmtlo.jpg",
+    imageUrl: "https://res.cloudinary.com/dx4ae8taf/image/upload/v1778838539/SokoYetu Mtaani/products/whm0j4tk1ayunwmbmtlo.jpg",
     importedByAdmin: true,
   },
   {
@@ -114,7 +114,7 @@ const products = [
 ];
 
 async function main() {
-  console.log("Starting SokoYetu production seed...");
+  console.log("Starting SokoYetu Mtaani production seed...");
   console.log("Database:", process.env.DATABASE_URL.replace(/:[^:@/]+@/, ":****@"));
 
   let created = 0;
@@ -164,3 +164,4 @@ main()
   .finally(async () => {
     await prisma.$disconnect();
   });
+

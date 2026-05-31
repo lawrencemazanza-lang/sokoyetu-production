@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
 const root = process.cwd();
-console.log("SokoYetu Stage 35C Buyer Journey Smoke Test Check");
+console.log("SokoYetu Mtaani Stage 35C Buyer Journey Smoke Test Check");
 console.log("------------------------------------------------");
 let warnings = 0;
 
@@ -27,7 +27,7 @@ const serverPath = path.join(root, "server.js");
 if (fs.existsSync(serverPath)) {
   const server = fs.readFileSync(serverPath, "utf8");
   const required = [
-    "SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API",
+    "SokoYetu Mtaani Stage 35C: Controlled Buyer Journey Smoke Test API",
     "/api/admin/buyer-journey-smoke",
     "stage35cBuyerSmokeCounts"
   ];
@@ -39,8 +39,8 @@ if (fs.existsSync(serverPath)) {
       console.log("OK: server.js includes", item);
     }
   }
-  const fallback = server.lastIndexOf("SokoYetu Stage 32E: Friendly Error Pages");
-  const stage = server.indexOf("SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test API");
+  const fallback = server.lastIndexOf("SokoYetu Mtaani Stage 32E: Friendly Error Pages");
+  const stage = server.indexOf("SokoYetu Mtaani Stage 35C: Controlled Buyer Journey Smoke Test API");
   if (fallback !== -1 && stage !== -1 && stage > fallback) {
     console.log("WARN: Stage 35C endpoint appears after final fallback.");
     warnings++;
@@ -69,3 +69,4 @@ if (fs.existsSync(path.join(root, "admin-control.html"))) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 35C buyer journey smoke test check passed.");
+

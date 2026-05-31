@@ -1,4 +1,4 @@
-# SokoYetu Stage 33A: Production M-PESA Readiness Checklist and Daraja Switch Plan
+﻿# SokoYetu Mtaani Stage 33A: Production M-PESA Readiness Checklist and Daraja Switch Plan
 
 Stage 33A is read-only. It does not switch M-PESA to production.
 
@@ -88,3 +88,4 @@ Open:
 ```text
 http://localhost:5173/admin-mpesa-readiness.html
 ```
+

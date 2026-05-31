@@ -1,0 +1,257 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const bulkPath = path.join(root, "bulk-import.html");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(bulkPath)) {
+  console.error("ERROR: server.js or bulk-import.html was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage22c-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(bulkPath, "bulk-import");
+
+let server = fs.readFileSync(serverPath, "utf8");
+let bulk = fs.readFileSync(bulkPath, "utf8");
+
+// Make the page call the clean v2 endpoint instead of any older conflicting endpoint.
+let pageChanges = 0;
+while (bulk.includes("/api/admin/products/bulk-import")) {
+  bulk = bulk.replace("/api/admin/products/bulk-import", "/api/admin/products/bulk-import-v2");
+  pageChanges += 1;
+}
+
+// Make the result display handle v2 summary clearly.
+bulk = bulk.replace(
+  /const created = Number\(data\.created \?\? data\.summary\?\.created \?\? data\.result\?\.created \?\? 0\);[\s\S]*?result\.innerHTML='<div class="ok"><b>Import completed\.<\/b><br>Total processed: '\+total\+'<br>Created: '\+created\+'<br>Updated: '\+updated\+'<br>Skipped: '\+skipped\+'<\/div>'/,
+  `const created = Number(data.created ?? data.summary?.created ?? data.result?.created ?? 0);
+        const updated = Number(data.updated ?? data.summary?.updated ?? data.result?.updated ?? 0);
+        const skipped = Number(data.skipped ?? data.summary?.skipped ?? data.result?.skipped ?? 0);
+        const received = Number(data.received ?? data.total ?? data.summary?.total ?? (created + updated + skipped));
+        result.innerHTML='<div class="ok"><b>Import completed.</b><br>Products received: '+received+'<br>Created: '+created+'<br>Updated: '+updated+'<br>Skipped: '+skipped+'</div>'`
+);
+
+if (!bulk.includes("SokoYetu Stage 22C Bulk Import V2 Fix")) {
+  bulk = bulk.replace("</body>", "\n<!-- SokoYetu Stage 22C Bulk Import V2 Fix -->\n</body>");
+}
+
+fs.writeFileSync(bulkPath, bulk, "utf8");
+console.log("Updated bulk-import.html to use /api/admin/products/bulk-import-v2.");
+console.log("Page endpoint replacements:", pageChanges);
+
+// Add a clean import endpoint that cannot conflict with the older endpoint.
+if (!server.includes("SokoYetu Stage 22C: Bulk Product Import V2 API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 22C: Bulk Product Import V2 API
+// Clean import endpoint with reliable created/updated/skipped counts.
+// ================================
+app.post("/api/admin/products/bulk-import-v2", async (req, res) => {
+  try {
+    const configuredToken = process.env.BULK_IMPORT_TOKEN;
+    const providedToken = req.headers["x-import-token"];
+
+    if (!configuredToken) {
+      return res.status(500).json({
+        message: "BULK_IMPORT_TOKEN is not configured on the server.",
+        received: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+      });
+    }
+
+    if (!providedToken || providedToken !== configuredToken) {
+      return res.status(403).json({
+        message: "Invalid bulk import token.",
+        received: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+      });
+    }
+
+    const products = Array.isArray(req.body?.products) ? req.body.products : [];
+    const received = products.length;
+
+    if (!received) {
+      return res.status(400).json({
+        message: "No products were provided for import.",
+        received: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+      });
+    }
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    const results = [];
+
+    for (const raw of products) {
+      const name = String(raw.name || "").trim();
+      const description = String(raw.description || "").trim();
+      const category = String(raw.category || "General").trim();
+      const price = Number(raw.price || 0);
+      const oldPriceValue = raw.oldPrice === "" || raw.oldPrice === null || raw.oldPrice === undefined ? null : Number(raw.oldPrice);
+      const stock = Number(raw.stock || 0);
+      const imageUrl = String(raw.imageUrl || "").trim();
+
+      if (!name || !category || !Number.isFinite(price) || price <= 0 || !Number.isFinite(stock) || stock < 0) {
+        skipped += 1;
+        results.push({
+          name,
+          status: "skipped",
+          reason: "Missing name/category or invalid price/stock.",
+        });
+        continue;
+      }
+
+      const existing = await prisma.product.findFirst({
+        where: { name },
+      });
+
+      const data = {
+        name,
+        description: description || (existing?.description || \`\${name} listed under \${category}. Product details should be verified by admin before public promotion.\`),
+        category,
+        price,
+        oldPrice: Number.isFinite(oldPriceValue) ? oldPriceValue : (existing?.oldPrice ?? null),
+        stock,
+        imageUrl: imageUrl || (existing?.imageUrl || ""),
+        importedByAdmin: true,
+      };
+
+      if (existing) {
+        const product = await prisma.product.update({
+          where: { id: existing.id },
+          data,
+        });
+
+        updated += 1;
+        results.push({
+          name: product.name,
+          id: product.id,
+          status: "updated",
+        });
+      } else {
+        const product = await prisma.product.create({
+          data,
+        });
+
+        created += 1;
+        results.push({
+          name: product.name,
+          id: product.id,
+          status: "created",
+        });
+      }
+    }
+
+    return res.json({
+      message: "Bulk product import completed.",
+      received,
+      created,
+      updated,
+      skipped,
+      total: received,
+      results,
+    });
+  } catch (error) {
+    console.error("Bulk product import v2 error:", error);
+    return res.status(500).json({
+      message: "Bulk product import failed.",
+      details: error.message,
+      received: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added /api/admin/products/bulk-import-v2 to server.js.");
+} else {
+  console.log("Bulk import v2 endpoint already exists.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE22C_BULK_IMPORT_V2_FIX.md"), `# SokoYetu Stage 22C: Bulk Import V2 Fix
+
+## Problem
+
+The bulk import page showed:
+
+\`\`\`text
+Import completed.
+Total processed: 0
+Created: 0
+Updated: 0
+Skipped: 0
+\`\`\`
+
+even when products were previewed.
+
+## Fix
+
+This patch adds a clean endpoint:
+
+\`\`\`text
+POST /api/admin/products/bulk-import-v2
+\`\`\`
+
+and updates \`bulk-import.html\` to use it.
+
+The endpoint returns reliable counts:
+
+\`\`\`json
+{
+  "received": 2,
+  "created": 0,
+  "updated": 2,
+  "skipped": 0
+}
+\`\`\`
+
+If products already exist, they will show as \`updated\`, not \`created\`.
+
+## Test
+
+Open:
+
+\`\`\`text
+http://localhost:5173/bulk-import.html
+\`\`\`
+
+Use the token, load the example CSV, preview products, then import.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 22C bulk import v2 fix installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test http://localhost:5173/bulk-import.html again.");
+console.log("");
+console.log("If it works:");
+console.log("git add server.js bulk-import.html STAGE22C_BULK_IMPORT_V2_FIX.md");
+console.log('git commit -m "Fix bulk product import counts"');
+console.log("git push");

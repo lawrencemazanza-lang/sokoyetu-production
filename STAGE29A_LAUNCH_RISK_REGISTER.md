@@ -1,4 +1,4 @@
-# SokoYetu Stage 29A: Launch Risk Register
+﻿# SokoYetu Mtaani Stage 29A: Launch Risk Register
 
 | Risk | Impact | Control |
 |---|---|---|
@@ -11,3 +11,4 @@
 | Product images missing | Poor catalogue trust | Require seller photos or approved supplier images |
 | Admin registration open | Unauthorized admin accounts | Keep ADMIN_REGISTRATION_ENABLED false |
 | Production M-PESA switched too early | Failed live payments | Only switch after Safaricom production credentials are confirmed |
+

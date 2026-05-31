@@ -1,0 +1,207 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Mtaani Stage 32A SEO start -->
+  <title>SokoYetu Mtaani Product Details</title>
+  <meta name="description" content="View SokoYetu Mtaani product details, product price, category, stock status, seller information and customer support links.">
+  <link rel="canonical" href="https://www.mySokoYetu Mtaani.co.ke/product-detail.html">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="SokoYetu Mtaani Product Details">
+  <meta property="og:description" content="View SokoYetu Mtaani product details, product price, category, stock status, seller information and customer support links.">
+  <meta property="og:type" content="product">
+  <meta property="og:url" content="https://www.mySokoYetu Mtaani.co.ke/product-detail.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SokoYetu Mtaani Product Details">
+  <meta name="twitter:description" content="View SokoYetu Mtaani product details, product price, category, stock status, seller information and customer support links.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Mtaani Stage 32A SEO end -->
+  <meta charset="UTF-8">
+  
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:28px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:32px}
+    header p{margin:8px 0 0;color:#dcfce7;line-height:1.5;max-width:820px}
+    main{display:grid;gap:16px;padding:22px 0 42px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .body{padding:18px;display:grid;gap:14px}
+    .productLayout{display:grid;grid-template-columns:minmax(280px,430px) 1fr;gap:20px;align-items:start}
+    .imageBox{border:1px solid #e5e7eb;border-radius:22px;overflow:hidden;background:#f1f5f9;min-height:320px;display:grid;place-items:center}
+    .imageBox img{width:100%;height:100%;max-height:470px;object-fit:cover}
+    .noimg{color:#64748b;font-weight:900}
+    .title{font-size:28px;font-weight:900;color:#111827}
+    .muted{color:#64748b;line-height:1.55}
+    .price{font-size:28px;font-weight:900;color:#064e3b}
+    .old{color:#64748b;text-decoration:line-through;font-weight:700}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:6px 10px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534;margin:2px}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .linkbtn,button{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:12px 15px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button{background:#16a34a}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:12px}
+    .smallcard{border:1px solid #e5e7eb;border-radius:18px;background:#f8fafc;padding:12px}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:820px){.productLayout{grid-template-columns:1fr}.imageBox{min-height:230px}h1{font-size:27px}.title{font-size:24px}}
+  </style>
+  <link rel="stylesheet" href="/public-nav.css">
+
+  
+
+  <!-- SokoYetu Mtaani Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Mtaani Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-a11y.css">
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+  <link rel="stylesheet" href="/sokoyetu-search-logo-refine.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Product Details</h1>
+    <p>Review product information, stock status and support links before buying on SokoYetu Mtaani.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/">← Back to shop</a>
+    <a class="linkbtn secondary" href="/categories.html">Browse categories</a>
+    <a class="linkbtn secondary" href="/help-center.html">Help Center</a>
+  </div>
+
+  <section class="card">
+    <div class="body" id="result">
+      <div class="note">Loading product details...</div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  SokoYetu Mtaani · Product details · SokoYetu Mtaani@gmail.com
+</footer>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function productId(){
+  return new URLSearchParams(location.search).get("id");
+}
+function setMeta(product){
+  const title = (product.name || "Product") + " · SokoYetu Mtaani";
+  document.title = title;
+  let meta = document.querySelector('meta[name="description"]');
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "description");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", String(product.description || "View this SokoYetu Mtaani product.").slice(0, 155));
+}
+async function loadProduct(){
+  const id = productId();
+  const result = document.getElementById("result");
+
+  if (!id) {
+    result.innerHTML = '<div class="err">Product ID is missing. Open this page from a product or category listing.</div>';
+    return;
+  }
+
+  try {
+    const res = await fetch("/api/products", { credentials: "include" });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(data.message || "Could not load products.");
+
+    const raw = Array.isArray(data) ? data : (data.products || data.data || []);
+    const product = raw.find(p => String(p.id) === String(id));
+
+    if (!product) {
+      result.innerHTML = '<div class="err">Product was not found. It may have been removed or is not available.</div>';
+      return;
+    }
+
+    renderProduct(product);
+  } catch (error) {
+    result.innerHTML = '<div class="err">' + esc(error.message || "Could not load product.") + '</div>';
+  }
+}
+function renderProduct(product){
+  setMeta(product);
+
+  const result = document.getElementById("result");
+  const image = product.imageUrl || product.image || product.photoUrl || "";
+  const stock = product.stock ?? null;
+  const inStock = stock === null || Number(stock) > 0;
+  const stockText = stock === null ? "Stock not shown" : (inStock ? stock + " available" : "Out of stock");
+  const stockClass = inStock ? "pill" : "pill bad";
+
+  const imageHtml = image
+    ? '<img src="' + esc(image) + '" alt="' + esc(product.name || "Product image") + '">'
+    : '<div class="noimg">No product image available</div>';
+
+  const shareUrl = location.href;
+
+  result.innerHTML =
+    '<div class="productLayout">' +
+      '<div class="imageBox">' + imageHtml + '</div>' +
+      '<div style="display:grid;gap:13px">' +
+        '<div class="title">' + esc(product.name || "Unnamed product") + '</div>' +
+        '<div><span class="pill">' + esc(product.category || "Other") + '</span><span class="' + stockClass + '">' + esc(stockText) + '</span></div>' +
+        '<div><span class="price">' + money(product.price || 0) + '</span>' + (Number(product.oldPrice || 0) > Number(product.price || 0) ? ' <span class="old">' + money(product.oldPrice) + '</span>' : '') + '</div>' +
+        '<div class="muted">' + esc(product.description || "No description has been provided for this product yet.") + '</div>' +
+        '<div class="grid">' +
+          '<div class="smallcard"><b>Product ID</b><br><span class="muted">#' + esc(product.id) + '</span></div>' +
+          '<div class="smallcard"><b>Category</b><br><span class="muted">' + esc(product.category || "Other") + '</span></div>' +
+          '<div class="smallcard"><b>Seller</b><br><a class="linkbtn" href="/seller-store.html?sellerId=' + encodeURIComponent(product.sellerId || "unknown") + '">View seller store</a></div>' +
+        '</div>' +
+        '<div class="actions">' +
+          '<a class="linkbtn" href="/#products">Open shop</a>' +
+          '<a class="linkbtn secondary" href="/checkout.html">Go to checkout</a>' +
+          '<button type="button" onclick="copyShareLink()">Copy product link</button>' +
+        '</div>' +
+        '<div class="note">To buy this product, return to the shop, add it to your cart, then use Secure Checkout. For order help, use the Help Center.</div>' +
+      '</div>' +
+    '</div>';
+
+  window.currentShareUrl = shareUrl;
+}
+async function copyShareLink(){
+  try {
+    await navigator.clipboard.writeText(window.currentShareUrl || location.href);
+    alert("Product link copied.");
+  } catch (error) {
+    prompt("Copy this product link:", window.currentShareUrl || location.href);
+  }
+}
+window.copyShareLink = copyShareLink;
+loadProduct();
+</script>
+  <script src="/public-nav.js" defer></script>
+  <script src="/public-a11y.js" defer></script>
+  <script src="/sokoyetu-final-seo.js" defer></script>
+  <script src="/sokoyetu-search-logo-refine.js" defer></script>
+</body>
+</html>
+
+
+
+
+
+

@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu LiveKit Configuration");
+console.log("SokoYetu Mtaani LiveKit Configuration");
 console.log("-----------------------------");
 
 const required = ["LIVEKIT_URL", "LIVEKIT_API_KEY", "LIVEKIT_API_SECRET"];
@@ -21,3 +21,4 @@ for (const key of required) {
 console.log("");
 console.log(ok ? "LiveKit configuration looks ready." : "Add the missing LiveKit values to .env before testing livestream rooms.");
 process.exit(ok ? 0 : 1);
+

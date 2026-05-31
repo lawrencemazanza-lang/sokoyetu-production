@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 34B Trust Center Check");
+console.log("SokoYetu Mtaani Stage 34B Trust Center Check");
 console.log("------------------------------------");
 
 let warnings = 0;
@@ -28,7 +28,7 @@ const trustPath = path.join(root, "trust-center.html");
 if (fs.existsSync(trustPath)) {
   const html = fs.readFileSync(trustPath, "utf8");
   const required = [
-    "SokoYetu Trust Center",
+    "SokoYetu Mtaani Trust Center",
     "M-PESA payment safety",
     "Do not pay twice",
     "/track-order.html",
@@ -74,3 +74,4 @@ if (fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 34B Trust Center check passed.");
+

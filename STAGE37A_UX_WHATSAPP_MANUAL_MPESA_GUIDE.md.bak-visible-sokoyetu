@@ -1,0 +1,41 @@
+# SokoYetu Stage 37A: UX Cleanup, WhatsApp, Offer Rail and Manual M-PESA
+
+This stage adds:
+
+```text
+Floating WhatsApp button
+Right-side rotating offer rail on desktop
+Cleaner checkout page
+Home delivery and self-pickup selection
+Manual M-PESA fallback while Daraja is pending
+Customer-safe error wording
+```
+
+## Values used
+
+```text
+WhatsApp number: 254714565555
+M-PESA Buy Goods Till: 6923522
+```
+
+If the WhatsApp number is wrong, update `WHATSAPP_NUMBER` inside `checkout.html` and `app.js`.
+
+## Test
+
+```cmd
+npm run stage37a:check
+node --check server.js
+npm run dev
+```
+
+Manual test:
+
+1. Open homepage.
+2. Confirm WhatsApp button appears.
+3. Confirm right offer rail appears on desktop.
+4. Add product to cart.
+5. Click checkout.
+6. Confirm `/checkout.html` opens.
+7. Confirm Home delivery and Self-pickup appear.
+8. Submit a controlled order.
+9. If Daraja fails, confirm manual M-PESA instructions appear without technical text.

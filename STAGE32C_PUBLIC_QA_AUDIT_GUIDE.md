@@ -1,4 +1,4 @@
-# SokoYetu Stage 32C: Public Site Quality Assurance and Broken-Link Audit
+﻿# SokoYetu Mtaani Stage 32C: Public Site Quality Assurance and Broken-Link Audit
 
 Stage 32C adds an internal public-site QA audit page.
 
@@ -80,3 +80,4 @@ http://localhost:5173/admin-public-audit.html
 ```
 
 Then click **Run public site QA audit**.
+

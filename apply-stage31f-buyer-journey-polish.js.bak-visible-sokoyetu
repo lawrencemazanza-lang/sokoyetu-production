@@ -1,0 +1,555 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const indexPath = path.join(root, "index.html");
+const sitemapPath = path.join(root, "sitemap.xml");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage31f-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(indexPath, "index");
+backup(sitemapPath, "sitemap");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage31f:check"] = "node scripts/check-stage31f-buyer-journey.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+// Shared public navigation CSS.
+fs.writeFileSync(path.join(root, "public-nav.css"), `/* SokoYetu Stage 31F: public buyer journey navigation */
+:root{
+  --sy-green:#16a34a;
+  --sy-dark:#064e3b;
+  --sy-ink:#111827;
+  --sy-soft:#f0fdf4;
+  --sy-border:#bbf7d0;
+}
+.sy-public-nav{
+  position:sticky;
+  top:0;
+  z-index:9998;
+  background:rgba(255,255,255,.96);
+  backdrop-filter:blur(12px);
+  border-bottom:1px solid #e5e7eb;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.sy-public-nav .sy-wrap{
+  width:min(1180px,94vw);
+  margin:0 auto;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  padding:10px 0;
+}
+.sy-public-nav .sy-brand{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  text-decoration:none;
+  color:var(--sy-dark);
+  font-weight:900;
+  white-space:nowrap;
+}
+.sy-public-nav .sy-logo{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  display:grid;
+  place-items:center;
+  background:linear-gradient(135deg,var(--sy-dark),var(--sy-green));
+  color:#fff;
+  font-weight:900;
+}
+.sy-public-nav .sy-links{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:8px;
+  flex-wrap:wrap;
+}
+.sy-public-nav .sy-links a{
+  color:var(--sy-ink);
+  text-decoration:none;
+  font-weight:800;
+  font-size:14px;
+  padding:9px 10px;
+  border-radius:999px;
+}
+.sy-public-nav .sy-links a:hover{
+  background:var(--sy-soft);
+  color:var(--sy-dark);
+}
+.sy-public-nav .sy-links a.sy-primary{
+  background:var(--sy-green);
+  color:#fff;
+}
+.sy-public-nav .sy-links a.sy-dark{
+  background:var(--sy-dark);
+  color:#fff;
+}
+.sy-public-footer{
+  width:min(1180px,94vw);
+  margin:24px auto;
+  border:1px solid var(--sy-border);
+  border-radius:22px;
+  background:var(--sy-soft);
+  padding:16px;
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--sy-dark);
+}
+.sy-public-footer b{display:block;margin-bottom:8px}
+.sy-public-footer .sy-footer-links{display:flex;flex-wrap:wrap;gap:10px}
+.sy-public-footer a{
+  color:var(--sy-dark);
+  font-weight:900;
+  text-decoration:none;
+  border-bottom:2px solid var(--sy-green);
+}
+.sy-journey-banner{
+  width:min(1180px,94vw);
+  margin:16px auto;
+  border:1px solid var(--sy-border);
+  border-radius:22px;
+  background:var(--sy-soft);
+  padding:14px 16px;
+  font-family:Arial,Helvetica,sans-serif;
+  color:var(--sy-dark);
+}
+.sy-journey-banner .sy-steps{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:8px;
+}
+.sy-journey-banner .sy-step{
+  background:#fff;
+  border:1px solid var(--sy-border);
+  border-radius:999px;
+  padding:7px 10px;
+  font-weight:900;
+  color:var(--sy-dark);
+  font-size:13px;
+}
+@media(max-width:820px){
+  .sy-public-nav .sy-wrap{
+    align-items:flex-start;
+    flex-direction:column;
+  }
+  .sy-public-nav .sy-links{
+    justify-content:flex-start;
+  }
+  .sy-public-nav .sy-links a{
+    font-size:13px;
+    padding:8px 9px;
+  }
+}
+`, "utf8");
+
+// Shared public navigation JS.
+fs.writeFileSync(path.join(root, "public-nav.js"), `(function(){
+  if (window.__SOKOYETU_PUBLIC_NAV__) return;
+  window.__SOKOYETU_PUBLIC_NAV__ = true;
+
+  function path(){
+    return (location.pathname || "/").toLowerCase();
+  }
+
+  function link(href, label, cls){
+    return '<a href="' + href + '"' + (cls ? ' class="' + cls + '"' : '') + '>' + label + '</a>';
+  }
+
+  function injectNav(){
+    if (document.querySelector(".sy-public-nav")) return;
+
+    var current = path();
+    var nav = document.createElement("nav");
+    nav.className = "sy-public-nav";
+    nav.setAttribute("aria-label", "SokoYetu public navigation");
+    nav.innerHTML =
+      '<div class="sy-wrap">' +
+        '<a class="sy-brand" href="/"><span class="sy-logo">SY</span><span>SokoYetu</span></a>' +
+        '<div class="sy-links">' +
+          link("/", "Home") +
+          link("/categories.html", "Categories") +
+          link("/seller-stores.html", "Seller Stores") +
+          link("/help-center.html", "Help Center") +
+          link("/track-order.html", "Track Order") +
+          link("/support-request.html", "Support", "sy-dark") +
+          link("/checkout.html", "Checkout", "sy-primary") +
+        '</div>' +
+      '</div>';
+
+    document.body.insertBefore(nav, document.body.firstChild);
+
+    if (["/","/index.html"].includes(current) && !document.querySelector(".sy-journey-banner")) {
+      var banner = document.createElement("section");
+      banner.className = "sy-journey-banner";
+      banner.innerHTML =
+        '<b>Buyer journey</b>' +
+        '<div class="sy-steps">' +
+          '<span class="sy-step">1. Browse categories</span>' +
+          '<span class="sy-step">2. View product details</span>' +
+          '<span class="sy-step">3. Add to cart</span>' +
+          '<span class="sy-step">4. Checkout</span>' +
+          '<span class="sy-step">5. Track order</span>' +
+          '<span class="sy-step">6. Get support</span>' +
+        '</div>';
+      nav.insertAdjacentElement("afterend", banner);
+    }
+  }
+
+  function injectFooter(){
+    if (document.querySelector(".sy-public-footer")) return;
+
+    var footer = document.createElement("section");
+    footer.className = "sy-public-footer";
+    footer.innerHTML =
+      '<b>Customer service</b>' +
+      '<div class="sy-footer-links">' +
+        link("/help-center.html", "Help Center") +
+        link("/track-order.html", "Track Order") +
+        link("/support-request.html", "Submit Support Request") +
+        link("/returns-policy.html", "Returns and Refunds") +
+        link("/contact-support.html", "Contact Support") +
+        link("/privacy-policy.html", "Privacy") +
+        link("/terms-of-service.html", "Terms") +
+      '</div>';
+
+    document.body.appendChild(footer);
+  }
+
+  function ready(fn){
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+    else fn();
+  }
+
+  ready(function(){
+    injectNav();
+    injectFooter();
+  });
+})();
+`, "utf8");
+
+const publicPages = [
+  "index.html",
+  "categories.html",
+  "product-detail.html",
+  "seller-stores.html",
+  "seller-store.html",
+  "help-center.html",
+  "track-order.html",
+  "support-request.html",
+  "contact-support.html",
+  "faq.html",
+  "returns-policy.html",
+  "privacy-policy.html",
+  "terms-of-service.html",
+  "data-protection.html",
+  "seller-policy.html"
+];
+
+function addAssetTags(fileName) {
+  const filePath = path.join(root, fileName);
+  if (!fs.existsSync(filePath)) {
+    console.log("Skipped missing public page:", fileName);
+    return false;
+  }
+
+  backup(filePath, fileName.replace(/[^a-z0-9]/gi, "-"));
+
+  let html = fs.readFileSync(filePath, "utf8");
+  let before = html;
+
+  if (!html.includes('href="/public-nav.css"')) {
+    if (html.includes("</head>")) {
+      html = html.replace("</head>", '  <link rel="stylesheet" href="/public-nav.css">\n</head>');
+    } else {
+      html = '<link rel="stylesheet" href="/public-nav.css">\n' + html;
+    }
+  }
+
+  if (!html.includes('src="/public-nav.js"')) {
+    if (html.includes("</body>")) {
+      html = html.replace("</body>", '  <script src="/public-nav.js" defer></script>\n</body>');
+    } else {
+      html += '\n<script src="/public-nav.js" defer></script>\n';
+    }
+  }
+
+  if (html !== before) {
+    fs.writeFileSync(filePath, html, "utf8");
+    console.log("Added public navigation assets:", fileName);
+    return true;
+  }
+
+  console.log("Public navigation assets already present:", fileName);
+  return false;
+}
+
+let changedPages = 0;
+for (const page of publicPages) {
+  if (addAssetTags(page)) changedPages += 1;
+}
+
+// Clean homepage clutter from previous public-link stages.
+if (fs.existsSync(indexPath)) {
+  let index = fs.readFileSync(indexPath, "utf8");
+  const before = index;
+
+  const cleanupPatterns = [
+    /<!-- SokoYetu Stage 30E: Public customer service shortcuts -->[\s\S]*?<!-- End SokoYetu Stage 30E -->/g,
+    /<!-- SokoYetu Stage 31C: Public category directory link -->[\s\S]*?<!-- End SokoYetu Stage 31C -->/g,
+    /<!-- SokoYetu Stage 31D: Product detail page note -->[\s\S]*?<!-- End SokoYetu Stage 31D -->/g,
+    /<!-- SokoYetu Stage 31E: Seller stores link -->[\s\S]*?<!-- End SokoYetu Stage 31E -->/g
+  ];
+
+  for (const pattern of cleanupPatterns) {
+    index = index.replace(pattern, "");
+  }
+
+  // Remove old inline helpbar CSS if only partly inserted.
+  index = index.replace(/<style id="sy-stage30e-help-style">[\s\S]*?<\/style>/g, "");
+
+  if (index !== before) {
+    fs.writeFileSync(indexPath, index, "utf8");
+    console.log("Cleaned repeated homepage customer-service blocks from index.html.");
+  } else {
+    console.log("No repeated Stage 30E/31C/31D/31E homepage blocks found.");
+  }
+}
+
+// Add public paths to sitemap if missing.
+let sitemap = fs.existsSync(sitemapPath)
+  ? fs.readFileSync(sitemapPath, "utf8")
+  : `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url>\n    <loc>https://www.mysokoyetu.co.ke/</loc>\n  </url>\n</urlset>\n`;
+
+const sitemapUrls = [
+  "https://www.mysokoyetu.co.ke/categories.html",
+  "https://www.mysokoyetu.co.ke/product-detail.html",
+  "https://www.mysokoyetu.co.ke/seller-stores.html",
+  "https://www.mysokoyetu.co.ke/seller-store.html",
+  "https://www.mysokoyetu.co.ke/help-center.html",
+  "https://www.mysokoyetu.co.ke/track-order.html",
+  "https://www.mysokoyetu.co.ke/support-request.html"
+];
+
+for (const url of sitemapUrls) {
+  if (!sitemap.includes(url)) {
+    const block = `\n  <url>\n    <loc>${url}</loc>\n  </url>\n`;
+    if (sitemap.includes("</urlset>")) sitemap = sitemap.replace("</urlset>", block + "</urlset>");
+    else sitemap += block;
+  }
+}
+fs.writeFileSync(sitemapPath, sitemap, "utf8");
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage31f-buyer-journey.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 31F Buyer Journey Polish Check");
+console.log("--------------------------------------------");
+
+let warnings = 0;
+
+const requiredFiles = [
+  "public-nav.css",
+  "public-nav.js",
+  "index.html",
+  "categories.html",
+  "product-detail.html",
+  "seller-stores.html",
+  "seller-store.html",
+  "help-center.html",
+  "track-order.html",
+  "support-request.html"
+];
+
+for (const file of requiredFiles) {
+  const filePath = path.join(root, file);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const publicPages = [
+  "index.html",
+  "categories.html",
+  "product-detail.html",
+  "seller-stores.html",
+  "seller-store.html",
+  "help-center.html",
+  "track-order.html",
+  "support-request.html"
+];
+
+for (const page of publicPages) {
+  const filePath = path.join(root, page);
+  if (!fs.existsSync(filePath)) continue;
+  const html = fs.readFileSync(filePath, "utf8");
+  if (!html.includes('/public-nav.css')) {
+    console.log("WARN:", page, "does not link public-nav.css.");
+    warnings += 1;
+  } else {
+    console.log("OK:", page, "links public-nav.css.");
+  }
+  if (!html.includes('/public-nav.js')) {
+    console.log("WARN:", page, "does not load public-nav.js.");
+    warnings += 1;
+  } else {
+    console.log("OK:", page, "loads public-nav.js.");
+  }
+}
+
+const indexPath = path.join(root, "index.html");
+if (fs.existsSync(indexPath)) {
+  const index = fs.readFileSync(indexPath, "utf8");
+  const oldMarkers = [
+    "SokoYetu Stage 30E: Public customer service shortcuts",
+    "SokoYetu Stage 31C: Public category directory link",
+    "SokoYetu Stage 31D: Product detail page note",
+    "SokoYetu Stage 31E: Seller stores link"
+  ];
+
+  for (const marker of oldMarkers) {
+    if (index.includes(marker)) {
+      console.log("WARN: index.html still contains old clutter marker:", marker);
+      warnings += 1;
+    } else {
+      console.log("OK: index.html does not contain old marker:", marker);
+    }
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 31F buyer journey polish check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE31F_BUYER_JOURNEY_POLISH_GUIDE.md"), `# SokoYetu Stage 31F: Buyer Journey Polish and Public Site Navigation Cleanup
+
+Stage 31F creates a cleaner public buyer journey.
+
+## New files
+
+\`\`\`text
+public-nav.css
+public-nav.js
+scripts/check-stage31f-buyer-journey.js
+STAGE31F_BUYER_JOURNEY_POLISH_GUIDE.md
+\`\`\`
+
+## Updated public pages
+
+The following pages load the shared public navigation:
+
+\`\`\`text
+index.html
+categories.html
+product-detail.html
+seller-stores.html
+seller-store.html
+help-center.html
+track-order.html
+support-request.html
+contact-support.html
+faq.html
+returns-policy.html
+privacy-policy.html
+terms-of-service.html
+data-protection.html
+seller-policy.html
+\`\`\`
+
+## Public buyer journey
+
+\`\`\`text
+Homepage
+→ Categories
+→ Product Detail
+→ Seller Store
+→ Checkout
+→ Track Order
+→ Support Request
+→ Help Center
+\`\`\`
+
+## Cleanup performed
+
+The homepage clutter blocks from the earlier public-link stages are removed:
+
+\`\`\`text
+Stage 30E floating helpbar
+Stage 31C category note block
+Stage 31D product detail note block
+Stage 31E seller stores note block
+\`\`\`
+
+These are replaced by one consistent shared navigation and footer.
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage31f:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/
+http://localhost:5173/categories.html
+http://localhost:5173/product-detail.html?id=1
+http://localhost:5173/seller-stores.html
+http://localhost:5173/help-center.html
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 31F buyer journey polish installed.");
+console.log("Public pages updated:", changedPages);
+console.log("");
+console.log("Next:");
+console.log("npm run stage31f:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json public-nav.css public-nav.js sitemap.xml scripts/check-stage31f-buyer-journey.js index.html categories.html product-detail.html seller-stores.html seller-store.html help-center.html track-order.html support-request.html contact-support.html faq.html returns-policy.html privacy-policy.html terms-of-service.html data-protection.html seller-policy.html STAGE31F_BUYER_JOURNEY_POLISH_GUIDE.md");
+console.log('git commit -m "Polish buyer journey navigation"');
+console.log("git push");

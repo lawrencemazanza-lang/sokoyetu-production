@@ -1,4 +1,4 @@
-# SokoYetu Stage 30D: Public Help Center and Customer Service Hub
+﻿# SokoYetu Mtaani Stage 30D: Public Help Center and Customer Service Hub
 
 Stage 30D adds a public customer help center.
 
@@ -30,7 +30,7 @@ The help center gives customers one clear place to access:
 `sitemap.xml` is updated to include:
 
 ```text
-https://www.mysokoyetu.co.ke/help-center.html
+https://www.mySokoYetu Mtaani.co.ke/help-center.html
 ```
 
 ## What this stage does not touch
@@ -60,3 +60,4 @@ Open:
 ```text
 http://localhost:5173/help-center.html
 ```
+

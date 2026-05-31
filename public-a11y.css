@@ -1,4 +1,4 @@
-/* SokoYetu Stage 32D: accessibility and mobile usability polish */
+﻿/* SokoYetu Mtaani Stage 32D: accessibility and mobile usability polish */
 html{
   scroll-behavior:smooth;
 }
@@ -113,3 +113,4 @@ img{
     transition-duration:.001ms !important;
   }
 }
+

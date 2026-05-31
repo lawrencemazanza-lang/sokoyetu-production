@@ -1,4 +1,4 @@
-# SokoYetu Stage 31F: Buyer Journey Polish and Public Site Navigation Cleanup
+﻿# SokoYetu Mtaani Stage 31F: Buyer Journey Polish and Public Site Navigation Cleanup
 
 Stage 31F creates a cleaner public buyer journey.
 
@@ -91,3 +91,4 @@ http://localhost:5173/product-detail.html?id=1
 http://localhost:5173/seller-stores.html
 http://localhost:5173/help-center.html
 ```
+

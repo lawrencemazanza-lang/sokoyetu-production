@@ -1,0 +1,253 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20D: Checkout Real STK Push Fix")) {
+  console.log("No change needed. Stage 20D checkout STK fix is already installed.");
+  process.exit(0);
+}
+
+const backupPath = `${appPath}.backup-stage20d-checkout-stk-${Date.now()}`;
+fs.copyFileSync(appPath, backupPath);
+
+function findFunctionRange(source, functionName) {
+  const patterns = [
+    `async function ${functionName}(`,
+    `function ${functionName}(`
+  ];
+
+  let start = -1;
+  let pattern = "";
+
+  for (const p of patterns) {
+    start = source.indexOf(p);
+    if (start !== -1) {
+      pattern = p;
+      break;
+    }
+  }
+
+  if (start === -1) return null;
+
+  const braceStart = source.indexOf("{", start + pattern.length);
+  if (braceStart === -1) return null;
+
+  let depth = 0;
+  let inString = null;
+  let inTemplate = false;
+  let escaped = false;
+
+  for (let i = braceStart; i < source.length; i++) {
+    const char = source[i];
+    const prev = source[i - 1];
+
+    if (escaped) {
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\") {
+      escaped = true;
+      continue;
+    }
+
+    if (inString) {
+      if (char === inString) {
+        inString = null;
+      }
+      continue;
+    }
+
+    if (char === '"' || char === "'") {
+      inString = char;
+      continue;
+    }
+
+    if (char === "`") {
+      inTemplate = !inTemplate;
+      continue;
+    }
+
+    // Count braces even in templates because this is good enough for this controlled function.
+    if (char === "{") depth += 1;
+    if (char === "}") {
+      depth -= 1;
+      if (depth === 0) {
+        return { start, end: i + 1 };
+      }
+    }
+  }
+
+  return null;
+}
+
+const helperBlock = `
+// SokoYetu Stage 20D helper: start real M-PESA STK Push from checkout.
+async function startMpesaPayment(orderId, phone) {
+  const response = await fetch("/api/payments/mpesa/stk-push", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    credentials: "include",
+    body: JSON.stringify({
+      orderId,
+      phone,
+    }),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(data.message || "M-PESA payment could not start.");
+  }
+
+  return data;
+}
+
+`;
+
+if (!code.includes("async function startMpesaPayment")) {
+  const createRange = findFunctionRange(code, "createOrderFromCart");
+  if (createRange) {
+    code = code.slice(0, createRange.start) + helperBlock + code.slice(createRange.start);
+  } else {
+    code += "\n" + helperBlock;
+  }
+}
+
+const newCreateOrderFunction = `// SokoYetu Stage 20D: Checkout Real STK Push Fix
+async function createOrderFromCart(){
+  if (!state.user || state.user.role !== "buyer") {
+    toast("Please sign in as a buyer first.");
+    openModal("accountModal");
+    return;
+  }
+
+  const phone = document.getElementById("mpesaPhone")?.value?.trim();
+  const deliveryAddress = document.getElementById("deliveryAddress")?.value?.trim();
+
+  if (!phone) {
+    toast("M-PESA phone number is required.");
+    return;
+  }
+
+  if (!deliveryAddress) {
+    toast("Delivery address is required.");
+    return;
+  }
+
+  try {
+    const data = await apiRequest("/api/orders", {
+      method: "POST",
+      body: JSON.stringify({
+        phone,
+        deliveryAddress,
+      }),
+    });
+
+    const order = data.order || data;
+    const orderId = order.id;
+
+    if (!orderId) {
+      throw new Error("Order was created, but the order ID was not returned.");
+    }
+
+    const mpesaData = await startMpesaPayment(orderId, phone);
+
+    state.cart = [];
+    save();
+
+    const total = order.totalAmount ?? order.total ?? order.amount ?? 0;
+    const orderResult = document.getElementById("orderResult");
+
+    if (orderResult) {
+      orderResult.style.display = "block";
+      orderResult.innerHTML = \`
+        <div class="summary-line">
+          <span>Order created</span>
+          <b>#\${orderId}</b>
+        </div>
+
+        <div class="summary-line">
+          <span>Total</span>
+          <b>\${typeof formatMoney === "function" ? formatMoney(total) : total}</b>
+        </div>
+
+        <div class="summary-line">
+          <span>M-PESA status</span>
+          <b>\${mpesaData.mode === "demo" ? "Demo STK Prepared" : "STK Push Sent"}</b>
+        </div>
+
+        <p class="seller">
+          \${mpesaData.mode === "demo"
+            ? "Demo M-PESA request prepared successfully. In Daraja mode, the customer receives a real STK Push prompt."
+            : "M-PESA STK Push sent. Check the phone, enter the M-PESA PIN, then wait for confirmation."
+          }
+        </p>
+
+        \${mpesaData.checkoutRequestId ? \`
+          <p class="seller"><b>Checkout Request ID:</b> \${mpesaData.checkoutRequestId}</p>
+        \` : ""}
+      \`;
+    }
+
+    toast(
+      mpesaData.mode === "demo"
+        ? "Demo M-PESA request prepared successfully."
+        : "M-PESA STK Push sent to phone."
+    );
+
+    setTimeout(async () => {
+      try {
+        if (typeof loadCartFromDatabase === "function") {
+          await loadCartFromDatabase();
+        }
+
+        if (typeof renderApp === "function") {
+          renderApp();
+        }
+
+        if (typeof openModal === "function") {
+          openModal("mpesaModal");
+        }
+      } catch {}
+    }, 1200);
+  } catch (error) {
+    toast(error.message || "Checkout could not start M-PESA payment.");
+  }
+}
+
+`;
+
+const range = findFunctionRange(code, "createOrderFromCart");
+
+if (!range) {
+  console.error("ERROR: Could not find createOrderFromCart() in app.js.");
+  console.error("No changes were written.");
+  process.exit(1);
+}
+
+code = code.slice(0, range.start) + newCreateOrderFunction + code.slice(range.end);
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20D checkout STK fix installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally: buyer -> cart -> checkout -> M-PESA phone -> delivery address.");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Trigger real M-PESA STK from deployed checkout\"");
+console.log("git push");

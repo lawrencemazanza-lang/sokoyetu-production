@@ -1,4 +1,4 @@
-# SokoYetu Stage 27A: Seller Verification Checklist
+﻿# SokoYetu Mtaani Stage 27A: Seller Verification Checklist
 
 Use this checklist before approving a seller.
 
@@ -25,7 +25,7 @@ Use this checklist before approving a seller.
 - [ ] No counterfeit wording.
 - [ ] No illegal or restricted product.
 - [ ] No misleading claims.
-- [ ] No suspicious payment request outside SokoYetu.
+- [ ] No suspicious payment request outside SokoYetu Mtaani.
 - [ ] No pressure to bypass admin review.
 
 ## Fulfilment
@@ -41,3 +41,4 @@ Use this checklist before approving a seller.
 - [ ] More information requested.
 - [ ] Rejected.
 - [ ] Suspended.
+

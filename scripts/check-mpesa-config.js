@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
 const required = [
   "MPESA_MODE",
@@ -11,7 +11,7 @@ const required = [
   "MPESA_CALLBACK_URL",
 ];
 
-console.log("SokoYetu M-PESA Configuration Check");
+console.log("SokoYetu Mtaani M-PESA Configuration Check");
 console.log("----------------------------------");
 
 let ok = true;
@@ -50,3 +50,4 @@ if (process.env.MPESA_CALLBACK_URL && process.env.MPESA_CALLBACK_URL.includes("l
 console.log("");
 console.log(ok ? "M-PESA config looks ready for sandbox testing." : "Fix the warnings above before testing real Daraja STK Push.");
 process.exit(ok ? 0 : 1);
+

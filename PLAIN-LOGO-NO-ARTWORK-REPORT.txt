@@ -1,0 +1,27 @@
+﻿SokoYetu Plain Logo No Artwork Report
+
+Removed:
+- Underlines under the name
+- Dot/spark marks
+- Quote-like marks
+- Decorative pseudo-elements
+- Text shadows
+- Border/box-shadow effects on the wordmark
+
+Kept:
+- Original cart icon
+- Plain three-color brand:
+  - Soko = black
+  - Yetu = green
+  - Mtaani = orange
+- Search bar spacing
+
+Test:
+1. npm run dev
+2. Open http://localhost:5173/
+3. Press Ctrl + F5
+
+Deploy:
+git add .
+git commit -m "Remove all SokoYetu logo artwork marks"
+git push

@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 26A Order Operations Check");
+console.log("SokoYetu Mtaani Stage 26A Order Operations Check");
 console.log("----------------------------------------");
 
 const checks = [
@@ -35,3 +35,4 @@ console.log("- order-operations.html");
 console.log("");
 console.log("Warnings:", warnings);
 console.log("Stage 26A check completed.");
+

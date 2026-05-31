@@ -1,6 +1,6 @@
-# SokoYetu Stage 20: Production Deployment Guide
+﻿# SokoYetu Mtaani Stage 20: Production Deployment Guide
 
-This stage prepares SokoYetu for deployment on Render.
+This stage prepares SokoYetu Mtaani for deployment on Render.
 
 ## What this patch added
 
@@ -55,7 +55,7 @@ In the project folder:
 ```cmd
 git init
 git add .
-git commit -m "Prepare SokoYetu for production deployment"
+git commit -m "Prepare SokoYetu Mtaani for production deployment"
 git branch -M main
 git remote add origin YOUR_GITHUB_REPO_URL
 git push -u origin main
@@ -67,9 +67,9 @@ In Render:
 
 ```text
 New → PostgreSQL
-Name: sokoyetu-postgres
-Database: sokoyetu
-User: sokoyetu
+Name: SokoYetu Mtaani-postgres
+Database: SokoYetu Mtaani
+User: SokoYetu Mtaani
 ```
 
 Copy the internal connection string.
@@ -132,7 +132,7 @@ MPESA_CALLBACK_URL="https://YOUR-RENDER-DOMAIN/api/payments/mpesa/callback"
 Example:
 
 ```env
-MPESA_CALLBACK_URL="https://sokoyetu-web.onrender.com/api/payments/mpesa/callback"
+MPESA_CALLBACK_URL="https://SokoYetu Mtaani-web.onrender.com/api/payments/mpesa/callback"
 ```
 
 ### 6. Deploy
@@ -173,3 +173,4 @@ Check:
 - Prisma migration logs
 - Whether package-lock.json is committed
 - Whether NODE_ENV=production changed cookies while testing over HTTPS
+

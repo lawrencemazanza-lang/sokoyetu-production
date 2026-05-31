@@ -1,4 +1,4 @@
-# SokoYetu Stage 16: Production Image Storage with Cloudinary
+﻿# SokoYetu Mtaani Stage 16: Production Image Storage with Cloudinary
 
 ## What changed
 
@@ -35,7 +35,7 @@ CLOUDINARY_API_SECRET="your_api_secret"
 Uploaded product images will be stored in Cloudinary under:
 
 ```text
-sokoyetu/products
+SokoYetu Mtaani/products
 ```
 
 and the database will store the Cloudinary secure image URL.
@@ -63,3 +63,4 @@ https://res.cloudinary.com/
 ## Production note
 
 Cloudinary mode is better for deployment because local uploads on a server can be lost during redeploys, scaling, or container rebuilds.
+

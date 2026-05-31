@@ -1,0 +1,379 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const appPath = path.join(root, "app.js");
+const checkoutPath = path.join(root, "checkout.html");
+
+const WHATSAPP_NUMBER = "254714565555";
+const MPESA_TILL = "6923522";
+
+if (!fs.existsSync(packagePath) || !fs.existsSync(appPath) || !fs.existsSync(checkoutPath)) {
+  console.error("ERROR: package.json, app.js, or checkout.html was not found.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = filePath + ".backup-stage37a-" + label + "-" + Date.now();
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(appPath, "app");
+backup(checkoutPath, "checkout");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage37a:check"] = "node scripts/check-stage37a-ux-whatsapp-manual-mpesa.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage37a-ux-whatsapp-manual-mpesa.js"), `const fs = require("fs");
+const path = require("path");
+const root = process.cwd();
+let warnings = 0;
+console.log("SokoYetu Stage 37A UX WhatsApp Manual M-PESA Check");
+console.log("--------------------------------------------------");
+function checkFile(file, items) {
+  const p = path.join(root, file);
+  if (!fs.existsSync(p)) {
+    console.log("WARN:", file, "missing");
+    warnings++;
+    return;
+  }
+  const s = fs.readFileSync(p, "utf8");
+  for (const item of items) {
+    if (!s.includes(item)) {
+      console.log("WARN:", file, "missing:", item);
+      warnings++;
+    } else {
+      console.log("OK:", file, "includes", item);
+    }
+  }
+}
+checkFile("app.js", ["SokoYetu Stage 37A", "sokoyetu-offer-rail", "wa.me", "254714565555"]);
+checkFile("checkout.html", ["Manual M-PESA", "Buy Goods and Services", "6923522", "Self-pickup", "Home delivery", "/api/payments/mpesa/stk-push"]);
+const bad = ["SokoYetu Stage 36B: checkout page STK note", "M-PESA STK Push failed."];
+const c = fs.existsSync(path.join(root, "checkout.html")) ? fs.readFileSync(path.join(root, "checkout.html"), "utf8") : "";
+for (const item of bad) {
+  if (c.includes(item)) { console.log("WARN: checkout.html still contains public technical text:", item); warnings++; }
+}
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 37A check passed.");
+`, "utf8");
+
+const checkoutHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Checkout</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f5f7fb;color:#111827}
+    header{background:linear-gradient(135deg,#052e16,#16a34a);color:#fff;padding:22px 18px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:30px} header p{margin:7px 0 0;color:#dcfce7;line-height:1.45}
+    main{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(320px,.95fr);gap:18px;padding:22px 0 46px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:24px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 17px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:17px;display:grid;gap:14px}
+    label{font-weight:900;color:#064e3b}
+    input,textarea{width:100%;border:1px solid #bbf7d0;border-radius:15px;padding:12px;font:inherit;background:#fff}
+    textarea{min-height:88px;resize:vertical}
+    button,.linkbtn{border:0;border-radius:15px;background:#16a34a;color:#fff;padding:13px 16px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;justify-content:center;align-items:center;gap:7px}
+    button:disabled{opacity:.55}.secondary{background:#111827}.whatsapp{background:#128c7e}.outline{background:#fff;color:#064e3b;border:1px solid #bbf7d0}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .row{display:grid;grid-template-columns:76px 1fr auto;gap:12px;align-items:center;border:1px solid #e5e7eb;border-radius:18px;padding:11px;background:#f8fafc}
+    .row img{width:76px;height:76px;object-fit:cover;border-radius:15px;background:#e5e7eb}
+    .title{font-weight:900;color:#064e3b}.meta{font-size:13px;color:#64748b;margin-top:4px}.price{font-weight:900}
+    .summary{display:grid;gap:9px;border-top:1px solid #e5e7eb;margin-top:10px;padding-top:12px}
+    .line{display:flex;justify-content:space-between;gap:12px}.line.total{font-size:20px;font-weight:900;color:#064e3b;border-top:1px solid #e5e7eb;padding-top:11px}
+    .msg,.note,.warn,.err,.ok{border-radius:16px;padding:13px;line-height:1.5}.ok{background:#ecfdf5;border:1px solid #86efac;color:#047857}.err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b}.note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534}.warn{background:#fffbeb;border:1px solid #fde68a;color:#92400e}
+    .empty{padding:17px;border-radius:17px;background:#f8fafc;border:1px solid #e5e7eb;color:#64748b}
+    .method-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .method{border:1px solid #bbf7d0;background:#f8fafc;border-radius:18px;padding:13px;cursor:pointer}
+    .method input{width:auto}.method b{color:#064e3b;display:block;margin:6px 0}.method span{font-size:13px;color:#64748b}
+    .method.active{background:#ecfdf5;border-color:#16a34a;box-shadow:0 0 0 3px rgba(22,163,74,.1)}
+    .manual-box{border:1px solid #bbf7d0;background:linear-gradient(135deg,#ecfdf5,#fff);border-radius:20px;padding:15px;display:grid;gap:9px}
+    .manual-box h3{margin:0;color:#064e3b}.big{font-size:24px;font-weight:900;color:#064e3b;letter-spacing:.04em}
+    .steps{display:grid;gap:7px;color:#374151}.steps div{background:#fff;border:1px solid #e5e7eb;border-radius:14px;padding:9px}
+    @media(max-width:900px){main{grid-template-columns:1fr}.method-grid{grid-template-columns:1fr}.row{grid-template-columns:64px 1fr}.price{grid-column:2}h1{font-size:26px}}
+  </style>
+</head>
+<body>
+<header><div class="wrap"><h1>SokoYetu Checkout</h1><p>Choose home delivery or self-pickup, then pay with M-PESA. If the automatic prompt is unavailable, manual M-PESA instructions will appear.</p></div></header>
+<main>
+  <section class="card">
+    <div class="head">Checkout details</div>
+    <div class="body">
+      <form id="checkoutForm">
+        <label for="phone">M-PESA phone number</label>
+        <input id="phone" placeholder="0714565555 or 254714565555" autocomplete="tel">
+        <label>Receiving option</label>
+        <div class="method-grid">
+          <label class="method active" id="methodDeliveryBox"><input type="radio" name="deliveryMethod" value="DELIVERY" checked><b>Home delivery</b><span>Delivery fee applies unless the order qualifies for free delivery.</span></label>
+          <label class="method" id="methodPickupBox"><input type="radio" name="deliveryMethod" value="SELF_PICKUP"><b>Self-pickup</b><span>You collect the product yourself. Delivery fee is KES 0.</span></label>
+        </div>
+        <div id="deliveryAddressWrap"><label for="deliveryAddress">Delivery address</label><textarea id="deliveryAddress" placeholder="Example: Nairobi CBD, Moi Avenue, building name"></textarea></div>
+        <div id="pickupNote" class="note" style="display:none">Self-pickup selected. Delivery fee is KES 0. SokoYetu will confirm pickup details before product release.</div>
+        <button id="payBtn" type="submit">Create order and continue to payment</button>
+      </form>
+      <div id="message"></div>
+      <div id="manualPaymentBox"></div>
+      <div class="actions">
+        <a class="linkbtn outline" href="/">Continue shopping</a>
+        <a class="linkbtn secondary" href="/track-order.html">Track order</a>
+        <a class="linkbtn whatsapp" id="checkoutWhatsApp" target="_blank" rel="noopener">WhatsApp SokoYetu</a>
+      </div>
+    </div>
+  </section>
+  <aside class="card"><div class="head">Cart summary</div><div class="body" id="cartBody"><div class="empty">Loading cart...</div></div></aside>
+</main>
+<script>
+const WHATSAPP_NUMBER = "${WHATSAPP_NUMBER}";
+const MPESA_TILL = "${MPESA_TILL}";
+const cartBody = document.getElementById("cartBody");
+const form = document.getElementById("checkoutForm");
+const message = document.getElementById("message");
+const manualPaymentBox = document.getElementById("manualPaymentBox");
+const payBtn = document.getElementById("payBtn");
+const deliveryAddressEl = document.getElementById("deliveryAddress");
+const deliveryAddressWrap = document.getElementById("deliveryAddressWrap");
+const pickupNote = document.getElementById("pickupNote");
+const checkoutWhatsApp = document.getElementById("checkoutWhatsApp");
+let latestCart = [];
+let lastOrder = null;
+
+function esc(value){return String(value ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\\"":"&quot;","'":"&#39;"}[m]));}
+function money(value){return "KES " + Number(value || 0).toLocaleString("en-KE", {maximumFractionDigits:0});}
+async function fetchJson(url, options = {}) {
+  const response = await fetch(url, {credentials:"include", headers:{"Content-Type":"application/json", ...(options.headers || {})}, ...options});
+  const text = await response.text();
+  let data = {};
+  try { data = text ? JSON.parse(text) : {}; } catch { throw new Error("Server returned an unexpected response. Please contact SokoYetu on WhatsApp."); }
+  if (!response.ok) throw new Error(data.message || "Request failed.");
+  return data;
+}
+function normalizeCart(data){
+  const raw = Array.isArray(data) ? data : Array.isArray(data.items) ? data.items : Array.isArray(data.cart) ? data.cart : Array.isArray(data.cartItems) ? data.cartItems : [];
+  return raw.map(item => ({productId:item.productId || item.id || item.product?.id || "", name:item.name || item.title || item.product?.name || item.product?.title || "Product", imageUrl:item.imageUrl || item.image || item.product?.imageUrl || "", price:Number(item.price || item.product?.price || 0), quantity:Number(item.quantity || item.qty || 1)}));
+}
+function selectedMethod(){return document.querySelector("input[name='deliveryMethod']:checked")?.value || "DELIVERY";}
+function isSelfPickup(){return selectedMethod() === "SELF_PICKUP";}
+function subtotal(){return latestCart.reduce((sum, item) => sum + Number(item.price || 0) * Number(item.quantity || 1), 0);}
+function deliveryFee(){const sub = subtotal(); return isSelfPickup() ? 0 : (sub >= 10000 || sub === 0 ? 0 : 300);}
+function orderTotal(){return subtotal() + deliveryFee();}
+function waUrl(text){return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text);}
+function updateWhatsApp(order){checkoutWhatsApp.href = waUrl(order ? "Hello SokoYetu, I need help with order #" + order.id + "." : "Hello SokoYetu, I need help with my order.");}
+function updateMethodUI(){
+  document.getElementById("methodDeliveryBox").classList.toggle("active", !isSelfPickup());
+  document.getElementById("methodPickupBox").classList.toggle("active", isSelfPickup());
+  deliveryAddressWrap.style.display = isSelfPickup() ? "none" : "block";
+  pickupNote.style.display = isSelfPickup() ? "block" : "none";
+  renderCart();
+}
+function renderCart(){
+  if (!latestCart.length) { cartBody.innerHTML = "<div class='empty'>Your cart is empty. Go back to the shop and add a product first.</div>"; payBtn.disabled = true; return; }
+  payBtn.disabled = false;
+  const rows = latestCart.map(item => "<article class='row'>" + (item.imageUrl ? "<img src='" + esc(item.imageUrl) + "' alt=''>" : "<img alt=''>") + "<div><div class='title'>" + esc(item.name) + "</div><div class='meta'>Quantity: " + esc(item.quantity) + " · Product ID: " + esc(item.productId) + "</div></div><div class='price'>" + money(item.price * item.quantity) + "</div></article>").join("");
+  const fee = deliveryFee();
+  const deliveryText = isSelfPickup() ? "Self-pickup - free" : fee === 0 ? "Free" : money(fee);
+  cartBody.innerHTML = rows + "<div class='summary'><div class='line'><span>Subtotal</span><b>" + money(subtotal()) + "</b></div><div class='line'><span>Delivery</span><b>" + deliveryText + "</b></div><div class='line total'><span>Total</span><b>" + money(orderTotal()) + "</b></div></div><div class='note'>" + (isSelfPickup() ? "Self-pickup selected. You will not pay delivery fee." : "Free delivery applies above KES 10,000.") + "</div>";
+}
+async function loadCart(){
+  try { latestCart = normalizeCart(await fetchJson("/api/cart")); renderCart(); }
+  catch(error){ cartBody.innerHTML = "<div class='msg err'>" + esc(error.message) + "</div>"; payBtn.disabled = true; }
+}
+function manualPaymentHtml(order){
+  const amount = Number(order?.totalAmount || orderTotal() || 0);
+  const orderId = order?.id || "";
+  const text = "Hello SokoYetu, I have paid manually via M-PESA. Order #" + orderId + ", Amount " + money(amount) + ". My receipt code is: ";
+  return "<div class='manual-box'><h3>Manual M-PESA payment</h3><div class='warn'>Automatic M-PESA prompt is not available right now. Use manual payment and send receipt for confirmation.</div><div class='steps'><div><b>1.</b> Go to M-PESA.</div><div><b>2.</b> Choose <b>Lipa na M-PESA</b>.</div><div><b>3.</b> Choose <b>Buy Goods and Services</b>.</div><div><b>4.</b> Enter Till Number:</div></div><div class='big'>" + MPESA_TILL + "</div><div class='steps'><div><b>5.</b> Enter amount: <b>" + money(amount) + "</b></div><div><b>6.</b> Use Order ID as reference: <b>#" + esc(orderId) + "</b></div><div><b>7.</b> Send receipt to SokoYetu on WhatsApp.</div></div><div class='actions'><a class='linkbtn whatsapp' target='_blank' rel='noopener' href='" + waUrl(text) + "'>Send receipt on WhatsApp</a><a class='linkbtn secondary' href='/track-order.html'>Track order</a></div></div>";
+}
+function showManualPayment(order){ lastOrder = order; updateWhatsApp(order); manualPaymentBox.innerHTML = manualPaymentHtml(order); }
+document.querySelectorAll("input[name='deliveryMethod']").forEach(input => input.addEventListener("change", updateMethodUI));
+form.addEventListener("submit", async event => {
+  event.preventDefault();
+  const phone = document.getElementById("phone").value.trim();
+  const deliveryMethod = selectedMethod();
+  const deliveryAddress = deliveryAddressEl.value.trim();
+  manualPaymentBox.innerHTML = "";
+  if (!phone) { message.innerHTML = "<div class='msg err'>M-PESA phone number is required.</div>"; return; }
+  if (deliveryMethod !== "SELF_PICKUP" && !deliveryAddress) { message.innerHTML = "<div class='msg err'>Delivery address is required for home delivery.</div>"; return; }
+  try {
+    payBtn.disabled = true;
+    message.innerHTML = "<div class='msg ok'>Creating your order...</div>";
+    const orderData = await fetchJson("/api/orders", {method:"POST", body:JSON.stringify({phone, deliveryMethod, fulfillmentMethod:deliveryMethod, deliveryAddress: deliveryMethod === "SELF_PICKUP" ? "SELF PICKUP" : deliveryAddress})});
+    const order = orderData.order || orderData;
+    if (!order.id) throw new Error("Order was created but no order ID was returned.");
+    lastOrder = order; updateWhatsApp(order);
+    message.innerHTML = "<div class='msg ok'><b>Order created.</b><br>Order ID: #" + esc(order.id) + "<br>Trying to send the M-PESA prompt now...</div>";
+    try {
+      const stkData = await fetchJson("/api/payments/mpesa/stk-push", {method:"POST", body:JSON.stringify({orderId: order.id, phone})});
+      message.innerHTML = "<div class='msg ok'><b>M-PESA prompt sent.</b><br>Order ID: #" + esc(order.id) + "<br>Check the customer phone and enter the M-PESA PIN." + (stkData.checkoutRequestId ? "<br><small>Checkout Request ID: " + esc(stkData.checkoutRequestId) + "</small>" : "") + "</div>";
+    } catch (stkError) {
+      console.warn("Automatic M-PESA prompt unavailable:", stkError);
+      message.innerHTML = "<div class='msg err'><b>Automatic M-PESA prompt is not available right now.</b><br>Your order was created. Use the manual M-PESA instructions below, then send the receipt on WhatsApp for confirmation.</div>";
+      showManualPayment(order);
+    }
+  } catch (error) {
+    console.error("Checkout error:", error);
+    message.innerHTML = "<div class='msg err'><b>Order could not be completed.</b><br>Please check your cart and phone number, or contact SokoYetu on WhatsApp.</div>";
+  } finally { payBtn.disabled = false; }
+});
+updateWhatsApp(null); updateMethodUI(); loadCart();
+</script>
+</body>
+</html>`;
+
+fs.writeFileSync(checkoutPath, checkoutHtml, "utf8");
+console.log("Updated checkout.html with clean checkout and manual M-PESA fallback.");
+
+let app = fs.readFileSync(appPath, "utf8");
+app = app.split(`onclick="openModal('mpesaModal')"`).join(`onclick="window.location.href='/checkout.html'"`);
+
+if (!app.includes("SokoYetu Stage 37A: public UX polish, WhatsApp and offer rail")) {
+  app += `
+
+// SokoYetu Stage 37A: public UX polish, WhatsApp and offer rail
+(function initStage37AUxWhatsAppOfferRail() {
+  var WHATSAPP_NUMBER = "${WHATSAPP_NUMBER}";
+  var MPESA_TILL = "${MPESA_TILL}";
+  function isAdminOrCheckoutPage(){ return /admin|checkout/i.test(location.pathname); }
+  function waUrl(text){ return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text || "Hello SokoYetu, I need help."); }
+  function injectStyle(){
+    if(document.getElementById("sokoyetuStage37AStyle")) return;
+    var style=document.createElement("style");
+    style.id="sokoyetuStage37AStyle";
+    style.textContent =
+      "body{background:#f5f7fb!important}" +
+      "main,.main,.container,.content{max-width:1180px;margin-left:auto;margin-right:auto}" +
+      ".catalogue-grid,.product-grid,.tool-grid{gap:18px!important}" +
+      ".card,.product-card,.tool-card,.info-card,article{border-radius:18px}" +
+      ".modal-backdrop{z-index:30000}" +
+      ".sokoyetu-wa-float{position:fixed;right:18px;bottom:22px;z-index:21000;background:#128c7e;color:#fff;text-decoration:none;border-radius:999px;padding:13px 16px;font-weight:900;box-shadow:0 18px 45px rgba(15,23,42,.28);display:flex;align-items:center;gap:8px}" +
+      ".sokoyetu-offer-rail{position:fixed;right:18px;top:110px;width:280px;z-index:12000;background:#fff;border:1px solid #bbf7d0;border-radius:24px;box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:hidden}" +
+      ".sokoyetu-offer-head{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:13px 15px;font-weight:900}" +
+      ".sokoyetu-offer-body{padding:14px;display:grid;gap:9px}.sokoyetu-offer-title{font-weight:900;color:#064e3b;font-size:18px}.sokoyetu-offer-text{color:#475569;line-height:1.4}.sokoyetu-offer-pill{display:inline-flex;width:fit-content;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 9px;font-size:12px;font-weight:900}.sokoyetu-offer-actions{display:flex;gap:8px;flex-wrap:wrap}.sokoyetu-offer-actions a{border-radius:12px;padding:9px 10px;text-decoration:none;font-weight:900}.sokoyetu-offer-whatsapp{background:#128c7e;color:#fff}.sokoyetu-offer-shop{background:#111827;color:#fff}" +
+      "@media(min-width:1280px){body:not(.sokoyetu-no-rail){padding-right:310px}}" +
+      "@media(max-width:1279px){.sokoyetu-offer-rail{display:none}}" +
+      "@media(max-width:720px){.sokoyetu-wa-float{right:10px;bottom:12px;padding:11px 13px;font-size:13px}.top-promo{font-size:12px;line-height:1.35}.hero,.section{padding-left:12px!important;padding-right:12px!important}}";
+    document.head.appendChild(style);
+  }
+  function createWhatsAppFloat(){
+    if(document.getElementById("sokoyetuWhatsAppFloat")) return;
+    var a=document.createElement("a");
+    a.id="sokoyetuWhatsAppFloat";
+    a.className="sokoyetu-wa-float";
+    a.href=waUrl("Hello SokoYetu, I need help.");
+    a.target="_blank";
+    a.rel="noopener";
+    a.textContent="WhatsApp SokoYetu";
+    document.body.appendChild(a);
+  }
+  function createOfferRail(){
+    if(isAdminOrCheckoutPage()){ document.body.classList.add("sokoyetu-no-rail"); return; }
+    if(document.getElementById("sokoyetuOfferRail")) return;
+    var offers=[
+      {title:"Self-pickup now available",text:"Collect your order yourself and pay no delivery fee.",pill:"KES 0 delivery fee",link:"/checkout.html"},
+      {title:"Manual M-PESA available",text:"If automatic prompt is unavailable, use Buy Goods Till " + MPESA_TILL + " and send receipt on WhatsApp.",pill:"Till " + MPESA_TILL,link:"/checkout.html"},
+      {title:"Sellers welcome",text:"Want to sell on SokoYetu? Message us on WhatsApp and we will guide you.",pill:"Seller onboarding",link:"/seller-center.html"},
+      {title:"Promoted products",text:"New offers and promoted products will appear here for buyers.",pill:"Hot offers",link:"/categories.html"}
+    ];
+    var rail=document.createElement("aside");
+    rail.id="sokoyetuOfferRail";
+    rail.className="sokoyetu-offer-rail";
+    rail.innerHTML='<div class="sokoyetu-offer-head">SokoYetu Offers</div><div class="sokoyetu-offer-body"><span class="sokoyetu-offer-pill" id="sokoyetuOfferPill"></span><div class="sokoyetu-offer-title" id="sokoyetuOfferTitle"></div><div class="sokoyetu-offer-text" id="sokoyetuOfferText"></div><div class="sokoyetu-offer-actions"><a class="sokoyetu-offer-whatsapp" id="sokoyetuOfferWhatsApp" target="_blank" rel="noopener">WhatsApp</a><a class="sokoyetu-offer-shop" id="sokoyetuOfferLink">Open</a></div></div>';
+    document.body.appendChild(rail);
+    var index=0;
+    function render(){
+      var offer=offers[index % offers.length];
+      document.getElementById("sokoyetuOfferPill").textContent=offer.pill;
+      document.getElementById("sokoyetuOfferTitle").textContent=offer.title;
+      document.getElementById("sokoyetuOfferText").textContent=offer.text;
+      document.getElementById("sokoyetuOfferWhatsApp").href=waUrl("Hello SokoYetu, I am interested in: " + offer.title);
+      document.getElementById("sokoyetuOfferLink").href=offer.link;
+      index++;
+    }
+    render();
+    setInterval(render,4500);
+  }
+  function routeOldCheckoutClicks(){
+    document.addEventListener("click",function(event){
+      var el=event.target && event.target.closest ? event.target.closest("button,a,[onclick],.quick-card,.btn") : null;
+      if(!el) return;
+      var text=String(el.textContent || "").toLowerCase().replace(/\\s+/g," ").trim();
+      var onclick=String(el.getAttribute && el.getAttribute("onclick") || "").toLowerCase();
+      if(onclick.includes("mpesamodal") || text.includes("m-pesa checkout") || text.includes("checkout with m-pesa") || text === "checkout"){
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href="/checkout.html";
+      }
+    },true);
+  }
+  function init(){ injectStyle(); createWhatsAppFloat(); createOfferRail(); routeOldCheckoutClicks(); }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded",init); else init();
+})();
+`;
+}
+
+fs.writeFileSync(appPath, app, "utf8");
+console.log("Updated app.js with WhatsApp floating button, offer rail and checkout routing.");
+
+fs.writeFileSync(path.join(root, "STAGE37A_UX_WHATSAPP_MANUAL_MPESA_GUIDE.md"), `# SokoYetu Stage 37A: UX Cleanup, WhatsApp, Offer Rail and Manual M-PESA
+
+This stage adds:
+
+\`\`\`text
+Floating WhatsApp button
+Right-side rotating offer rail on desktop
+Cleaner checkout page
+Home delivery and self-pickup selection
+Manual M-PESA fallback while Daraja is pending
+Customer-safe error wording
+\`\`\`
+
+## Values used
+
+\`\`\`text
+WhatsApp number: ${WHATSAPP_NUMBER}
+M-PESA Buy Goods Till: ${MPESA_TILL}
+\`\`\`
+
+If the WhatsApp number is wrong, update \`WHATSAPP_NUMBER\` inside \`checkout.html\` and \`app.js\`.
+
+## Test
+
+\`\`\`cmd
+npm run stage37a:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Manual test:
+
+1. Open homepage.
+2. Confirm WhatsApp button appears.
+3. Confirm right offer rail appears on desktop.
+4. Add product to cart.
+5. Click checkout.
+6. Confirm \`/checkout.html\` opens.
+7. Confirm Home delivery and Self-pickup appear.
+8. Submit a controlled order.
+9. If Daraja fails, confirm manual M-PESA instructions appear without technical text.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 37A UX, WhatsApp and Manual M-PESA fallback installed.");
+console.log("");
+console.log("Now run:");
+console.log("npm run stage37a:check");
+console.log("node --check server.js");
+console.log("npm run dev");

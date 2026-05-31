@@ -1,0 +1,176 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Mtaani Stage 32A SEO start -->
+  <title>Track Your SokoYetu Mtaani Order</title>
+  <meta name="description" content="Track your SokoYetu Mtaani order using your order ID and checkout phone number.">
+  <link rel="canonical" href="https://www.mySokoYetu Mtaani.co.ke/track-order.html">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="Track Your SokoYetu Mtaani Order">
+  <meta property="og:description" content="Track your SokoYetu Mtaani order using your order ID and checkout phone number.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mySokoYetu Mtaani.co.ke/track-order.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Track Your SokoYetu Mtaani Order">
+  <meta name="twitter:description" content="Track your SokoYetu Mtaani order using your order ID and checkout phone number.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Mtaani Stage 32A SEO end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1100px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:white;padding:12px 15px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;margin:3px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .timeline{display:grid;gap:10px}
+    .event{border-left:4px solid #16a34a;background:#f8fafc;border-radius:12px;padding:10px 12px}
+    .muted{color:#64748b;font-size:13px}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+  <link rel="stylesheet" href="/public-nav.css">
+
+  
+
+  <!-- SokoYetu Mtaani Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mySokoYetu Mtaani.co.ke/SokoYetu Mtaani-share.svg">
+  <meta name="twitter:image" content="https://www.mySokoYetu Mtaani.co.ke/SokoYetu Mtaani-share.svg">
+  <!-- SokoYetu Mtaani Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-a11y.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Track Your Order</h1>
+    <p>Use your order number and M-PESA phone number to check the latest order status.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Order lookup</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Order ID</label>
+          <input id="orderId" inputmode="numeric" placeholder="Example: 12">
+        </div>
+        <div>
+          <label>M-PESA phone number used at checkout</label>
+          <input id="phone" inputmode="tel" placeholder="Example: 254714565555 or 0714565555">
+        </div>
+      </div>
+      <button id="trackBtn" type="button">Track order</button>
+      <div class="note">For privacy, order details are shown only when the phone number matches the order or payment record.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">Order status</div>
+    <div class="body" id="result"></div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function pillClass(status){
+  const s = String(status || "").toUpperCase();
+  if (s.includes("FAILED") || s.includes("CANCELLED") || s.includes("REJECT")) return "pill bad";
+  if (s.includes("PENDING") || s.includes("REFUND")) return "pill warn";
+  return "pill";
+}
+async function trackOrder(){
+  const orderId = document.getElementById("orderId").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+
+  if (!orderId || !phone) {
+    msg('<div class="err">Enter both order ID and phone number.</div>');
+    return;
+  }
+
+  msg('<div class="note">Checking order...</div>');
+  document.getElementById("resultCard").style.display = "none";
+
+  try {
+    const response = await fetch("/api/orders/track", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ orderId, phone })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not track order.");
+
+    renderOrder(data.order);
+    msg('<div class="ok">Order loaded successfully.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not track order.") + '</div>');
+  }
+}
+function renderOrder(order){
+  const result = document.getElementById("result");
+  const items = (order.items || []).map(item => {
+    return '<tr><td>' + esc(item.name) + '</td><td>' + esc(item.quantity) + '</td><td>' + money(item.price) + '</td><td>' + money(Number(item.price || 0) * Number(item.quantity || 0)) + '</td></tr>';
+  }).join("");
+
+  const tracking = (order.tracking || []).map(t => {
+    const date = t.createdAt ? new Date(t.createdAt).toLocaleString() : "";
+    return '<div class="event"><b>' + esc(t.status) + '</b><br><span>' + esc(t.note || "Status updated.") + '</span><br><span class="muted">' + esc(date) + '</span></div>';
+  }).join("") || '<div class="event"><b>' + esc(order.orderStatus) + '</b><br><span>Your order has been created. Updates will appear here.</span></div>';
+
+  result.innerHTML =
+    '<div class="grid">' +
+      '<div><b>Order</b><br>#' + esc(order.id) + '</div>' +
+      '<div><b>Total</b><br>' + money(order.totalAmount) + '</div>' +
+      '<div><b>Order status</b><br><span class="' + pillClass(order.orderStatus) + '">' + esc(order.orderStatus) + '</span></div>' +
+      '<div><b>Payment status</b><br><span class="' + pillClass(order.paymentStatus) + '">' + esc(order.paymentStatus) + '</span></div>' +
+    '</div>' +
+    '<div><b>Delivery address</b><br><span class="muted">' + esc(order.deliveryAddress || "Not provided") + '</span></div>' +
+    '<div><b>M-PESA receipt</b><br><span class="muted">' + esc(order.mpesaReceipt || "Not available yet") + '</span></div>' +
+    '<div><b>Items</b><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead><tbody>' + items + '</tbody></table></div>' +
+    '<div><b>Tracking timeline</b><div class="timeline">' + tracking + '</div></div>' +
+    '<div class="note">Need help? Contact SokoYetu Mtaani@gmail.com with your order number.</div>';
+
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("trackBtn").onclick = trackOrder;
+</script>
+  <script src="/public-nav.js" defer></script>
+  <script src="/public-a11y.js" defer></script>
+</body>
+</html>
+

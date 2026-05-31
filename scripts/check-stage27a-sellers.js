@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 27A Seller Onboarding Check");
+console.log("SokoYetu Mtaani Stage 27A Seller Onboarding Check");
 console.log("------------------------------------------");
 
 let warnings = 0;
@@ -34,3 +34,4 @@ console.log("- STAGE27A_SELLER_VERIFICATION_CHECKLIST.md");
 console.log("- STAGE27A_SELLER_APPROVAL_MESSAGE_TEMPLATES.md");
 console.log("");
 console.log("Warnings:", warnings);
+

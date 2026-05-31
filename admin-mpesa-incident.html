@@ -1,11 +1,11 @@
-<!doctype html>
+﻿<!doctype html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="robots" content="noindex,nofollow,noarchive">
   <meta name="googlebot" content="noindex,nofollow,noarchive">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>SokoYetu M-PESA Incident Response</title>
+  <title>SokoYetu Mtaani M-PESA Incident Response</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <style>
     *{box-sizing:border-box}
@@ -46,11 +46,14 @@
     .checkitem input{width:auto;min-height:auto;margin-top:3px}
     @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
   </style>
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+  <link rel="stylesheet" href="/sokoyetu-search-logo-refine.css">
+  <link rel="stylesheet" href="/sokoyetu-plain-logo-no-artwork.css">
 </head>
 <body>
 <header>
   <div class="wrap">
-    <h1>SokoYetu M-PESA Incident Response</h1>
+    <h1>SokoYetu Mtaani M-PESA Incident Response</h1>
     <p>Rollback checklist, incident log, escalation template and evidence capture for M-PESA live-test or production payment problems. No database records are changed.</p>
   </div>
 </header>
@@ -348,9 +351,9 @@ function buildTemplate(){
   let text = "";
 
   if (recipient === "safaricom") {
-    text = "Hello Safaricom/Daraja Support,\n\nWe are reviewing an M-PESA transaction issue for SokoYetu. Reference: " + ref + ".\n\nPlease help verify the transaction status using the available evidence below:\n- Order ID:\n- Payment ID:\n- Customer phone:\n- M-PESA receipt:\n- CheckoutRequestID:\n- Expected amount:\n- Actual amount:\n- Callback time, if available:\n\nIssue observed:\n\nAction requested: Please confirm whether the transaction was successful and whether callback delivery was completed.\n\nRegards,\nSokoYetu Operations";
+    text = "Hello Safaricom/Daraja Support,\n\nWe are reviewing an M-PESA transaction issue for SokoYetu Mtaani. Reference: " + ref + ".\n\nPlease help verify the transaction status using the available evidence below:\n- Order ID:\n- Payment ID:\n- Customer phone:\n- M-PESA receipt:\n- CheckoutRequestID:\n- Expected amount:\n- Actual amount:\n- Callback time, if available:\n\nIssue observed:\n\nAction requested: Please confirm whether the transaction was successful and whether callback delivery was completed.\n\nRegards,\nSokoYetu Mtaani Operations";
   } else if (recipient === "customer") {
-    text = "Hello,\n\nThank you for contacting SokoYetu. We are reviewing your M-PESA payment/order issue. Reference: " + ref + ".\n\nPlease do not make another payment while we verify the transaction. If you have an M-PESA confirmation message, keep it safely. We will check the payment receipt, order status and reconciliation record, then update you.\n\nRegards,\nSokoYetu Support";
+    text = "Hello,\n\nThank you for contacting SokoYetu Mtaani. We are reviewing your M-PESA payment/order issue. Reference: " + ref + ".\n\nPlease do not make another payment while we verify the transaction. If you have an M-PESA confirmation message, keep it safely. We will check the payment receipt, order status and reconciliation record, then update you.\n\nRegards,\nSokoYetu Mtaani Support";
   } else {
     text = "Internal M-PESA incident note\n\nReference: " + ref + "\nPriority:\nIncident type:\nOrder ID:\nPayment ID:\nCustomer phone:\nM-PESA receipt:\nCheckoutRequestID:\nExpected amount:\nActual amount:\nObserved issue:\nEvidence checked:\nCustomer communication:\nNext action:\nOwner:\nDeadline:";
   }
@@ -394,5 +397,14 @@ document.getElementById("copyTemplateBtn").onclick = copyTemplate;
 renderRollback();
 renderIncidents();
 </script>
+  <script src="/sokoyetu-final-seo.js" defer></script>
+  <script src="/sokoyetu-search-logo-refine.js" defer></script>
+  <script src="/sokoyetu-plain-logo-no-artwork.js" defer></script>
 </body>
 </html>
+
+
+
+
+
+

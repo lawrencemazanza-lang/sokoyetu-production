@@ -1,0 +1,304 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage27a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage27a:check"] = "node scripts/check-stage27a-sellers.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage27a-sellers.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 27A Seller Onboarding Check");
+console.log("------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.PUBLIC_SITE_URL) {
+  console.log("WARN: PUBLIC_SITE_URL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: PUBLIC_SITE_URL =", process.env.PUBLIC_SITE_URL);
+}
+
+if (!process.env.SUPPORT_EMAIL) {
+  console.log("WARN: SUPPORT_EMAIL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: SUPPORT_EMAIL =", process.env.SUPPORT_EMAIL);
+}
+
+if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
+  console.log("WARN: ADMIN_REGISTRATION_ENABLED should remain false during launch.");
+  warnings += 1;
+} else {
+  console.log("OK: Admin self-registration is not publicly open.");
+}
+
+console.log("");
+console.log("Review these files:");
+console.log("- seller-onboarding.html");
+console.log("- STAGE27A_SELLER_ONBOARDING_GUIDE.md");
+console.log("- STAGE27A_SELLER_VERIFICATION_CHECKLIST.md");
+console.log("- STAGE27A_SELLER_APPROVAL_MESSAGE_TEMPLATES.md");
+console.log("");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "seller-onboarding.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Seller Onboarding</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1120px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+    .step{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:16px;padding:12px;line-height:1.5}
+    .step b{color:#064e3b}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 10px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534;margin:3px}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .danger{background:#fef2f2;border-color:#fecaca;color:#991b1b}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:10px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    textarea{width:100%;min-height:90px;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Seller Onboarding</h1>
+    <p>Verification workflow for approving sellers before they trade on the marketplace.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Seller onboarding stages</div>
+    <div class="body">
+      <div>
+        <span class="pill warn">Application Received</span>
+        <span class="pill warn">Documents Requested</span>
+        <span class="pill">Under Review</span>
+        <span class="pill">Approved</span>
+        <span class="pill bad">Rejected</span>
+        <span class="pill warn">Suspended</span>
+      </div>
+      <div class="note">During soft launch, do not allow unknown sellers to publish freely. Admin should manually verify seller details, contact information, product category and fulfilment ability before approving product visibility.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Admin seller verification checklist</div>
+    <div class="body grid">
+      <div class="step"><b>1. Identity and contact</b><br>Confirm seller name, phone number, email and primary contact person.</div>
+      <div class="step"><b>2. Business details</b><br>Record business name, location, operating category and trading method.</div>
+      <div class="step"><b>3. Product category</b><br>Check whether the seller deals in allowed products and avoids restricted/counterfeit items.</div>
+      <div class="step"><b>4. Product quality</b><br>Request real product photos, prices, stock levels and warranty/return details where relevant.</div>
+      <div class="step"><b>5. Fulfilment readiness</b><br>Confirm whether the seller can deliver, support pickup, or hand over to a rider/courier.</div>
+      <div class="step"><b>6. Admin decision</b><br>Approve, reject, request more information, or suspend depending on risk.</div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller risk decision table</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Risk signal</th><th>Decision</th><th>Admin action</th></tr></thead>
+        <tbody>
+          <tr><td>Seller provides clear identity, product details and contact information.</td><td>Approve</td><td>Allow seller to list products under admin monitoring.</td></tr>
+          <tr><td>Seller details are incomplete but not suspicious.</td><td>Request more information</td><td>Ask for product photos, location, phone and category details.</td></tr>
+          <tr><td>Seller lists prohibited or suspicious counterfeit wording.</td><td>Reject or suspend</td><td>Do not publish products until reviewed.</td></tr>
+          <tr><td>Seller cannot confirm stock or delivery readiness.</td><td>Hold approval</td><td>Allow profile review but delay product promotion.</td></tr>
+          <tr><td>Customer complaints increase against a seller.</td><td>Suspend pending review</td><td>Pause seller visibility while admin investigates.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller message templates</div>
+    <div class="body grid">
+      <div><b>Application received</b><textarea readonly>Hello [Seller], thank you for applying to sell on SokoYetu. We are reviewing your seller details and will contact you if additional information is needed.</textarea></div>
+      <div><b>More information needed</b><textarea readonly>Hello [Seller], before approval, please send your business name, location, phone number, product categories, sample product photos and fulfilment method.</textarea></div>
+      <div><b>Seller approved</b><textarea readonly>Hello [Seller], your SokoYetu seller profile has been approved for soft launch participation. Please keep product prices, stock and delivery details accurate.</textarea></div>
+      <div><b>Seller suspended</b><textarea readonly>Hello [Seller], your SokoYetu seller profile is temporarily under review due to a product, fulfilment or customer-support concern. We will contact you after review.</textarea></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Restricted product warning</div>
+    <div class="body">
+      <div class="note danger">Do not approve listings that appear counterfeit, unsafe, illegal, misleading, age-restricted, or unsupported by the seller. In soft launch, admin should approve products manually.</div>
+    </div>
+  </section>
+</main>
+</body>
+</html>`);
+
+fs.writeFileSync(path.join(root, "STAGE27A_SELLER_ONBOARDING_GUIDE.md"), `# SokoYetu Stage 27A: Seller Onboarding and Verification Guide
+
+Stage 27A defines the seller onboarding workflow for soft launch.
+
+This stage does not change checkout, M-PESA, DNS, email forwarding, database schema, product import or LiveKit logic.
+
+## Seller onboarding flow
+
+\`\`\`text
+Seller applies
+→ Admin checks identity/contact details
+→ Admin checks business/product category
+→ Admin checks fulfilment ability
+→ Admin approves, rejects, requests more information or suspends
+\`\`\`
+
+## Seller statuses
+
+Use these operational statuses:
+
+\`\`\`text
+Application Received
+Documents Requested
+Under Review
+Approved
+Rejected
+Suspended
+\`\`\`
+
+## Minimum seller information
+
+\`\`\`text
+Seller name
+Business name
+Phone number
+Email address
+Location
+Product categories
+Delivery/pickup ability
+Sample product photos
+Return/refund approach
+\`\`\`
+
+## Soft launch rule
+
+During soft launch, sellers should not publish products without admin review. Admin should verify seller details and product reliability before promotion.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE27A_SELLER_VERIFICATION_CHECKLIST.md"), `# SokoYetu Stage 27A: Seller Verification Checklist
+
+Use this checklist before approving a seller.
+
+## Identity and contact
+
+- [ ] Seller name recorded.
+- [ ] Business name recorded.
+- [ ] Phone number confirmed.
+- [ ] Email address confirmed.
+- [ ] Location recorded.
+- [ ] Main contact person identified.
+
+## Product and category
+
+- [ ] Product categories are allowed.
+- [ ] Product descriptions are clear.
+- [ ] Product images are real or supplier-approved.
+- [ ] Prices are realistic.
+- [ ] Stock levels are confirmed.
+- [ ] Warranty or return expectations are clear where relevant.
+
+## Risk checks
+
+- [ ] No counterfeit wording.
+- [ ] No illegal or restricted product.
+- [ ] No misleading claims.
+- [ ] No suspicious payment request outside SokoYetu.
+- [ ] No pressure to bypass admin review.
+
+## Fulfilment
+
+- [ ] Seller can prepare item after paid order.
+- [ ] Seller can support pickup, rider collection or delivery.
+- [ ] Seller understands customer communication process.
+- [ ] Seller agrees to admin order confirmation during soft launch.
+
+## Decision
+
+- [ ] Approved.
+- [ ] More information requested.
+- [ ] Rejected.
+- [ ] Suspended.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE27A_SELLER_APPROVAL_MESSAGE_TEMPLATES.md"), `# SokoYetu Stage 27A: Seller Approval Message Templates
+
+## Application received
+
+Hello [Seller], thank you for applying to sell on SokoYetu. We are reviewing your seller details and will contact you if additional information is needed.
+
+## More information needed
+
+Hello [Seller], before approval, please send your business name, location, phone number, product categories, sample product photos and fulfilment method.
+
+## Seller approved
+
+Hello [Seller], your SokoYetu seller profile has been approved for soft launch participation. Please keep product prices, stock and delivery details accurate.
+
+## Seller rejected
+
+Hello [Seller], we are unable to approve your SokoYetu seller profile at this time because the details provided do not meet our soft-launch requirements.
+
+## Seller suspended
+
+Hello [Seller], your SokoYetu seller profile is temporarily under review due to a product, fulfilment or customer-support concern. We will contact you after review.
+
+## Product correction request
+
+Hello [Seller], please update the product listing for [Product Name]. We need clearer images, accurate price, stock confirmation and a more complete product description before approval.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 27A seller onboarding pack installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage27a:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/seller-onboarding.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json scripts/check-stage27a-sellers.js seller-onboarding.html STAGE27A_SELLER_ONBOARDING_GUIDE.md STAGE27A_SELLER_VERIFICATION_CHECKLIST.md STAGE27A_SELLER_APPROVAL_MESSAGE_TEMPLATES.md");
+console.log('git commit -m "Add seller onboarding workflow"');
+console.log("git push");

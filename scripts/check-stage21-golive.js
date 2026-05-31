@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 21 Go-Live Readiness Check");
+console.log("SokoYetu Mtaani Stage 21 Go-Live Readiness Check");
 console.log("----------------------------------------");
 
 let blocking = 0;
@@ -92,3 +92,4 @@ if (blocking > 0) {
 }
 
 console.log("Core go-live check passed. Review warnings before public launch.");
+

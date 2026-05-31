@@ -1,0 +1,335 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage32b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage32b:check"] = "node scripts/check-stage32b-brand-assets.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+const brandSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#g)"/>
+  <circle cx="256" cy="242" r="142" fill="rgba(255,255,255,0.12)"/>
+  <path d="M156 173h200l-22 148H178L156 173Z" fill="#ffffff"/>
+  <path d="M190 173c9-48 34-78 66-78s57 30 66 78" fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round"/>
+  <circle cx="210" cy="355" r="22" fill="#ffffff"/>
+  <circle cx="306" cy="355" r="22" fill="#ffffff"/>
+  <text x="256" y="281" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="72" font-weight="900" fill="#064e3b">SY</text>
+</svg>`;
+
+const shareSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630">
+  <defs>
+    <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+      <stop offset="0%" stop-color="#064e3b"/>
+      <stop offset="100%" stop-color="#16a34a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="url(#g)"/>
+  <circle cx="980" cy="90" r="210" fill="rgba(255,255,255,0.10)"/>
+  <circle cx="170" cy="560" r="230" fill="rgba(255,255,255,0.08)"/>
+  <rect x="76" y="76" width="1048" height="478" rx="42" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.22)" stroke-width="2"/>
+  <text x="110" y="220" font-family="Arial, Helvetica, sans-serif" font-size="96" font-weight="900" fill="#ffffff">SokoYetu</text>
+  <text x="112" y="304" font-family="Arial, Helvetica, sans-serif" font-size="42" font-weight="700" fill="#dcfce7">Kenyan marketplace for buyers and sellers</text>
+  <text x="112" y="384" font-family="Arial, Helvetica, sans-serif" font-size="34" fill="#ffffff">Browse categories · Seller stores · Checkout · Track orders · Support</text>
+  <rect x="112" y="430" width="250" height="66" rx="33" fill="#ffffff"/>
+  <text x="237" y="474" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="28" font-weight="900" fill="#064e3b">mysokoyetu.co.ke</text>
+  <text x="980" y="470" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="112" font-weight="900" fill="#ffffff">SY</text>
+</svg>`;
+
+fs.writeFileSync(path.join(root, "favicon.svg"), brandSvg, "utf8");
+fs.writeFileSync(path.join(root, "sokoyetu-icon.svg"), brandSvg, "utf8");
+fs.writeFileSync(path.join(root, "sokoyetu-share.svg"), shareSvg, "utf8");
+
+fs.writeFileSync(path.join(root, "site.webmanifest"), JSON.stringify({
+  name: "SokoYetu Marketplace",
+  short_name: "SokoYetu",
+  description: "SokoYetu marketplace for Kenyan buyers and sellers.",
+  start_url: "/",
+  scope: "/",
+  display: "standalone",
+  background_color: "#f8fafc",
+  theme_color: "#16a34a",
+  orientation: "portrait-primary",
+  icons: [
+    {
+      src: "/sokoyetu-icon.svg",
+      sizes: "512x512",
+      type: "image/svg+xml",
+      purpose: "any maskable"
+    }
+  ],
+  shortcuts: [
+    {
+      name: "Browse Categories",
+      short_name: "Categories",
+      description: "Browse SokoYetu products by category.",
+      url: "/categories.html",
+      icons: [{ src: "/sokoyetu-icon.svg", sizes: "512x512", type: "image/svg+xml" }]
+    },
+    {
+      name: "Track Order",
+      short_name: "Track",
+      description: "Track a SokoYetu order.",
+      url: "/track-order.html",
+      icons: [{ src: "/sokoyetu-icon.svg", sizes: "512x512", type: "image/svg+xml" }]
+    },
+    {
+      name: "Help Center",
+      short_name: "Help",
+      description: "Open the SokoYetu Help Center.",
+      url: "/help-center.html",
+      icons: [{ src: "/sokoyetu-icon.svg", sizes: "512x512", type: "image/svg+xml" }]
+    }
+  ]
+}, null, 2), "utf8");
+
+const publicPages = [
+  "index.html",
+  "categories.html",
+  "product-detail.html",
+  "seller-stores.html",
+  "seller-store.html",
+  "help-center.html",
+  "track-order.html",
+  "support-request.html",
+  "contact-support.html",
+  "faq.html",
+  "returns-policy.html",
+  "privacy-policy.html",
+  "terms-of-service.html",
+  "data-protection.html",
+  "seller-policy.html"
+];
+
+function addBrandMetadata(fileName) {
+  const filePath = path.join(root, fileName);
+  if (!fs.existsSync(filePath)) {
+    console.log("Skipped missing public page:", fileName);
+    return false;
+  }
+
+  backup(filePath, fileName.replace(/[^a-z0-9]/gi, "-"));
+
+  let html = fs.readFileSync(filePath, "utf8");
+  const before = html;
+
+  html = html.replace(/<!-- SokoYetu Stage 32B Brand start -->[\s\S]*?<!-- SokoYetu Stage 32B Brand end -->/g, "");
+
+  const block = `
+  <!-- SokoYetu Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mysokoyetu.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mysokoyetu.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Stage 32B Brand end -->`;
+
+  // Remove old og:image/twitter:image lines to avoid conflicting share images.
+  html = html.replace(/<meta\s+property=["']og:image["'][^>]*>\s*/gi, "");
+  html = html.replace(/<meta\s+name=["']twitter:image["'][^>]*>\s*/gi, "");
+
+  if (html.includes("</head>")) {
+    html = html.replace("</head>", block + "\n</head>");
+  } else {
+    html = block + "\n" + html;
+  }
+
+  if (html !== before) {
+    fs.writeFileSync(filePath, html, "utf8");
+    console.log("Brand metadata applied:", fileName);
+    return true;
+  }
+
+  console.log("Brand metadata already current:", fileName);
+  return false;
+}
+
+let changed = 0;
+for (const page of publicPages) {
+  if (addBrandMetadata(page)) changed += 1;
+}
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage32b-brand-assets.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 32B Brand Assets and Manifest Check");
+console.log("-------------------------------------------------");
+
+let warnings = 0;
+
+const assets = [
+  "favicon.svg",
+  "sokoyetu-icon.svg",
+  "sokoyetu-share.svg",
+  "site.webmanifest"
+];
+
+for (const file of assets) {
+  if (!fs.existsSync(path.join(root, file))) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const pages = ${JSON.stringify(publicPages, null, 2)};
+
+for (const page of pages) {
+  const filePath = path.join(root, page);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", page, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+  const required = [
+    "/favicon.svg",
+    "/site.webmanifest",
+    "SokoYetu Stage 32B Brand start",
+    "sokoyetu-share.svg",
+    "application-name"
+  ];
+
+  for (const item of required) {
+    if (!html.includes(item)) {
+      console.log("WARN:", page, "missing:", item);
+      warnings += 1;
+    }
+  }
+
+  if (required.every((item) => html.includes(item))) {
+    console.log("OK:", page, "has brand/manifest metadata.");
+  }
+}
+
+const manifestPath = path.join(root, "site.webmanifest");
+if (fs.existsSync(manifestPath)) {
+  try {
+    const manifest = JSON.parse(fs.readFileSync(manifestPath, "utf8"));
+    if (!manifest.name || !manifest.short_name || !manifest.icons || !manifest.icons.length) {
+      console.log("WARN: site.webmanifest is incomplete.");
+      warnings += 1;
+    } else {
+      console.log("OK: site.webmanifest structure is valid.");
+    }
+  } catch (error) {
+    console.log("WARN: site.webmanifest is not valid JSON:", error.message);
+    warnings += 1;
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 32B brand assets and manifest check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE32B_BRAND_ASSETS_MANIFEST_GUIDE.md"), `# SokoYetu Stage 32B: Brand Assets, Favicon and Web App Manifest
+
+Stage 32B gives the public site stronger browser and sharing identity.
+
+## New files
+
+\`\`\`text
+favicon.svg
+sokoyetu-icon.svg
+sokoyetu-share.svg
+site.webmanifest
+scripts/check-stage32b-brand-assets.js
+STAGE32B_BRAND_ASSETS_MANIFEST_GUIDE.md
+\`\`\`
+
+## Updated public pages
+
+The main public pages now include:
+
+\`\`\`text
+favicon link
+web app manifest link
+application-name metadata
+mobile web app metadata
+Open Graph share image
+Twitter share image
+\`\`\`
+
+## Important note
+
+This stage does **not** add a service worker or offline caching. That is intentional because checkout and M-PESA flows should not be affected by stale cached pages.
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage32b:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/favicon.svg
+http://localhost:5173/site.webmanifest
+http://localhost:5173/
+\`\`\`
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 32B brand assets and web manifest installed.");
+console.log("Public pages updated:", changed);
+console.log("");
+console.log("Next:");
+console.log("npm run stage32b:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/site.webmanifest and http://localhost:5173/favicon.svg");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json favicon.svg sokoyetu-icon.svg sokoyetu-share.svg site.webmanifest scripts/check-stage32b-brand-assets.js index.html categories.html product-detail.html seller-stores.html seller-store.html help-center.html track-order.html support-request.html contact-support.html faq.html returns-policy.html privacy-policy.html terms-of-service.html data-protection.html seller-policy.html STAGE32B_BRAND_ASSETS_MANIFEST_GUIDE.md");
+console.log('git commit -m "Add brand assets and web manifest"');
+console.log("git push");

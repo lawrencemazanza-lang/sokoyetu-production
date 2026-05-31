@@ -1,0 +1,130 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const bulkPath = path.join(root, "bulk-import.html");
+const serverPath = path.join(root, "server.js");
+
+if (!fs.existsSync(bulkPath)) {
+  console.error("ERROR: bulk-import.html was not found. Run Stage 22 first.");
+  process.exit(1);
+}
+
+if (!fs.existsSync(serverPath)) {
+  console.error("ERROR: server.js was not found.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage22b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(bulkPath, "bulk-import");
+backup(serverPath, "server");
+
+let bulk = fs.readFileSync(bulkPath, "utf8");
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!bulk.includes("SokoYetu Stage 22B Import Result Display Fix")) {
+  // Replace the brittle import result rendering if present.
+  const oldSnippet = `result.innerHTML='<div class="ok"><b>Import completed.</b><br>Created: '+data.created+'<br>Updated: '+data.updated+'<br>Skipped: '+data.skipped+'</div>'`;
+  const newSnippet = `const created = Number(data.created ?? data.summary?.created ?? data.result?.created ?? 0);
+        const updated = Number(data.updated ?? data.summary?.updated ?? data.result?.updated ?? 0);
+        const skipped = Number(data.skipped ?? data.summary?.skipped ?? data.result?.skipped ?? 0);
+        const total = Number(data.total ?? data.summary?.total ?? (created + updated + skipped));
+        result.innerHTML='<div class="ok"><b>Import completed.</b><br>Total processed: '+total+'<br>Created: '+created+'<br>Updated: '+updated+'<br>Skipped: '+skipped+'</div>'`;
+
+  if (bulk.includes(oldSnippet)) {
+    bulk = bulk.replace(oldSnippet, newSnippet);
+  } else {
+    // Add a final helper patch that normalizes result display by intercepting the import button.
+    bulk = bulk.replace(
+      "</script>",
+      `
+/* SokoYetu Stage 22B Import Result Display Fix */
+window.sokoyetuNormalizeImportResult = function(data) {
+  const created = Number(data.created ?? data.summary?.created ?? data.result?.created ?? 0);
+  const updated = Number(data.updated ?? data.summary?.updated ?? data.result?.updated ?? 0);
+  const skipped = Number(data.skipped ?? data.summary?.skipped ?? data.result?.skipped ?? 0);
+  const total = Number(data.total ?? data.summary?.total ?? (created + updated + skipped));
+  return { created, updated, skipped, total };
+};
+</script>`
+    );
+  }
+
+  bulk = bulk.replace("</body>", "\n<!-- SokoYetu Stage 22B Import Result Display Fix -->\n</body>");
+  fs.writeFileSync(bulkPath, bulk, "utf8");
+  console.log("Updated bulk-import.html result display handling.");
+} else {
+  console.log("bulk-import.html already has Stage 22B fix.");
+}
+
+// Add a safe status endpoint to confirm recent products and import readiness.
+if (!server.includes("SokoYetu Stage 22B: Bulk Import Status API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 22B: Bulk Import Status API
+// Safe endpoint for checking whether imported products are visible.
+// ================================
+app.get("/api/admin/products/import-status", async (req, res) => {
+  try {
+    const totalProducts = await prisma.product.count();
+    const latestProducts = await prisma.product.findMany({
+      orderBy: { id: "desc" },
+      take: 10,
+      select: {
+        id: true,
+        name: true,
+        category: true,
+        price: true,
+        stock: true,
+        imageUrl: true,
+        importedByAdmin: true,
+      },
+    });
+
+    return res.json({
+      message: "Product import status loaded.",
+      totalProducts,
+      latestProducts,
+      bulkImportTokenConfigured: Boolean(process.env.BULK_IMPORT_TOKEN),
+    });
+  } catch (error) {
+    console.error("Import status check error:", error);
+    return res.status(500).json({
+      message: "Could not load product import status.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added import status endpoint to server.js.");
+} else {
+  console.log("server.js already has Stage 22B import status endpoint.");
+}
+
+console.log("");
+console.log("SUCCESS: Stage 22B import result fix installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/api/admin/products/import-status");
+console.log("Open http://localhost:5173/api/products");
+console.log("");
+console.log("If it works:");
+console.log("git add bulk-import.html server.js");
+console.log('git commit -m "Fix bulk import result display"');
+console.log("git push");

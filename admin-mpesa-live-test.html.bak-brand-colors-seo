@@ -1,0 +1,328 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani M-PESA Live Test Runbook</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:92px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .danger{background:#991b1b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    .checkitem{border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;padding:10px;display:flex;gap:10px;align-items:flex-start}
+    .checkitem input{width:auto;min-height:auto;margin-top:3px}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani M-PESA Live Test Runbook</h1>
+    <p>Controlled checklist and manual log for the first small real production M-PESA payment test. No database records are changed by this page.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-env-guard.html">M-PESA guard</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-reconciliation.html">Reconciliation</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-evidence.html">Evidence export</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Before running a real payment</div>
+    <div class="body">
+      <div class="badBox">
+        Do not run a real production payment test until production Daraja credentials, live shortcode or till, live passkey, HTTPS callback URL, and admin monitoring pages are confirmed.
+      </div>
+      <div id="checklist"></div>
+      <div class="actions">
+        <button id="saveChecksBtn" type="button">Save checklist</button>
+        <button id="clearChecksBtn" class="danger" type="button">Clear checklist</button>
+      </div>
+      <div id="checkMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Manual live test log</div>
+    <div class="body">
+      <div class="warnBox">
+        This log is stored in this browser using localStorage only. It is for operational notes and export. It does not write to the server or the database.
+      </div>
+      <div class="grid">
+        <div>
+          <label>Tester name</label>
+          <input id="tester" placeholder="Admin/tester name">
+        </div>
+        <div>
+          <label>Environment</label>
+          <select id="environment">
+            <option value="production">production</option>
+            <option value="live">live</option>
+            <option value="sandbox">sandbox</option>
+            <option value="other">other</option>
+          </select>
+        </div>
+        <div>
+          <label>Order ID</label>
+          <input id="orderId" placeholder="Order ID">
+        </div>
+        <div>
+          <label>Checkout phone</label>
+          <input id="phone" placeholder="Phone used at checkout">
+        </div>
+        <div>
+          <label>Expected amount</label>
+          <input id="expectedAmount" type="number" min="0" placeholder="KES">
+        </div>
+        <div>
+          <label>Actual amount</label>
+          <input id="actualAmount" type="number" min="0" placeholder="KES">
+        </div>
+        <div>
+          <label>M-PESA receipt</label>
+          <input id="mpesaReceipt" placeholder="Receipt number">
+        </div>
+        <div>
+          <label>Checkout request ID</label>
+          <input id="checkoutRequestId" placeholder="CheckoutRequestID">
+        </div>
+        <div>
+          <label>Result</label>
+          <select id="result">
+            <option value="pass">pass</option>
+            <option value="review">review</option>
+            <option value="fail">fail</option>
+          </select>
+        </div>
+      </div>
+      <div>
+        <label>Notes</label>
+        <textarea id="notes" placeholder="What happened? Confirm phone prompt, payment receipt, order status, admin order view and reconciliation result."></textarea>
+      </div>
+      <div class="actions">
+        <button id="addLogBtn" type="button">Add test log</button>
+        <button id="exportCsvBtn" class="secondary" type="button">Export CSV</button>
+        <button id="exportJsonBtn" class="secondary" type="button">Export JSON</button>
+        <button id="clearLogBtn" class="danger" type="button">Clear logs</button>
+      </div>
+      <div id="logMessage"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Saved test logs</div>
+    <div class="body">
+      <div id="summary" class="grid"></div>
+      <table>
+        <thead>
+          <tr>
+            <th>Date/time</th>
+            <th>Tester</th>
+            <th>Environment</th>
+            <th>Order</th>
+            <th>Phone</th>
+            <th>Amounts</th>
+            <th>Receipt / checkout</th>
+            <th>Result</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody id="logs"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const checklistItems = [
+  "Safaricom production Daraja app is approved.",
+  "Live PayBill, Till or shortcode is confirmed.",
+  "Live passkey matches the live shortcode.",
+  "Production consumer key and consumer secret are added only in Render environment variables.",
+  "MPESA_CALLBACK_URL uses HTTPS and points to the production Render domain.",
+  "MPESA_PRODUCTION_CONFIRMED=true is set only after manual approval.",
+  "Admin orders page opens and can verify payment/order status.",
+  "M-PESA reconciliation dashboard opens.",
+  "M-PESA evidence export page opens.",
+  "A very small test amount has been selected.",
+  "Tester has the phone line ready and enough balance.",
+  "Support/refund process is ready if the test fails."
+];
+
+const LOG_KEY = "sokoyetu_stage33e_mpesa_live_test_logs";
+const CHECK_KEY = "sokoyetu_stage33e_mpesa_live_test_checks";
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function msg(id, html){ document.getElementById(id).innerHTML = html; }
+function getLogs(){
+  try { return JSON.parse(localStorage.getItem(LOG_KEY) || "[]"); }
+  catch { return []; }
+}
+function saveLogs(logs){ localStorage.setItem(LOG_KEY, JSON.stringify(logs)); }
+function getChecks(){
+  try { return JSON.parse(localStorage.getItem(CHECK_KEY) || "{}"); }
+  catch { return {}; }
+}
+function saveChecks(checks){ localStorage.setItem(CHECK_KEY, JSON.stringify(checks)); }
+function renderChecklist(){
+  const checks = getChecks();
+  document.getElementById("checklist").innerHTML = checklistItems.map((text, i) => {
+    const id = "check-" + i;
+    return '<label class="checkitem" for="' + id + '"><input type="checkbox" id="' + id + '" ' + (checks[i] ? "checked" : "") + '><span>' + esc(text) + '</span></label>';
+  }).join("");
+}
+function collectChecks(){
+  const checks = {};
+  checklistItems.forEach((_, i) => {
+    checks[i] = document.getElementById("check-" + i).checked;
+  });
+  return checks;
+}
+function addLog(){
+  const logs = getLogs();
+  const entry = {
+    createdAt: new Date().toISOString(),
+    tester: document.getElementById("tester").value.trim(),
+    environment: document.getElementById("environment").value,
+    orderId: document.getElementById("orderId").value.trim(),
+    phone: document.getElementById("phone").value.trim(),
+    expectedAmount: document.getElementById("expectedAmount").value,
+    actualAmount: document.getElementById("actualAmount").value,
+    mpesaReceipt: document.getElementById("mpesaReceipt").value.trim(),
+    checkoutRequestId: document.getElementById("checkoutRequestId").value.trim(),
+    result: document.getElementById("result").value,
+    notes: document.getElementById("notes").value.trim()
+  };
+
+  if (!entry.tester || !entry.orderId || !entry.phone) {
+    msg("logMessage", '<div class="err">Tester name, order ID and phone are required.</div>');
+    return;
+  }
+
+  logs.unshift(entry);
+  saveLogs(logs);
+  renderLogs();
+  msg("logMessage", '<div class="ok">Test log saved in this browser.</div>');
+}
+function renderLogs(){
+  const logs = getLogs();
+  const pass = logs.filter(l => l.result === "pass").length;
+  const review = logs.filter(l => l.result === "review").length;
+  const fail = logs.filter(l => l.result === "fail").length;
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Logs saved<b>' + logs.length + '</b></div>' +
+    '<div class="metric">Pass<b>' + pass + '</b></div>' +
+    '<div class="metric">Review<b>' + review + '</b></div>' +
+    '<div class="metric">Fail<b>' + fail + '</b></div>';
+
+  document.getElementById("logs").innerHTML = logs.length ? logs.map(l => {
+    const cls = l.result === "pass" ? "pill" : l.result === "fail" ? "pill bad" : "pill warn";
+    return '<tr>' +
+      '<td>' + esc(new Date(l.createdAt).toLocaleString()) + '</td>' +
+      '<td>' + esc(l.tester) + '</td>' +
+      '<td>' + esc(l.environment) + '</td>' +
+      '<td>#' + esc(l.orderId) + '</td>' +
+      '<td>' + esc(l.phone) + '</td>' +
+      '<td>Expected: ' + money(l.expectedAmount) + '<br>Actual: ' + money(l.actualAmount) + '</td>' +
+      '<td>Receipt: <code>' + esc(l.mpesaReceipt || "-") + '</code><br>Checkout: <code>' + esc(l.checkoutRequestId || "-") + '</code></td>' +
+      '<td><span class="' + cls + '">' + esc(l.result) + '</span></td>' +
+      '<td>' + esc(l.notes || "-") + '</td>' +
+    '</tr>';
+  }).join("") : '<tr><td colspan="9">No logs saved yet.</td></tr>';
+}
+function csvEscape(value){
+  const text = String(value ?? "");
+  if (/[",\r\n]/.test(text)) return '"' + text.replace(/"/g, '""') + '"';
+  return text;
+}
+function exportFile(format){
+  const logs = getLogs();
+  if (!logs.length) {
+    msg("logMessage", '<div class="err">No logs to export.</div>');
+    return;
+  }
+  const stamp = new Date().toISOString().slice(0,10);
+  let blob;
+  let filename;
+  if (format === "json") {
+    blob = new Blob([JSON.stringify({ generatedAt:new Date().toISOString(), logs }, null, 2)], { type:"application/json" });
+    filename = "sokoyetu-mpesa-live-test-log-" + stamp + ".json";
+  } else {
+    const headers = Object.keys(logs[0]);
+    const csv = headers.join(",") + "\n" + logs.map(row => headers.map(h => csvEscape(row[h])).join(",")).join("\n");
+    blob = new Blob([csv], { type:"text/csv" });
+    filename = "sokoyetu-mpesa-live-test-log-" + stamp + ".csv";
+  }
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+  msg("logMessage", '<div class="ok">Export started: ' + esc(filename) + '</div>');
+}
+document.getElementById("saveChecksBtn").onclick = () => {
+  saveChecks(collectChecks());
+  msg("checkMessage", '<div class="ok">Checklist saved in this browser.</div>');
+};
+document.getElementById("clearChecksBtn").onclick = () => {
+  if (!confirm("Clear saved checklist?")) return;
+  localStorage.removeItem(CHECK_KEY);
+  renderChecklist();
+  msg("checkMessage", '<div class="ok">Checklist cleared.</div>');
+};
+document.getElementById("addLogBtn").onclick = addLog;
+document.getElementById("exportCsvBtn").onclick = () => exportFile("csv");
+document.getElementById("exportJsonBtn").onclick = () => exportFile("json");
+document.getElementById("clearLogBtn").onclick = () => {
+  if (!confirm("Clear all local live test logs?")) return;
+  localStorage.removeItem(LOG_KEY);
+  renderLogs();
+  msg("logMessage", '<div class="ok">Logs cleared from this browser.</div>');
+};
+renderChecklist();
+renderLogs();
+</script>
+</body>
+</html>
+

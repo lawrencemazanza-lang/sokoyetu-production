@@ -1,4 +1,4 @@
-# SokoYetu Stage 31E: Public Seller Storefronts and Seller Directory
+﻿# SokoYetu Mtaani Stage 31E: Public Seller Storefronts and Seller Directory
 
 Stage 31E adds public seller-store discovery.
 
@@ -61,3 +61,4 @@ http://localhost:5173/seller-stores.html
 ```
 
 Then open a seller store.
+

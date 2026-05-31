@@ -1,0 +1,427 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20I: Customer Cart and Checkout Panel")) {
+  console.log("No change needed. Stage 20I cart checkout panel is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20i-customer-cart-checkout-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+const patch = `
+
+// ================================
+// SokoYetu Stage 20I: Customer Cart and Checkout Panel
+// Adds a stable customer-facing cart/checkout panel for deployed Render.
+// It avoids old demo checkout text and avoids modal blink caused by full app re-renders.
+// ================================
+(function initStage20ICustomerCartCheckoutPanel() {
+  if (window.__sokoyetuStage20ICartCheckoutInstalled) return;
+  window.__sokoyetuStage20ICartCheckoutInstalled = true;
+
+  var latestCartItems = [];
+
+  function money(value) {
+    if (typeof formatMoney === "function") {
+      try { return formatMoney(Number(value || 0)); } catch (error) {}
+    }
+    return "KES " + Number(value || 0).toLocaleString("en-KE");
+  }
+
+  function productOf(item) {
+    return item.product || item.Product || item;
+  }
+
+  function qtyOf(item) {
+    return Number(item.quantity || item.qty || item.count || 1) || 1;
+  }
+
+  function normalizeCart(data) {
+    var raw =
+      (Array.isArray(data) && data) ||
+      data.cart ||
+      data.items ||
+      data.cartItems ||
+      data.data ||
+      [];
+
+    if (!Array.isArray(raw)) return [];
+
+    return raw.map(function (item) {
+      var product = productOf(item);
+      var productId = Number(item.productId || product.id || item.id);
+      var quantity = qtyOf(item);
+      var price = Number(product.price || item.price || 0);
+
+      return {
+        id: productId,
+        productId: productId,
+        cartItemId: item.id,
+        name: product.name || item.name || "Product",
+        price: price,
+        quantity: quantity,
+        imageUrl: product.imageUrl || item.imageUrl || "",
+        category: product.category || item.category || "",
+        product: product
+      };
+    }).filter(function (item) {
+      return item.productId && item.productId > 0;
+    });
+  }
+
+  async function getCart() {
+    var response = await fetch("/api/cart", {
+      credentials: "include",
+      headers: { "Accept": "application/json" }
+    });
+
+    var data = await response.json().catch(function () { return {}; });
+
+    if (!response.ok) {
+      throw new Error(data.message || "Could not load cart.");
+    }
+
+    latestCartItems = normalizeCart(data);
+    updateCartLauncher(latestCartItems);
+    return latestCartItems;
+  }
+
+  function cartTotal(items) {
+    return items.reduce(function (sum, item) {
+      return sum + Number(item.price || 0) * Number(item.quantity || 1);
+    }, 0);
+  }
+
+  function cartCount(items) {
+    return items.reduce(function (sum, item) {
+      return sum + Number(item.quantity || 1);
+    }, 0);
+  }
+
+  function removeOldCartLoadedNotice() {
+    try {
+      Array.from(document.querySelectorAll("body > div, body > section, body > aside, body > p")).forEach(function (node) {
+        if (node.id === "syCustomerCartBackdrop" || node.id === "syCustomerCartLauncher") return;
+        var text = String(node.textContent || "").toLowerCase();
+        if (text.includes("cart loaded.") && text.includes("if the checkout screen did not refresh")) {
+          node.style.display = "none";
+          node.setAttribute("aria-hidden", "true");
+        }
+      });
+    } catch (error) {}
+  }
+
+  function ensureElements() {
+    if (!document.getElementById("syCustomerCartStyle")) {
+      var style = document.createElement("style");
+      style.id = "syCustomerCartStyle";
+      style.textContent =
+        ".sy-customer-cart-launcher{position:fixed;right:18px;bottom:86px;z-index:14000;border:none;border-radius:999px;background:linear-gradient(135deg,#f97316,#dc2626);color:#fff;font-weight:900;padding:13px 17px;box-shadow:0 18px 45px rgba(15,23,42,.28);cursor:pointer;display:none}" +
+        ".sy-customer-cart-backdrop{position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:14001;display:none;align-items:center;justify-content:center;padding:16px}" +
+        ".sy-customer-cart-panel{width:min(760px,96vw);max-height:92vh;overflow:auto;background:#fff;border-radius:24px;box-shadow:0 30px 90px rgba(15,23,42,.38);border:1px solid #fed7aa}" +
+        ".sy-customer-cart-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;background:linear-gradient(135deg,#111827,#dc2626);color:#fff}" +
+        ".sy-customer-cart-head h2{margin:0;font-size:22px}.sy-customer-cart-close{border:none;border-radius:12px;background:rgba(255,255,255,.18);color:#fff;font-weight:900;padding:9px 12px;cursor:pointer}" +
+        ".sy-customer-cart-body{padding:18px;display:grid;gap:14px}.sy-cart-row{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;border:1px solid #fee2e2;border-radius:16px;padding:10px;background:#fff7ed}" +
+        ".sy-cart-row img{width:64px;height:64px;object-fit:cover;border-radius:12px;background:#f3f4f6}.sy-cart-title{font-weight:900;color:#111827}.sy-cart-meta{font-size:13px;color:#64748b;margin-top:4px}.sy-cart-price{font-weight:900;color:#b91c1c;text-align:right}" +
+        ".sy-cart-summary{border:1px solid #e5e7eb;border-radius:16px;padding:14px;background:#f8fafc;display:grid;gap:8px}.sy-cart-line{display:flex;justify-content:space-between;gap:12px}.sy-cart-line b{color:#111827}" +
+        ".sy-checkout-form{display:grid;gap:10px;border:1px solid #fed7aa;border-radius:18px;padding:14px;background:#fff7ed}.sy-checkout-form label{font-weight:900;color:#111827;font-size:14px}.sy-checkout-form input,.sy-checkout-form textarea{width:100%;border:1px solid #fdba74;border-radius:12px;padding:11px;font:inherit}.sy-checkout-form textarea{min-height:74px;resize:vertical}" +
+        ".sy-cart-btn{border:none;border-radius:14px;background:#dc2626;color:#fff;font-weight:900;padding:12px 15px;cursor:pointer}.sy-cart-btn.secondary{background:#111827}.sy-cart-msg{border-radius:14px;padding:12px;line-height:1.5;font-weight:800}.sy-cart-msg.ok{background:#ecfdf5;color:#047857;border:1px solid #a7f3d0}.sy-cart-msg.err{background:#fef2f2;color:#b91c1c;border:1px solid #fecaca}.sy-cart-empty{border:1px dashed #fdba74;border-radius:16px;padding:18px;background:#fff7ed;color:#64748b;font-weight:800}" +
+        "@media(max-width:720px){.sy-customer-cart-launcher{right:10px;bottom:70px;padding:11px 13px}.sy-cart-row{grid-template-columns:52px 1fr}.sy-cart-price{grid-column:2;text-align:left}.sy-cart-row img{width:52px;height:52px}}";
+      document.head.appendChild(style);
+    }
+
+    if (!document.getElementById("syCustomerCartLauncher")) {
+      var launcher = document.createElement("button");
+      launcher.id = "syCustomerCartLauncher";
+      launcher.className = "sy-customer-cart-launcher";
+      launcher.type = "button";
+      launcher.textContent = "🛒 Cart / Checkout";
+      launcher.addEventListener("click", function () {
+        openCustomerCartPanel();
+      });
+      document.body.appendChild(launcher);
+    }
+
+    if (!document.getElementById("syCustomerCartBackdrop")) {
+      var backdrop = document.createElement("div");
+      backdrop.id = "syCustomerCartBackdrop";
+      backdrop.className = "sy-customer-cart-backdrop";
+      backdrop.innerHTML =
+        "<section class='sy-customer-cart-panel'>" +
+          "<div class='sy-customer-cart-head'>" +
+            "<h2>Cart and Checkout</h2>" +
+            "<button class='sy-customer-cart-close' id='syCustomerCartClose' type='button'>Close</button>" +
+          "</div>" +
+          "<div class='sy-customer-cart-body' id='syCustomerCartBody'>" +
+            "<div class='sy-cart-empty'>Loading cart...</div>" +
+          "</div>" +
+        "</section>";
+      document.body.appendChild(backdrop);
+
+      document.getElementById("syCustomerCartClose").addEventListener("click", closeCustomerCartPanel);
+      backdrop.addEventListener("click", function (event) {
+        if (event.target === backdrop) closeCustomerCartPanel();
+      });
+    }
+  }
+
+  function updateCartLauncher(items) {
+    ensureElements();
+    var launcher = document.getElementById("syCustomerCartLauncher");
+    var count = cartCount(items || []);
+
+    if (count > 0) {
+      launcher.style.display = "inline-flex";
+      launcher.textContent = "🛒 Cart / Checkout (" + count + ")";
+    } else {
+      launcher.style.display = "none";
+      launcher.textContent = "🛒 Cart / Checkout";
+    }
+  }
+
+  function renderCart(items) {
+    ensureElements();
+    var body = document.getElementById("syCustomerCartBody");
+    var total = cartTotal(items);
+
+    if (!items.length) {
+      body.innerHTML =
+        "<div class='sy-cart-empty'>Your cart is empty. Add a product first, then return to checkout.</div>";
+      return;
+    }
+
+    var rows = items.map(function (item) {
+      var img = item.imageUrl
+        ? "<img src='" + String(item.imageUrl).replace(/'/g, "&#39;") + "' alt=''>"
+        : "<img alt=''>";
+      return (
+        "<article class='sy-cart-row'>" +
+          img +
+          "<div>" +
+            "<div class='sy-cart-title'>" + escapeHtml(item.name) + "</div>" +
+            "<div class='sy-cart-meta'>Quantity: " + item.quantity + " · Product ID: " + item.productId + "</div>" +
+          "</div>" +
+          "<div class='sy-cart-price'>" + money(Number(item.price || 0) * Number(item.quantity || 1)) + "</div>" +
+        "</article>"
+      );
+    }).join("");
+
+    body.innerHTML =
+      rows +
+      "<div class='sy-cart-summary'>" +
+        "<div class='sy-cart-line'><span>Subtotal</span><b>" + money(total) + "</b></div>" +
+        "<div class='sy-cart-line'><span>Delivery</span><b>" + (total >= 10000 ? "Free" : "To be confirmed") + "</b></div>" +
+        "<div class='sy-cart-line'><span>Total</span><b>" + money(total) + "</b></div>" +
+      "</div>" +
+      "<form class='sy-checkout-form' id='syCustomerCheckoutForm'>" +
+        "<label for='syCheckoutPhone'>M-PESA phone number</label>" +
+        "<input id='syCheckoutPhone' name='phone' placeholder='0714565555 or 254714565555' autocomplete='tel' required>" +
+        "<label for='syCheckoutAddress'>Delivery address</label>" +
+        "<textarea id='syCheckoutAddress' name='deliveryAddress' placeholder='Example: Nairobi CBD, Moi Avenue, building name' required></textarea>" +
+        "<button class='sy-cart-btn' type='submit'>Send M-PESA STK Push</button>" +
+        "<button class='sy-cart-btn secondary' type='button' id='syRefreshCartBtn'>Refresh Cart</button>" +
+        "<div id='syCheckoutMessage'></div>" +
+      "</form>";
+
+    document.getElementById("syRefreshCartBtn").addEventListener("click", function () {
+      openCustomerCartPanel();
+    });
+
+    document.getElementById("syCustomerCheckoutForm").addEventListener("submit", handleCheckoutSubmit);
+  }
+
+  function escapeHtml(value) {
+    return String(value || "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
+  async function openCustomerCartPanel() {
+    ensureElements();
+    removeOldCartLoadedNotice();
+
+    var backdrop = document.getElementById("syCustomerCartBackdrop");
+    var body = document.getElementById("syCustomerCartBody");
+
+    backdrop.style.display = "flex";
+    body.innerHTML = "<div class='sy-cart-empty'>Loading cart...</div>";
+
+    try {
+      var items = await getCart();
+      renderCart(items);
+    } catch (error) {
+      body.innerHTML = "<div class='sy-cart-msg err'>" + escapeHtml(error.message || "Could not load cart.") + "</div>";
+    }
+  }
+
+  function closeCustomerCartPanel() {
+    var backdrop = document.getElementById("syCustomerCartBackdrop");
+    if (backdrop) backdrop.style.display = "none";
+  }
+
+  async function postJson(url, payload) {
+    var response = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {})
+    });
+
+    var data = await response.json().catch(function () { return {}; });
+
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed.");
+    }
+
+    return data;
+  }
+
+  async function handleCheckoutSubmit(event) {
+    event.preventDefault();
+
+    var message = document.getElementById("syCheckoutMessage");
+    var phone = document.getElementById("syCheckoutPhone").value.trim();
+    var deliveryAddress = document.getElementById("syCheckoutAddress").value.trim();
+
+    if (!phone) {
+      message.innerHTML = "<div class='sy-cart-msg err'>M-PESA phone number is required.</div>";
+      return;
+    }
+
+    if (!deliveryAddress) {
+      message.innerHTML = "<div class='sy-cart-msg err'>Delivery address is required.</div>";
+      return;
+    }
+
+    try {
+      message.innerHTML = "<div class='sy-cart-msg ok'>Creating order and sending STK Push...</div>";
+
+      var orderData = await postJson("/api/orders", {
+        phone: phone,
+        deliveryAddress: deliveryAddress
+      });
+
+      var order = orderData.order || orderData;
+      var orderId = order.id;
+
+      if (!orderId) {
+        throw new Error("Order was created but no order ID was returned.");
+      }
+
+      var stkData = await postJson("/api/payments/mpesa/stk-push", {
+        orderId: orderId,
+        phone: phone
+      });
+
+      message.innerHTML =
+        "<div class='sy-cart-msg ok'>" +
+          "<b>M-PESA STK Push sent.</b><br>" +
+          "Check the customer phone, enter the M-PESA PIN, then wait for payment confirmation." +
+          (stkData.checkoutRequestId ? "<br><small>Checkout Request ID: " + escapeHtml(stkData.checkoutRequestId) + "</small>" : "") +
+        "</div>";
+
+      setTimeout(getCart, 1200);
+    } catch (error) {
+      message.innerHTML =
+        "<div class='sy-cart-msg err'><b>Checkout could not continue.</b><br>" +
+        escapeHtml(error.message || "Please check M-PESA settings and try again.") +
+        "</div>";
+    }
+  }
+
+  function isCheckoutClick(element) {
+    if (!element) return false;
+    var text = String(element.textContent || "").toLowerCase().trim();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    if (text.includes("add to cart")) return false;
+
+    return (
+      text === "cart" ||
+      text.includes("view cart") ||
+      text.includes("checkout") ||
+      text.includes("basket") ||
+      id.includes("cart") ||
+      id.includes("checkout") ||
+      className.includes("cart") ||
+      className.includes("checkout")
+    );
+  }
+
+  function isAddToCartClick(element) {
+    if (!element) return false;
+    var text = String(element.textContent || "").toLowerCase();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    return text.includes("add to cart") || id.includes("add-to-cart") || id.includes("addtocart") || className.includes("add-to-cart");
+  }
+
+  document.addEventListener("click", function (event) {
+    var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+    if (!clicked) return;
+
+    if (isCheckoutClick(clicked)) {
+      event.preventDefault();
+      event.stopPropagation();
+      event.stopImmediatePropagation();
+      openCustomerCartPanel();
+      return;
+    }
+
+    if (isAddToCartClick(clicked)) {
+      setTimeout(function () {
+        getCart().then(removeOldCartLoadedNotice).catch(function () {});
+      }, 800);
+      setTimeout(function () {
+        getCart().then(removeOldCartLoadedNotice).catch(function () {});
+      }, 1600);
+    }
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", function () {
+    ensureElements();
+    removeOldCartLoadedNotice();
+    setTimeout(function () {
+      getCart().then(removeOldCartLoadedNotice).catch(function () {});
+    }, 1200);
+  });
+
+  window.addEventListener("focus", function () {
+    getCart().then(removeOldCartLoadedNotice).catch(function () {});
+  });
+
+  window.sokoyetuOpenCustomerCartCheckout = openCustomerCartPanel;
+})();
+`;
+
+code += patch;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20I stable customer cart/checkout panel installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally: add to cart, click Cart / Checkout, submit checkout.");
+console.log("");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Add stable customer cart checkout panel\"");
+console.log("git push");

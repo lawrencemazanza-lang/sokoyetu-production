@@ -1,4 +1,4 @@
-# SokoYetu Stage 29B: Admin Backup and Data Export
+﻿# SokoYetu Mtaani Stage 29B: Admin Backup and Data Export
 
 Stage 29B adds protected operational exports.
 
@@ -52,3 +52,4 @@ JSON
 ## Security note
 
 Exported files may include customer emails, phone numbers, delivery addresses, payment references and order information. Store them safely and do not upload them publicly.
+

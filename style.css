@@ -1,4 +1,4 @@
-:root {
+﻿:root {
   --orange: #f68b1e;
   --orange-dark: #de6f00;
   --green: #10a667;
@@ -680,7 +680,7 @@ a { color: inherit; text-decoration: none; }
 
 
 /* ================================
-   SokoYetu Stage 18 Final Interface Polish
+   SokoYetu Mtaani Stage 18 Final Interface Polish
    Non-destructive design polish.
    ================================ */
 
@@ -752,3 +752,4 @@ img:not([src]) {
     max-height: 90vh !important;
   }
 }
+

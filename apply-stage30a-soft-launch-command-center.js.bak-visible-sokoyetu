@@ -1,0 +1,539 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage30a-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage30a:check"] = "node scripts/check-stage30a-soft-launch.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage30a-soft-launch.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 30A Soft Launch Check");
+console.log("-----------------------------------");
+
+let warnings = 0;
+
+function check(key, opts = {}) {
+  const value = process.env[key];
+  if (!value) {
+    console.log("WARN:", key, "is not set.");
+    warnings += 1;
+    return;
+  }
+  console.log("OK:", key, "=", opts.secret ? value.slice(0, 4) + "...hidden" : value);
+}
+
+check("PUBLIC_SITE_URL");
+check("BUSINESS_NAME");
+check("SUPPORT_EMAIL");
+check("DATABASE_URL", { secret: true });
+check("ADMIN_ORDER_TOKEN", { secret: true });
+check("JWT_SECRET", { secret: true });
+check("UPLOAD_MODE");
+check("MPESA_MODE");
+check("MPESA_ENV");
+check("MPESA_CALLBACK_URL");
+
+if (process.env.ADMIN_REGISTRATION_ENABLED === "true") {
+  console.log("WARN: ADMIN_REGISTRATION_ENABLED should be false for launch.");
+  warnings += 1;
+} else {
+  console.log("OK: ADMIN_REGISTRATION_ENABLED is not publicly open.");
+}
+
+if (process.env.MPESA_ENV === "sandbox") {
+  console.log("WARN: MPESA_ENV is sandbox. Keep this for testing only; real payments require production credentials.");
+  warnings += 1;
+}
+
+console.log("");
+console.log("Review:");
+console.log("- admin-launch.html");
+console.log("- STAGE30A_SOFT_LAUNCH_HANDOVER.md");
+console.log("- STAGE30A_FINAL_TEST_SCRIPT.md");
+console.log("- STAGE30A_OPERATIONS_CALENDAR.md");
+console.log("");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-launch.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Soft Launch Command Center</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:24px;color:#064e3b;margin-top:4px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .checklist{display:grid;gap:8px}
+    .checkitem{border:1px solid #e5e7eb;background:#f8fafc;border-radius:14px;padding:10px}
+    @media(max-width:760px){table{font-size:12px}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Soft Launch Command Center</h1>
+    <p>Final go/no-go readiness view before inviting real users to the marketplace.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Access</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+      </div>
+      <button id="loadBtn" type="button">Load launch readiness</button>
+      <div class="note">This page does not expose secrets. It only gives a practical launch-readiness view for admin use.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">Launch readiness</div>
+    <div class="body" id="result"></div>
+  </section>
+
+  <section class="card">
+    <div class="head">Final manual checks</div>
+    <div class="body checklist">
+      <div class="checkitem">☐ Open https://www.mysokoyetu.co.ke and confirm HTTPS works.</div>
+      <div class="checkitem">☐ Create a buyer account and confirm login works.</div>
+      <div class="checkitem">☐ Add product to cart and open checkout.</div>
+      <div class="checkitem">☐ Send one sandbox M-PESA STK Push and confirm phone receives prompt.</div>
+      <div class="checkitem">☐ Check admin orders page and update one test order status.</div>
+      <div class="checkitem">☐ Test order tracking with a real order ID and checkout phone.</div>
+      <div class="checkitem">☐ Submit a support/refund request and view it in admin support queue.</div>
+      <div class="checkitem">☐ Export orders and payments from admin backup page.</div>
+      <div class="checkitem">☐ Confirm support@, orders@ and admin@ email forwarding when Truehost completes provisioning.</div>
+      <div class="checkitem">☐ Keep M-PESA in sandbox until production Daraja credentials are issued.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pill(value, bad=false, warn=false){
+  return '<span class="pill ' + (bad ? "bad" : warn ? "warn" : "") + '">' + esc(value) + '</span>';
+}
+async function loadReadiness(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading launch readiness...</div>');
+  try {
+    const response = await fetch("/api/admin/launch-readiness", {
+      headers: {"x-admin-order-token": token()},
+      credentials: "include"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not load launch readiness.");
+    renderReadiness(data);
+    msg('<div class="ok">Launch readiness loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load launch readiness.") + '</div>');
+  }
+}
+function renderReadiness(data){
+  const result = document.getElementById("result");
+  const metrics = data.metrics || {};
+  const config = data.config || {};
+  const blockers = data.blockers || [];
+  const warnings = data.warnings || [];
+
+  const statusBox = blockers.length
+    ? '<div class="badBox"><b>Not ready for wider launch.</b><br>' + blockers.map(b => '• ' + esc(b)).join('<br>') + '</div>'
+    : '<div class="ok"><b>Ready for controlled soft launch testing.</b><br>Proceed only with trusted users while M-PESA remains in sandbox.</div>';
+
+  const warningBox = warnings.length
+    ? '<div class="warnBox"><b>Warnings</b><br>' + warnings.map(w => '• ' + esc(w)).join('<br>') + '</div>'
+    : '<div class="ok"><b>No warnings returned by launch-readiness endpoint.</b></div>';
+
+  result.innerHTML =
+    statusBox +
+    warningBox +
+    '<div class="grid">' +
+      '<div class="metric">Users<b>' + esc(metrics.users ?? 0) + '</b></div>' +
+      '<div class="metric">Sellers<b>' + esc(metrics.sellers ?? 0) + '</b></div>' +
+      '<div class="metric">Products<b>' + esc(metrics.products ?? 0) + '</b></div>' +
+      '<div class="metric">Orders<b>' + esc(metrics.orders ?? 0) + '</b></div>' +
+      '<div class="metric">Payments<b>' + esc(metrics.payments ?? 0) + '</b></div>' +
+      '<div class="metric">Support notes<b>' + esc(metrics.supportNotes ?? 0) + '</b></div>' +
+    '</div>' +
+    '<div><b>Configuration</b><br>' +
+      pill("Site: " + (config.publicSiteUrl || "not set"), !config.publicSiteUrl) +
+      pill("Support: " + (config.supportEmail || "not set"), !config.supportEmail) +
+      pill("M-PESA: " + (config.mpesaMode || "-") + " / " + (config.mpesaEnv || "-"), false, config.mpesaEnv === "sandbox") +
+      pill("Upload: " + (config.uploadMode || "-"), !config.uploadMode) +
+      pill("Admin registration: " + (config.adminRegistrationEnabled || "not set"), config.adminRegistrationEnabled === "true") +
+    '</div>' +
+    '<div><b>Important links</b><table><thead><tr><th>Page</th><th>URL</th></tr></thead><tbody>' +
+      (data.links || []).map(l => '<tr><td>' + esc(l.label) + '</td><td><a href="' + esc(l.url) + '" target="_blank">' + esc(l.url) + '</a></td></tr>').join("") +
+    '</tbody></table></div>' +
+    '<div><b>Recent orders</b><table><thead><tr><th>ID</th><th>Status</th><th>Payment</th><th>Total</th><th>Created</th></tr></thead><tbody>' +
+      (data.recentOrders || []).map(o => '<tr><td>#' + esc(o.id) + '</td><td>' + esc(o.orderStatus) + '</td><td>' + esc(o.paymentStatus) + '</td><td>KES ' + Number(o.totalAmount || 0).toLocaleString("en-KE") + '</td><td>' + esc(o.createdAt ? new Date(o.createdAt).toLocaleString() : "-") + '</td></tr>').join("") +
+    '</tbody></table></div>';
+
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("loadBtn").onclick = loadReadiness;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 30A: Soft Launch Readiness API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 30A: Soft Launch Readiness API
+// Protected by ADMIN_ORDER_TOKEN. Final go/no-go operational view.
+// ================================
+function requireSoftLaunchToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/launch-readiness", async (req, res) => {
+  try {
+    if (!requireSoftLaunchToken(req, res)) return;
+
+    const blockers = [];
+    const warnings = [];
+
+    let users = 0;
+    let sellers = 0;
+    let products = 0;
+    let orders = 0;
+    let payments = 0;
+    let supportNotes = 0;
+    let recentOrders = [];
+
+    try {
+      users = await prisma.user.count();
+      sellers = await prisma.user.count({ where: { role: "seller" } });
+      products = await prisma.product.count();
+      orders = await prisma.order.count();
+      payments = await prisma.payment.count();
+      supportNotes = await prisma.deliveryTracking.count();
+      recentOrders = await prisma.order.findMany({
+        orderBy: { id: "desc" },
+        take: 10,
+        select: {
+          id: true,
+          totalAmount: true,
+          paymentStatus: true,
+          orderStatus: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      blockers.push("Database health check failed: " + error.message);
+    }
+
+    if (!process.env.PUBLIC_SITE_URL) blockers.push("PUBLIC_SITE_URL is not set.");
+    if (!process.env.DATABASE_URL) blockers.push("DATABASE_URL is not set.");
+    if (!process.env.JWT_SECRET) blockers.push("JWT_SECRET is not set.");
+    if (!process.env.ADMIN_ORDER_TOKEN) blockers.push("ADMIN_ORDER_TOKEN is not set.");
+    if (!process.env.SUPPORT_EMAIL) warnings.push("SUPPORT_EMAIL is not set.");
+    if (!process.env.BUSINESS_NAME) warnings.push("BUSINESS_NAME is not set.");
+    if (!process.env.MPESA_CALLBACK_URL) blockers.push("MPESA_CALLBACK_URL is not set.");
+    if (process.env.ADMIN_REGISTRATION_ENABLED === "true") blockers.push("ADMIN_REGISTRATION_ENABLED is true. Public admin registration should be locked.");
+    if (process.env.MPESA_ENV === "sandbox") warnings.push("M-PESA is still in sandbox mode. Continue only with controlled testing until production Daraja credentials are issued.");
+    if (process.env.UPLOAD_MODE !== "cloudinary") warnings.push("UPLOAD_MODE is not cloudinary. Confirm product image storage before wider launch.");
+    if (products === 0) warnings.push("No products found. Add launch products before inviting buyers.");
+    if (sellers === 0) warnings.push("No seller accounts found. Add or verify sellers before marketplace launch.");
+
+    const base = process.env.PUBLIC_SITE_URL || "https://www.mysokoyetu.co.ke";
+    const links = [
+      { label: "Public site", url: base },
+      { label: "Checkout", url: base + "/checkout.html" },
+      { label: "Track order", url: base + "/track-order.html" },
+      { label: "Support request", url: base + "/support-request.html" },
+      { label: "Admin orders", url: base + "/admin-orders.html" },
+      { label: "Admin support", url: base + "/admin-support.html" },
+      { label: "Admin backup", url: base + "/admin-backup.html" },
+      { label: "System health", url: base + "/admin-system-health.html" },
+    ];
+
+    return res.json({
+      message: "Launch readiness loaded.",
+      generatedAt: new Date().toISOString(),
+      readiness: blockers.length ? "NOT_READY" : "CONTROLLED_SOFT_LAUNCH_READY",
+      config: {
+        publicSiteUrl: process.env.PUBLIC_SITE_URL || null,
+        supportEmail: process.env.SUPPORT_EMAIL || null,
+        businessName: process.env.BUSINESS_NAME || null,
+        mpesaMode: process.env.MPESA_MODE || null,
+        mpesaEnv: process.env.MPESA_ENV || null,
+        uploadMode: process.env.UPLOAD_MODE || null,
+        adminRegistrationEnabled: process.env.ADMIN_REGISTRATION_ENABLED || null,
+      },
+      metrics: {
+        users,
+        sellers,
+        products,
+        orders,
+        payments,
+        supportNotes,
+      },
+      recentOrders,
+      links,
+      blockers,
+      warnings,
+    });
+  } catch (error) {
+    console.error("Launch readiness error:", error);
+    return res.status(500).json({
+      message: "Could not load launch readiness.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 30A launch readiness endpoint to server.js.");
+} else {
+  console.log("Stage 30A endpoint already exists.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE30A_SOFT_LAUNCH_HANDOVER.md"), `# SokoYetu Stage 30A: Soft Launch and Final Handover
+
+Stage 30A prepares SokoYetu for controlled soft launch.
+
+## New page
+
+\`\`\`text
+/admin-launch.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+GET /api/admin/launch-readiness
+\`\`\`
+
+## Token
+
+This page reuses:
+
+\`\`\`env
+ADMIN_ORDER_TOKEN
+\`\`\`
+
+## Soft launch meaning
+
+Soft launch means the site can be tested with trusted users while admin closely monitors:
+
+- Orders
+- Payments
+- Seller readiness
+- Product quality
+- Delivery handling
+- Support requests
+- Refund requests
+- Data backups
+
+## Not yet full public launch if
+
+- M-PESA is still sandbox
+- Email forwarding is not confirmed
+- Sellers are not verified
+- Product catalogue is incomplete
+- Admin cannot manage orders
+- Database backup/export process is not understood
+
+## Final handover links
+
+\`\`\`text
+/
+ /checkout.html
+ /track-order.html
+ /support-request.html
+ /admin-orders.html
+ /admin-support.html
+ /admin-backup.html
+ /admin-system-health.html
+ /admin-launch.html
+\`\`\`
+`);
+
+fs.writeFileSync(path.join(root, "STAGE30A_FINAL_TEST_SCRIPT.md"), `# SokoYetu Stage 30A: Final Test Script
+
+Run this before inviting users.
+
+## Public pages
+
+- [ ] Open home page.
+- [ ] Open checkout page.
+- [ ] Open track order page.
+- [ ] Open support request page.
+- [ ] Open legal/support pages.
+
+## Buyer flow
+
+- [ ] Register or log in as buyer.
+- [ ] Add product to cart.
+- [ ] Open checkout.
+- [ ] Enter checkout phone and delivery address.
+- [ ] Send sandbox M-PESA STK Push.
+- [ ] Confirm phone receives STK Push.
+- [ ] Confirm order appears in admin orders.
+
+## Admin flow
+
+- [ ] Open admin orders.
+- [ ] Update order status.
+- [ ] Open admin support queue.
+- [ ] Review support/refund request.
+- [ ] Open admin backup and export orders/payments.
+- [ ] Open system health.
+- [ ] Open launch command center.
+
+## Seller flow
+
+- [ ] Seller can log in.
+- [ ] Seller product is visible after admin review.
+- [ ] Seller fulfilment process is clear.
+
+## Stop launch if
+
+- Checkout fails.
+- M-PESA STK Push fails unexpectedly.
+- Orders are not recorded.
+- Admin cannot view orders.
+- Database errors appear in Render logs.
+- Domain/HTTPS fails.
+`);
+
+fs.writeFileSync(path.join(root, "STAGE30A_OPERATIONS_CALENDAR.md"), `# SokoYetu Stage 30A: First 30 Days Operations Calendar
+
+## Daily
+
+- Check new orders.
+- Check payment status.
+- Check support queue.
+- Check refund requests.
+- Export orders and payments during soft launch.
+- Review Render logs for errors.
+
+## Twice weekly
+
+- Review seller accounts.
+- Review product images and descriptions.
+- Check out-of-stock products.
+- Confirm delivery process issues.
+
+## Weekly
+
+- Export products, sellers, support notes and users summary.
+- Review launch risk register.
+- Test checkout with sandbox.
+- Confirm email forwarding status.
+- Review admin tokens and access.
+
+## Before switching to production M-PESA
+
+- Confirm real PayBill/Till.
+- Confirm production Daraja Consumer Key and Consumer Secret.
+- Confirm production Passkey and shortcode.
+- Confirm callback URL.
+- Test a very small real payment.
+- Confirm money settlement destination.
+- Confirm refund handling process.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 30A soft launch command center installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage30a:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-launch.html");
+console.log("Use the same ADMIN_ORDER_TOKEN used for admin-orders.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage30a-soft-launch.js admin-launch.html STAGE30A_SOFT_LAUNCH_HANDOVER.md STAGE30A_FINAL_TEST_SCRIPT.md STAGE30A_OPERATIONS_CALENDAR.md");
+console.log('git commit -m "Add soft launch command center"');
+console.log("git push");

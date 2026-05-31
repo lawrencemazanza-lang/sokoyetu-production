@@ -1,15 +1,15 @@
-const AS = "assets/";
+﻿const AS = "assets/";
 const state = {
-  role: localStorage.getItem("sokoyetuRole") || "buyer",
+  role: localStorage.getItem("SokoYetu MtaaniRole") || "buyer",
   user: null,
   authChecked: false,
-  cart: JSON.parse(localStorage.getItem("sokoyetuCart") || "[]"),
-  wishlist: JSON.parse(localStorage.getItem("sokoyetuWishlist") || "[]"),
-  imported: JSON.parse(localStorage.getItem("sokoyetuImported") || "[]"),
+  cart: JSON.parse(localStorage.getItem("SokoYetu MtaaniCart") || "[]"),
+  wishlist: JSON.parse(localStorage.getItem("SokoYetu MtaaniWishlist") || "[]"),
+  imported: JSON.parse(localStorage.getItem("SokoYetu MtaaniImported") || "[]"),
   flashIndex: 0,
   adIndex: 0,
   selectedSupplier: 0,
-  profit: Number(localStorage.getItem("sokoyetuProfit") || 18),
+  profit: Number(localStorage.getItem("SokoYetu MtaaniProfit") || 18),
   searchQuery: "",
   categoryFilter: "all"
 };
@@ -37,9 +37,9 @@ const products = [
 
 const ads = [
   {kicker:"Flash Deals Daily", title:"Kenya's smart marketplace for trusted products and live shopping.", text:"Shop phones, laptops, home essentials, groceries, fashion, beauty products and local brands from verified sellers across Kenya.", icon:"🛍️", cta:"Start Shopping"},
-  {kicker:"Live Now", title:"Watch sellers demonstrate products before you buy.", text:"Join live rooms, ask questions, view pinned products and purchase directly through SokoYetu checkout.", icon:"📹", cta:"Watch Live Deals"},
+  {kicker:"Live Now", title:"Watch sellers demonstrate products before you buy.", text:"Join live rooms, ask questions, view pinned products and purchase directly through SokoYetu Mtaani checkout.", icon:"📹", cta:"Watch Live Deals"},
   {kicker:"AI Buyer Tools", title:"Find the best product without wasting time.", text:"Use smart search, compare prices, filter by delivery speed and get personalised recommendations.", icon:"🤖", cta:"Open Smart Tools"},
-  {kicker:"For Admin", title:"Source products from wholesalers and price competitively.", text:"AI wholesale sourcing helps compare market price, add profit percentage and publish to the SokoYetu wall.", icon:"📦", cta:"AI Wholesale"}
+  {kicker:"For Admin", title:"Source products from wholesalers and price competitively.", text:"AI wholesale sourcing helps compare market price, add profit percentage and publish to the SokoYetu Mtaani wall.", icon:"📦", cta:"AI Wholesale"}
 ];
 
 const liveSellers = [
@@ -98,8 +98,8 @@ function mapApiProduct(item) {
     id: String(item.id),
     dbId: item.id,
     name: item.name,
-    description: item.description || "Quality product available on SokoYetu from trusted sellers.",
-    seller: item.seller?.name || (item.importedByAdmin ? "SokoYetu Verified" : "Verified Seller"),
+    description: item.description || "Quality product available on SokoYetu Mtaani from trusted sellers.",
+    seller: item.seller?.name || (item.importedByAdmin ? "SokoYetu Mtaani Verified" : "Verified Seller"),
     category: item.category || "Other",
     img: item.imageUrl || guessProductImage(item),
     imageUrl: item.imageUrl || "",
@@ -151,7 +151,7 @@ async function loadCartFromDatabase() {
   }
 }
 // ================================
-// SokoYetu Step 7: Frontend M-PESA Hook
+// SokoYetu Mtaani Step 7: Frontend M-PESA Hook
 // Paste this in app.js near your other helper functions.
 // Then call startMpesaPayment(order.id, phone) after creating an order.
 // ================================
@@ -230,11 +230,11 @@ async function bootstrapApp() {
 }
 
 function save() {
-  localStorage.setItem("sokoyetuRole", state.role);
-  localStorage.setItem("sokoyetuCart", JSON.stringify(state.cart));
-  localStorage.setItem("sokoyetuWishlist", JSON.stringify(state.wishlist));
-  localStorage.setItem("sokoyetuImported", JSON.stringify(state.imported));
-  localStorage.setItem("sokoyetuProfit", String(state.profit));
+  localStorage.setItem("SokoYetu MtaaniRole", state.role);
+  localStorage.setItem("SokoYetu MtaaniCart", JSON.stringify(state.cart));
+  localStorage.setItem("SokoYetu MtaaniWishlist", JSON.stringify(state.wishlist));
+  localStorage.setItem("SokoYetu MtaaniImported", JSON.stringify(state.imported));
+  localStorage.setItem("SokoYetu MtaaniProfit", String(state.profit));
 }
 
 function toast(message) {
@@ -277,7 +277,7 @@ function renderHeader() {
     <div class="top-promo">🌍 <span>Free delivery on orders above KES 10,000</span> &nbsp; | &nbsp; Shop with confidence - verified sellers, secure checkout and M-PESA support</div>
     <div class="mini-strip">
       <div class="mini-strip-inner">
-        <a class="sell-link" href="#" onclick="setRole('seller'); openModal('accountModal'); return false;">Sell on SokoYetu →</a>
+        <a class="sell-link" href="#" onclick="setRole('seller'); openModal('accountModal'); return false;">Sell on SokoYetu Mtaani →</a>
         <div class="mini-actions">
           <button class="mini-pill green" onclick="openModal('liveModal')">🔴 Live Sellers</button>
           <button class="mini-pill blue" onclick="openModal('smartModal')">🤖 Smart Buyer Tools</button>
@@ -321,7 +321,7 @@ function renderApp() {
       ${renderFilteredResults()}
       ${renderInfoGrid()}
       ${renderProductSection("Top selling items", allProducts().slice(0, 6))}
-      ${renderProductSection("New on SokoYetu | Phone Deals", allProducts().filter(p => /phone|galaxy|redmi|smartphone/i.test(p.name)).concat(allProducts()).slice(0, 6))}
+      ${renderProductSection("New on SokoYetu Mtaani | Phone Deals", allProducts().filter(p => /phone|galaxy|redmi|smartphone/i.test(p.name)).concat(allProducts()).slice(0, 6))}
       ${renderProductSection("Home, TV and Appliance Deals", allProducts().filter(p => /tv|washing|sofa|lamp|pot|appliance/i.test(p.name)).concat(allProducts()).slice(0, 6))}
       ${renderLiveSellersSection()}
       ${renderRoleSection()}
@@ -347,7 +347,7 @@ function renderMarketplaceTop() {
       <aside class="quick-panel">
         <button class="quick-card orange" onclick="openModal('liveModal')"><div class="quick-icon">🔴</div><strong>Live Sellers Now</strong><span>Join live rooms and buy pinned products.</span></button>
         <button class="quick-card blue" onclick="openModal('smartModal')"><div class="quick-icon">🤖</div><strong>Smart Buyer Tools</strong><span>Ask AI to find best deals by budget.</span></button>
-        <button class="quick-card green" onclick="setRole('seller'); openModal('accountModal')"><div class="quick-icon">🏪</div><strong>Sell on SokoYetu</strong><span>Go live, list products and grow sales.</span></button>
+        <button class="quick-card green" onclick="setRole('seller'); openModal('accountModal')"><div class="quick-icon">🏪</div><strong>Sell on SokoYetu Mtaani</strong><span>Go live, list products and grow sales.</span></button>
         <button class="quick-card" onclick="window.location.href='/checkout.html'"><div class="quick-icon">📲</div><strong>M-PESA Checkout</strong><span>Fast STK-ready payment experience.</span></button>
       </aside>
     </section>
@@ -478,7 +478,7 @@ function sellerTools(){return[
 ]}
 function adminTools(){return[
   {icon:"🏭", title:"AI Wholesale Sourcing", text:"Search wholesalers, open catalogues and import products with profit margin.", action:"openModal('adminModal')"},
-  {icon:"🧮", title:"Profit Guard", text:"Compare wholesale cost, SokoYetu price and Kenyan market average."},
+  {icon:"🧮", title:"Profit Guard", text:"Compare wholesale cost, SokoYetu Mtaani price and Kenyan market average."},
   {icon:"📲", title:"M-PESA Reconciliation", text:"Plan reconciliation between orders, payments and seller payouts.", action:"openModal('mpesaModal')"}
 ]}
 
@@ -488,13 +488,13 @@ function renderFooter() {
       <div class="footer-inner">
         <div>
           <a class="logo-wrap" href="#"><div class="logo-mark"><div class="logo-letters">SY</div></div><div><div class="logo-text"><span style="color:#fff">Soko</span><span class="yetu">Yetu</span></div><div class="logo-sub" style="color:#f8c481">Smart Kenyan Market</div></div></a>
-          <p>SokoYetu is Kenya's smart marketplace for trusted products, verified sellers, live shopping and AI-powered digital selling. Buyers discover better deals faster, sellers sell through product walls and live rooms, and admins can source products from wholesalers, price competitively and publish products with smarter marketing support.</p>
+          <p>SokoYetu Mtaani is Kenya's smart marketplace for trusted products, verified sellers, live shopping and AI-powered digital selling. Buyers discover better deals faster, sellers sell through product walls and live rooms, and admins can source products from wholesalers, price competitively and publish products with smarter marketing support.</p>
         </div>
         <div><h3>Quick Links</h3><a>Home</a><a>All Products</a><a>Track Order</a><a>Live Sellers</a><a>Become a Seller</a></div>
         <div><h3>Categories</h3><a>Electronics</a><a>Fashion</a><a>Home & Garden</a><a>Beauty & Health</a><a>Groceries</a><a>Sports</a></div>
-        <div><h3>Contact Us</h3><p>Email: mysokoyetu@gmail.com<br>Location: Nairobi, Kenya</p><p><b>M-PESA Accepted</b><br>Pay easily with Lipa na M-PESA.</p></div>
+        <div><h3>Contact Us</h3><p>Email: SokoYetu Mtaani@gmail.com<br>Location: Nairobi, Kenya</p><p><b>M-PESA Accepted</b><br>Pay easily with Lipa na M-PESA.</p></div>
       </div>
-      <div class="footer-bottom"><span>© 2026 SokoYetu. All rights reserved.</span><span>Privacy Policy · Terms of Service · Returns Policy</span></div>
+      <div class="footer-bottom"><span>© 2026 SokoYetu Mtaani. All rights reserved.</span><span>Privacy Policy · Terms of Service · Returns Policy</span></div>
     </footer>
   `;
 }
@@ -545,7 +545,7 @@ function renderAccountModal(){
   `;
 }
 function renderLiveModal(){ return `<p style="margin-top:0;color:#6b7280">Sellers can demonstrate products live, pin products, answer buyer questions and receive orders directly from live rooms.</p><div class="live-sellers-grid">${liveSellers.map(s=>`<article class="live-room"><div class="live-screen"><span class="live-label">LIVE</span><span class="viewer-label">${s.viewers} watching</span>${s.icon}</div><div class="live-room-body"><h3>${s.name}</h3><p>${s.topic}</p><div class="badge orange">Pinned: ${s.product}</div><br><br><button class="btn orange small" onclick="toast('Joined ${s.name} live room')">Join Live Room</button></div></article>`).join("")}</div>`;}
-function renderSmartModal(){ return `<div class="field"><label>Ask SokoYetu AI</label><textarea rows="3" id="aiQuestion" placeholder="Example: I need a good phone under KES 25,000 with strong battery"></textarea></div><button style="margin-top:10px" class="btn orange" onclick="runSmartAssistant()">Get Recommendation</button><div id="aiAnswer" class="cart-summary"><b>Suggested use:</b> Ask by budget, category, delivery speed, rating or product purpose.</div><div class="tool-grid" style="margin-top:14px">${buyerTools().map(toolCard).join("")}</div>`;}
+function renderSmartModal(){ return `<div class="field"><label>Ask SokoYetu Mtaani AI</label><textarea rows="3" id="aiQuestion" placeholder="Example: I need a good phone under KES 25,000 with strong battery"></textarea></div><button style="margin-top:10px" class="btn orange" onclick="runSmartAssistant()">Get Recommendation</button><div id="aiAnswer" class="cart-summary"><b>Suggested use:</b> Ask by budget, category, delivery speed, rating or product purpose.</div><div class="tool-grid" style="margin-top:14px">${buyerTools().map(toolCard).join("")}</div>`;}
 function renderHelpModal(){ return `<p>How can we help?</p><div class="tool-grid" style="grid-template-columns:1fr"><article class="tool-card"><h3>📦 Track your order</h3><p>View order status from payment confirmation to delivery.</p></article><article class="tool-card"><h3>↩️ Returns and refunds</h3><p>Eligible products follow a clear return request workflow.</p></article><article class="tool-card"><h3>📲 Payment options</h3><p>M-PESA, card and cash-on-delivery can be added in production.</p></article></div>`;}
 function renderMpesaModal(){
   const subtotal = getCartTotal();
@@ -571,7 +571,7 @@ function renderSellerModal(){ return state.user?.role !== "seller" ? `<p>This ar
 function renderAdminModal(){ return state.user?.role !== "admin" ? `<p>This area is for admin accounts only. Please sign in using an admin account.</p>` : `<div class="admin-layout"><aside class="admin-menu"><button class="active">AI Wholesale Sourcing</button><button>Product Wall Imports</button><button>Advert Studio</button><button>M-PESA Reconciliation</button><button>Quality Risk Checks</button></aside><div>${renderWholesaleTool()}</div></div>`; }
 function renderWholesaleTool(){ const s=suppliers[state.selectedSupplier]; return `<div class="field"><label>Search wholesalers, products, category or location</label><input id="supplierSearch" oninput="renderSupplierSearch()" placeholder="Example: phones wholesalers in Nairobi"></div><div id="supplierResults" class="wholesaler-list" style="margin-top:12px">${suppliers.map((x,i)=>supplierCard(x,i)).join("")}</div><hr style="border:0;border-top:1px solid #eef0f3;margin:16px 0"><h3>${s.name}</h3><p style="color:#6b7280">${s.note}</p><div class="badge green">Reliability ${s.score}%</div> <div class="badge orange">${s.location}</div> <div class="badge">${s.delivery}</div><div class="field" style="max-width:260px;margin-top:12px"><label>Profit percentage</label><input id="profitInput" type="number" value="${state.profit}" oninput="updateProfit(this.value)"></div><div class="catalogue-grid">${s.products.map((p,i)=>catalogueCard(p,i)).join("")}</div>`; }
 function supplierCard(s,i){ return `<button class="wholesaler-card" onclick="selectSupplier(${i})"><div><b>${s.name}</b><div class="seller">${s.location} · ${s.categories}</div></div><span class="badge green">${s.score}%</span></button>`; }
-function catalogueCard(p,i){ const price=Math.round(p.cost*(1+state.profit/100)); const profit=price-p.cost; const competitive=price <= p.market; return `<article class="catalogue-card"><img src="${AS+p.img}"><div><b>${p.name}</b><div class="seller">Wholesale: ${formatMoney(p.cost)} · Stock ${p.stock}</div><div class="seller">Market avg: ${formatMoney(p.market)}</div><div><span class="badge ${competitive?'green':'red'}">SokoYetu: ${formatMoney(price)}</span> <span class="badge orange">Profit: ${formatMoney(profit)}</span></div><button style="margin-top:8px" class="btn orange small" onclick="importProduct(${i})">Add to SokoYetu Wall</button></div></article>`; }
+function catalogueCard(p,i){ const price=Math.round(p.cost*(1+state.profit/100)); const profit=price-p.cost; const competitive=price <= p.market; return `<article class="catalogue-card"><img src="${AS+p.img}"><div><b>${p.name}</b><div class="seller">Wholesale: ${formatMoney(p.cost)} · Stock ${p.stock}</div><div class="seller">Market avg: ${formatMoney(p.market)}</div><div><span class="badge ${competitive?'green':'red'}">SokoYetu Mtaani: ${formatMoney(price)}</span> <span class="badge orange">Profit: ${formatMoney(profit)}</span></div><button style="margin-top:8px" class="btn orange small" onclick="importProduct(${i})">Add to SokoYetu Mtaani Wall</button></div></article>`; }
 function renderCartModal(){
   if (!state.user) return `<p>Please sign in as a buyer to use the real database cart.</p><button class="btn orange" onclick="openModal('accountModal')">Sign In or Create Account</button>`;
   if (state.user.role !== "buyer") return `<p>The cart is for buyer accounts. Please sign in as a buyer.</p>`;
@@ -643,7 +643,7 @@ async function removeFromCart(id){
     toast(error.message);
   }
 }
-// SokoYetu Stage 20D: Checkout Real STK Push Fix
+// SokoYetu Mtaani Stage 20D: Checkout Real STK Push Fix
 async function createOrderFromCart(){
   if (!state.user || state.user.role !== "buyer") {
     toast("Please sign in as a buyer first.");
@@ -766,7 +766,7 @@ function clearFilters(){ state.searchQuery=''; state.categoryFilter='all'; rende
 function runSmartAssistant(){ const q=(document.getElementById('aiQuestion')||{}).value || ''; const match=allProducts().filter(p=>q.toLowerCase().split(/\s+/).some(word=>word.length>3 && p.name.toLowerCase().includes(word))).slice(0,3); const rec=match.length?match:allProducts().slice(0,3); document.getElementById('aiAnswer').innerHTML = `<b>AI suggestion:</b> Based on your request, compare these options first:<br>${rec.map(p=>`• ${p.name} — ${formatMoney(p.price)} from ${p.seller}`).join('<br>')}<br><br><span class="seller">This is a front-end demo. Connect a real AI API for live intelligent recommendations.</span>`; }
 function selectSupplier(i){ state.selectedSupplier=i; renderApp(); openModal('adminModal'); }
 function updateProfit(v){ state.profit=Math.max(0, Number(v||0)); save(); const modal=document.getElementById('adminModal'); if(modal && modal.classList.contains('open')) { modal.innerHTML = modalShell("Admin-only AI Centre", renderAdminModal()); } }
-function importProduct(i){ const s=suppliers[state.selectedSupplier]; const p=s.products[i]; const price=Math.round(p.cost*(1+state.profit/100)); const newProduct={id:'w'+Date.now()+i, name:p.name, seller:'SokoYetu Wholesale Wall', category:'Wholesale Import', img:p.img, price, old:p.market, stock:p.stock, rating:4.6, reviews:0, discount:Math.max(1, Math.round((1-price/p.market)*100))}; state.imported.unshift(newProduct); save(); renderApp(); openModal('adminModal'); toast(`${p.name} added to SokoYetu wall`); }
+function importProduct(i){ const s=suppliers[state.selectedSupplier]; const p=s.products[i]; const price=Math.round(p.cost*(1+state.profit/100)); const newProduct={id:'w'+Date.now()+i, name:p.name, seller:'SokoYetu Mtaani Wholesale Wall', category:'Wholesale Import', img:p.img, price, old:p.market, stock:p.stock, rating:4.6, reviews:0, discount:Math.max(1, Math.round((1-price/p.market)*100))}; state.imported.unshift(newProduct); save(); renderApp(); openModal('adminModal'); toast(`${p.name} added to SokoYetu Mtaani wall`); }
 function renderSupplierSearch(){ const q=(document.getElementById('supplierSearch')||{}).value?.toLowerCase() || ''; const html=suppliers.filter(s=>!q || `${s.name} ${s.location} ${s.categories} ${s.note}`.toLowerCase().includes(q)).map((s,i)=>supplierCard(s,i)).join('') || '<p>No matching supplier in demo data.</p>'; document.getElementById('supplierResults').innerHTML=html; }
 
 
@@ -889,10 +889,10 @@ setInterval(updateCountdown, 1000);
 
 
 // ================================
-// SokoYetu Step 8 Seller Frontend Patch
+// SokoYetu Mtaani Step 8 Seller Frontend Patch
 // Adds visible seller dashboard tools only when the signed-in user role is seller.
 // ================================
-(function initSokoYetuSellerFrontend() {
+(function initSokoYetu MtaaniSellerFrontend() {
   const sellerStyle = document.createElement("style");
   sellerStyle.textContent = `
     .seller-studio-launcher {
@@ -1397,16 +1397,16 @@ setInterval(updateCountdown, 1000);
   });
 
   window.addEventListener("focus", refreshSellerLauncher);
-  window.sokoyetuRefreshSellerLauncher = refreshSellerLauncher;
+  window.SokoYetu MtaaniRefreshSellerLauncher = refreshSellerLauncher;
 })();
 
 
 
 // ================================
-// SokoYetu Step 9 Admin Frontend Patch
+// SokoYetu Mtaani Step 9 Admin Frontend Patch
 // Adds visible Admin Control Centre only for signed-in admins.
 // ================================
-(function initSokoYetuAdminFrontend() {
+(function initSokoYetu MtaaniAdminFrontend() {
   const adminStyle = document.createElement("style");
   adminStyle.textContent = `
     .admin-centre-launcher {
@@ -1716,7 +1716,7 @@ setInterval(updateCountdown, 1000);
         <section class="admin-centre-panel">
           <div class="admin-centre-head">
             <div>
-              <h2>SokoYetu Admin Control Centre</h2>
+              <h2>SokoYetu Mtaani Admin Control Centre</h2>
               <p>Monitor users, sellers, products, orders, payments, wholesalers and imported product pricing.</p>
             </div>
             <button class="admin-centre-close" id="adminCentreClose">Close</button>
@@ -1843,7 +1843,7 @@ setInterval(updateCountdown, 1000);
 
     try {
       const data = await adminApi("/api/admin/dashboard-data");
-      window.sokoyetuAdminData = data;
+      window.SokoYetu MtaaniAdminData = data;
 
       const m = data.metrics || {};
 
@@ -1939,7 +1939,7 @@ setInterval(updateCountdown, 1000);
                 <div>
                   <h4>${product.name}</h4>
                   <p>${product.category} · Stock: ${product.stock}</p>
-                  <p>Seller: ${product.seller?.name || (product.importedByAdmin ? "SokoYetu Admin Import" : "SokoYetu")}</p>
+                  <p>Seller: ${product.seller?.name || (product.importedByAdmin ? "SokoYetu Mtaani Admin Import" : "SokoYetu Mtaani")}</p>
                 </div>
                 <span class="admin-badge">${adminMoney(product.price)}</span>
               </div>
@@ -2111,7 +2111,7 @@ setInterval(updateCountdown, 1000);
       });
 
       alert(
-        "Imported to SokoYetu wall. Selling price: " +
+        "Imported to SokoYetu Mtaani wall. Selling price: " +
         adminMoney(data.pricing.sellingPrice) +
         ". Competitive: " +
         (data.pricing.isCompetitive ? "Yes" : "No")
@@ -2139,16 +2139,16 @@ setInterval(updateCountdown, 1000);
   });
 
   window.addEventListener("focus", refreshAdminLauncher);
-  window.sokoyetuRefreshAdminLauncher = refreshAdminLauncher;
+  window.SokoYetu MtaaniRefreshAdminLauncher = refreshAdminLauncher;
 })();
 
 
 
 // ================================
-// SokoYetu Step 10 Product Image Frontend Patch
+// SokoYetu Mtaani Step 10 Product Image Frontend Patch
 // Adds image upload helper and enhances seller/admin product image workflow.
 // ================================
-(function initSokoYetuImageUploadPatch() {
+(function initSokoYetu MtaaniImageUploadPatch() {
   async function uploadProductImageFromInput(fileInput) {
     if (!fileInput || !fileInput.files || !fileInput.files[0]) {
       return "";
@@ -2265,16 +2265,16 @@ setInterval(updateCountdown, 1000);
     setTimeout(addImageInputsToSellerAndAdminForms, 2500);
   });
 
-  window.sokoyetuAddImageInputs = addImageInputsToSellerAndAdminForms;
+  window.SokoYetu MtaaniAddImageInputs = addImageInputsToSellerAndAdminForms;
 })();
 
 
 
 // ================================
-// SokoYetu Step 11 Delivery Tracking Frontend Patch
+// SokoYetu Mtaani Step 11 Delivery Tracking Frontend Patch
 // Adds buyer order tracking panel and timeline view.
 // ================================
-(function initSokoYetuTrackingFrontend() {
+(function initSokoYetu MtaaniTrackingFrontend() {
   const trackingStyle = document.createElement("style");
   trackingStyle.textContent = `
     .tracking-launcher {
@@ -2617,17 +2617,17 @@ setInterval(updateCountdown, 1000);
   });
 
   window.addEventListener("focus", refreshTrackingLauncher);
-  window.sokoyetuRefreshTrackingLauncher = refreshTrackingLauncher;
+  window.SokoYetu MtaaniRefreshTrackingLauncher = refreshTrackingLauncher;
 })();
 
 
 
 // ================================
-// SokoYetu Admin AI Tools Active Patch
+// SokoYetu Mtaani Admin AI Tools Active Patch
 // Makes all admin AI tool icons/cards active.
 // Visible only to signed-in admin users.
 // ================================
-(function initSokoYetuAdminAIToolsActivePatch() {
+(function initSokoYetu MtaaniAdminAIToolsActivePatch() {
   const aiStyle = document.createElement("style");
   aiStyle.textContent = `
     .admin-ai-launcher {
@@ -2988,7 +2988,7 @@ setInterval(updateCountdown, 1000);
         <section class="admin-ai-panel">
           <div class="admin-ai-head">
             <div>
-              <h2>SokoYetu Admin AI Centre</h2>
+              <h2>SokoYetu Mtaani Admin AI Centre</h2>
               <p>All artificial-intelligence selling, sourcing, pricing and marketing tools are active here.</p>
             </div>
             <button class="admin-ai-close" id="adminAIClose">Close</button>
@@ -3072,7 +3072,7 @@ setInterval(updateCountdown, 1000);
   function renderWholesaleTool(el) {
     el.innerHTML = `
       <h3>AI Wholesaler Search</h3>
-      <p>Search saved wholesalers and identify suppliers that can support SokoYetu product sourcing.</p>
+      <p>Search saved wholesalers and identify suppliers that can support SokoYetu Mtaani product sourcing.</p>
       <div class="admin-ai-form">
         <input id="aiWholesaleQuery" placeholder="Search category, product or location, for example Electronics Nairobi" />
         <button class="admin-ai-btn" id="aiWholesaleRun">Search Wholesalers</button>
@@ -3134,7 +3134,7 @@ setInterval(updateCountdown, 1000);
       const margin = selling ? Math.round((expectedProfit / selling) * 100) : 0;
 
       document.getElementById("aiPriceOutput").innerHTML = `
-        <div><b>SokoYetu price:</b> ${aiMoney(selling)}</div>
+        <div><b>SokoYetu Mtaani price:</b> ${aiMoney(selling)}</div>
         <div><b>Expected profit:</b> ${aiMoney(expectedProfit)}</div>
         <div><b>Estimated margin:</b> ${margin}%</div>
         <div><b>Market check:</b> ${competitive ? "Competitive against the market average." : "Too high. Reduce profit or negotiate wholesale cost."}</div>
@@ -3163,8 +3163,8 @@ setInterval(updateCountdown, 1000);
       document.getElementById("aiListingOutput").innerHTML = `
         <b>Title:</b> ${name} - Trusted ${category} Deal<br>
         <b>Description:</b>
-        <p>${name} is a practical ${category.toLowerCase()} choice for SokoYetu buyers looking for value, reliability and convenience. It offers ${features}. Ideal for customers who want quality at a fair Kenyan market price.</p>
-        <b>Tags:</b> ${category}, SokoYetu Deal, Verified Product, Fast Delivery, M-PESA Accepted
+        <p>${name} is a practical ${category.toLowerCase()} choice for SokoYetu Mtaani buyers looking for value, reliability and convenience. It offers ${features}. Ideal for customers who want quality at a fair Kenyan market price.</p>
+        <b>Tags:</b> ${category}, SokoYetu Mtaani Deal, Verified Product, Fast Delivery, M-PESA Accepted
       `;
     });
   }
@@ -3196,8 +3196,8 @@ setInterval(updateCountdown, 1000);
 
       document.getElementById("aiAdOutput").innerHTML = `
         <b>${platform} advert:</b>
-        <p>🔥 New on SokoYetu: ${product}. Get it now for ${price}. ${offer}. Pay easily with M-PESA and enjoy trusted delivery across Kenya.</p>
-        <b>Hashtags:</b> #SokoYetu #KenyaDeals #ShopOnlineKE #MPESAAccepted #FlashDeals
+        <p>🔥 New on SokoYetu Mtaani: ${product}. Get it now for ${price}. ${offer}. Pay easily with M-PESA and enjoy trusted delivery across Kenya.</p>
+        <b>Hashtags:</b> #SokoYetu Mtaani #KenyaDeals #ShopOnlineKE #MPESAAccepted #FlashDeals
         <b>Call to action:</b> Shop now before the offer ends.
       `;
     });
@@ -3352,7 +3352,7 @@ setInterval(updateCountdown, 1000);
         <b>Bundle name:</b> ${main} Complete Value Pack<br>
         <b>Includes:</b> ${main}, ${addons}<br>
         <b>Suggested bundle price:</b> ${bundlePrice ? aiMoney(bundlePrice) : "Enter total price to calculate"}<br>
-        <p>Marketing angle: save more when you buy the full set together on SokoYetu.</p>
+        <p>Marketing angle: save more when you buy the full set together on SokoYetu Mtaani.</p>
       `;
     });
   }
@@ -3377,7 +3377,7 @@ setInterval(updateCountdown, 1000);
 
       document.getElementById("aiLiveOutput").innerHTML = `
         <b>Opening script:</b>
-        <p>Karibu SokoYetu Live. Today ${seller} is showing ${product}, available now with ${offer}. Ask questions in the chat and tap the pinned product to buy.</p>
+        <p>Karibu SokoYetu Mtaani Live. Today ${seller} is showing ${product}, available now with ${offer}. Ask questions in the chat and tap the pinned product to buy.</p>
         <b>Pinned product message:</b>
         <p>${product} is live now. Limited stock. Pay with M-PESA and track your order from your account.</p>
         <b>Closing call-to-action:</b>
@@ -3407,14 +3407,14 @@ setInterval(updateCountdown, 1000);
     const candidates = Array.from(document.querySelectorAll("button, .card, .tool-card, [class*='ai'], [class*='tool']"));
 
     candidates.forEach((element) => {
-      if (element.dataset.sokoyetuAiActivated) return;
+      if (element.dataset.SokoYetu MtaaniAiActivated) return;
 
       const text = (element.textContent || "").toLowerCase();
       const match = textToTool.find(([keyword]) => text.includes(keyword));
 
       if (!match) return;
 
-      element.dataset.sokoyetuAiActivated = "true";
+      element.dataset.SokoYetu MtaaniAiActivated = "true";
       element.style.cursor = "pointer";
       element.addEventListener("click", () => {
         openAdminAITools();
@@ -3435,13 +3435,13 @@ setInterval(updateCountdown, 1000);
   });
 
   window.addEventListener("focus", refreshAdminAILauncher);
-  window.sokoyetuRefreshAdminAI = refreshAdminAILauncher;
+  window.SokoYetu MtaaniRefreshAdminAI = refreshAdminAILauncher;
 })();
 
 
 
 // ================================
-// SokoYetu Admin AI Focus and Close Fix
+// SokoYetu Mtaani Admin AI Focus and Close Fix
 // Fixes Admin AI panel close button and prevents input/search focus from being hijacked.
 // ================================
 (function initAdminAIFocusAndCloseFix() {
@@ -3552,7 +3552,7 @@ setInterval(updateCountdown, 1000);
     // This marks actual AI panel structure as protected so later scans do not treat
     // the panel, workspace or form controls as legacy cards.
     panel.querySelectorAll(".admin-ai-panel, .admin-ai-workspace, .admin-ai-output, .admin-ai-form, input, textarea, select, option").forEach((el) => {
-      el.dataset.sokoyetuAiActivated = "true";
+      el.dataset.SokoYetu MtaaniAiActivated = "true";
     });
   }
 
@@ -3595,18 +3595,18 @@ setInterval(updateCountdown, 1000);
 
   window.addEventListener("focus", runFix);
 
-  window.sokoyetuCloseAdminAIHard = closeAIHard;
-  window.sokoyetuFixAdminAIPanel = runFix;
+  window.SokoYetu MtaaniCloseAdminAIHard = closeAIHard;
+  window.SokoYetu MtaaniFixAdminAIPanel = runFix;
 })();
 
 
 
 // ================================
-// SokoYetu Admin AI Suite V2 Patch
+// SokoYetu Mtaani Admin AI Suite V2 Patch
 // Replaces dormant admin AI cards with a clean active admin-only AI suite.
 // It also searches real seeded wholesalers from the database.
 // ================================
-(function initSokoYetuAdminAISuiteV2() {
+(function initSokoYetu MtaaniAdminAISuiteV2() {
   const style = document.createElement("style");
   style.textContent = `
     #adminAISuiteV2Launcher {
@@ -4017,7 +4017,7 @@ setInterval(updateCountdown, 1000);
                     <b>${p.name}</b>
                     <p>Wholesale: ${money(p.wholesalePrice)} · Market: ${money(p.marketPrice)} · Stock: ${p.stock}</p>
                     <input id="ai2Profit-${p.id}" type="number" value="20" min="1" max="100" style="width:90px;border:1px solid #ddd6fe;border-radius:10px;padding:7px;" />
-                    <button type="button" class="ai2-btn orange" data-ai2-import="${p.id}">Import to SokoYetu</button>
+                    <button type="button" class="ai2-btn orange" data-ai2-import="${p.id}">Import to SokoYetu Mtaani</button>
                   </div>
                 `).join("")}
               </div>
@@ -4040,7 +4040,7 @@ setInterval(updateCountdown, 1000);
               if (typeof loadProductsFromDatabase === "function") await loadProductsFromDatabase();
               if (typeof renderApp === "function") renderApp();
             } catch (error) {
-              btn.textContent = "Import to SokoYetu";
+              btn.textContent = "Import to SokoYetu Mtaani";
               alert(error.message);
             }
           });
@@ -4100,9 +4100,9 @@ setInterval(updateCountdown, 1000);
       const c = document.getElementById("ai2ListCat").value || "General";
       const f = document.getElementById("ai2ListFeatures").value || "reliable quality and everyday value";
       document.getElementById("ai2ListOut").innerHTML = `
-        <b>Title:</b> ${n} - Best ${c} Deal on SokoYetu<br>
+        <b>Title:</b> ${n} - Best ${c} Deal on SokoYetu Mtaani<br>
         <b>Description:</b><p>${n} is a practical ${c.toLowerCase()} product for buyers who want value, reliability and convenience. Key features include ${f}. Pay easily with M-PESA and track your order online.</p>
-        <b>Tags:</b> ${c}, SokoYetu, verified product, M-PESA, Kenya deals
+        <b>Tags:</b> ${c}, SokoYetu Mtaani, verified product, M-PESA, Kenya deals
       `;
     };
   }
@@ -4126,8 +4126,8 @@ setInterval(updateCountdown, 1000);
       const offer = document.getElementById("ai2AdOffer").value || "limited offer";
       document.getElementById("ai2AdOut").innerHTML = `
         <b>${platform} advert:</b>
-        <p>🔥 New on SokoYetu: ${product}. Get it now for ${price}. ${offer}. Pay with M-PESA and track delivery online.</p>
-        <b>Hashtags:</b> #SokoYetu #KenyaDeals #ShopOnlineKE #MPESA
+        <p>🔥 New on SokoYetu Mtaani: ${product}. Get it now for ${price}. ${offer}. Pay with M-PESA and track delivery online.</p>
+        <b>Hashtags:</b> #SokoYetu Mtaani #KenyaDeals #ShopOnlineKE #MPESA
       `;
     };
   }
@@ -4234,7 +4234,7 @@ setInterval(updateCountdown, 1000);
       const product = document.getElementById("ai2LiveProduct").value || "featured product";
       const offer = document.getElementById("ai2LiveOffer").value || "live-only deal";
       document.getElementById("ai2LiveOut").innerHTML = `
-        <b>Opening:</b><p>Karibu SokoYetu Live. Today ${seller} is showing ${product} with ${offer}. Ask questions and tap the pinned product to buy.</p>
+        <b>Opening:</b><p>Karibu SokoYetu Mtaani Live. Today ${seller} is showing ${product} with ${offer}. Ask questions and tap the pinned product to buy.</p>
         <b>Pinned message:</b><p>${product} is available now. Pay with M-PESA and track your order from your account.</p>
       `;
     };
@@ -4245,13 +4245,13 @@ setInterval(updateCountdown, 1000);
     setTimeout(refreshLauncher, 2000);
   });
   window.addEventListener("focus", refreshLauncher);
-  window.sokoyetuOpenAdminAISuiteV2 = openSuite;
-  window.sokoyetuRefreshAdminAISuiteV2 = refreshLauncher;
+  window.SokoYetu MtaaniOpenAdminAISuiteV2 = openSuite;
+  window.SokoYetu MtaaniRefreshAdminAISuiteV2 = refreshLauncher;
 })();
 
 
 // ================================
-// SokoYetu Step 13 Old AI Cleanup
+// SokoYetu Mtaani Step 13 Old AI Cleanup
 // Keeps the corrected 🧠 Admin AI Suite V2 and hides the older unstable 🤖 AI Tools launcher.
 // ================================
 (function cleanupOldAdminAIButtonsStep13() {
@@ -4285,10 +4285,10 @@ setInterval(updateCountdown, 1000);
 
 
 // ================================
-// SokoYetu Stage 17: LiveKit Livestreaming Frontend
+// SokoYetu Mtaani Stage 17: LiveKit Livestreaming Frontend
 // Adds role-aware live seller buttons.
 // ================================
-(function initSokoYetuLiveKitFrontend() {
+(function initSokoYetu MtaaniLiveKitFrontend() {
   const liveStyle = document.createElement("style");
   liveStyle.textContent = `
     .sy-live-launcher{position:fixed;z-index:12500;left:18px;bottom:142px;border:none;border-radius:999px;padding:13px 18px;background:linear-gradient(135deg,#dc2626,#111827);color:#fff;font-weight:900;cursor:pointer;box-shadow:0 18px 45px rgba(15,23,42,.32);display:none}
@@ -4355,7 +4355,7 @@ setInterval(updateCountdown, 1000);
       backdrop.innerHTML = `
         <section class="sy-live-panel">
           <div class="sy-live-head">
-            <div><h2>SokoYetu Live Shopping</h2><p>Sellers host live product sessions. Buyers join active live sellers.</p></div>
+            <div><h2>SokoYetu Mtaani Live Shopping</h2><p>Sellers host live product sessions. Buyers join active live sellers.</p></div>
             <button class="sy-live-close" id="syLiveClose">Close</button>
           </div>
           <div class="sy-live-body" id="syLiveBody"></div>
@@ -4509,16 +4509,16 @@ setInterval(updateCountdown, 1000);
   document.addEventListener("DOMContentLoaded", () => { setTimeout(refreshLiveButtons, 800); setTimeout(refreshLiveButtons, 2200); });
   document.addEventListener("click", () => { setTimeout(refreshLiveButtons, 300); });
   window.addEventListener("focus", refreshLiveButtons);
-  window.sokoyetuRefreshLiveButtons = refreshLiveButtons;
+  window.SokoYetu MtaaniRefreshLiveButtons = refreshLiveButtons;
 })();
 
 
 // ================================
-// SokoYetu Stage 18: Final UI Polish and Duplicate Cleanup
+// SokoYetu Mtaani Stage 18: Final UI Polish and Duplicate Cleanup
 // Keeps the corrected Admin AI Suite V2, LiveKit buttons, Cloudinary uploads, Daraja payments and Seller Studio.
 // Hides old duplicate/unstable launchers and improves floating controls.
 // ================================
-(function initSokoYetuStage18UIPolish() {
+(function initSokoYetu MtaaniStage18UIPolish() {
   const stage18Style = document.createElement("style");
   stage18Style.textContent = `
     /* Hide old unstable admin AI launcher/panel. Keep only Admin AI Suite V2. */
@@ -4744,19 +4744,19 @@ setInterval(updateCountdown, 1000);
   });
 
   window.addEventListener("focus", runStage18Cleanup);
-  window.sokoyetuStage18Cleanup = runStage18Cleanup;
+  window.SokoYetu MtaaniStage18Cleanup = runStage18Cleanup;
 })();
 
 
 
 // ================================
-// SokoYetu Stage 20P: Hard Reset Checkout JavaScript
+// SokoYetu Mtaani Stage 20P: Hard Reset Checkout JavaScript
 // Lightweight recovery after cart/checkout modal conflicts.
 // Sends checkout/cart navigation to checkout.html without heavy observers or modal sync.
 // ================================
 (function initStage20PHardResetCheckoutJavaScript() {
-  if (window.__sokoyetuStage20PInstalled) return;
-  window.__sokoyetuStage20PInstalled = true;
+  if (window.__SokoYetu MtaaniStage20PInstalled) return;
+  window.__SokoYetu MtaaniStage20PInstalled = true;
 
   function goToCheckout(event) {
     if (event) {
@@ -4837,10 +4837,10 @@ setInterval(updateCountdown, 1000);
 })();
 
 
-// SokoYetu Stage 36B: Checkout routing repair
+// SokoYetu Mtaani Stage 36B: Checkout routing repair
 // Sends cart and M-PESA checkout buttons to checkout.html so buyers can choose Home delivery or Self-pickup.
 (function initStage36BCheckoutRoutingRepair() {
-  function goToSokoYetuCheckout(event) {
+  function goToSokoYetu MtaaniCheckout(event) {
     if (event) {
       event.preventDefault();
       event.stopPropagation();
@@ -4870,8 +4870,107 @@ setInterval(updateCountdown, 1000);
 
   document.addEventListener("click", function(event) {
     const target = event.target;
-    if (isCheckoutRouteClick(target)) goToSokoYetuCheckout(event);
+    if (isCheckoutRouteClick(target)) goToSokoYetu MtaaniCheckout(event);
   }, true);
 
-  window.goToSokoYetuCheckout = goToSokoYetuCheckout;
+  window.goToSokoYetu MtaaniCheckout = goToSokoYetu MtaaniCheckout;
 })();
+
+
+// SokoYetu Mtaani Stage 37A: public UX polish, WhatsApp and offer rail
+(function initStage37AUxWhatsAppOfferRail() {
+  var WHATSAPP_NUMBER = "254714565555";
+  var MPESA_TILL = "6923522";
+  function isAdminOrCheckoutPage(){ return /admin|checkout/i.test(location.pathname); }
+  function waUrl(text){ return "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent(text || "Hello SokoYetu Mtaani, I need help."); }
+  function injectStyle(){
+    if(document.getElementById("SokoYetu MtaaniStage37AStyle")) return;
+    var style=document.createElement("style");
+    style.id="SokoYetu MtaaniStage37AStyle";
+    style.textContent =
+      "body{background:#f5f7fb!important}" +
+      "main,.main,.container,.content{max-width:1180px;margin-left:auto;margin-right:auto}" +
+      ".catalogue-grid,.product-grid,.tool-grid{gap:18px!important}" +
+      ".card,.product-card,.tool-card,.info-card,article{border-radius:18px}" +
+      ".modal-backdrop{z-index:30000}" +
+      ".sokoyetu-wa-float{position:fixed;right:18px;bottom:22px;z-index:21000;background:#128c7e;color:#fff;text-decoration:none;border-radius:999px;padding:13px 16px;font-weight:900;box-shadow:0 18px 45px rgba(15,23,42,.28);display:flex;align-items:center;gap:8px}" +
+      ".sokoyetu-offer-rail{position:fixed;right:18px;top:110px;width:280px;z-index:12000;background:#fff;border:1px solid #bbf7d0;border-radius:24px;box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:hidden}" +
+      ".sokoyetu-offer-head{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:13px 15px;font-weight:900}" +
+      ".sokoyetu-offer-body{padding:14px;display:grid;gap:9px}.sokoyetu-offer-title{font-weight:900;color:#064e3b;font-size:18px}.sokoyetu-offer-text{color:#475569;line-height:1.4}.sokoyetu-offer-pill{display:inline-flex;width:fit-content;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 9px;font-size:12px;font-weight:900}.sokoyetu-offer-actions{display:flex;gap:8px;flex-wrap:wrap}.sokoyetu-offer-actions a{border-radius:12px;padding:9px 10px;text-decoration:none;font-weight:900}.sokoyetu-offer-whatsapp{background:#128c7e;color:#fff}.sokoyetu-offer-shop{background:#111827;color:#fff}" +
+      "@media(min-width:1280px){body:not(.sokoyetu-no-rail){padding-right:310px}}" +
+      "@media(max-width:1279px){.sokoyetu-offer-rail{display:none}}" +
+      "@media(max-width:720px){.sokoyetu-wa-float{right:10px;bottom:12px;padding:11px 13px;font-size:13px}.top-promo{font-size:12px;line-height:1.35}.hero,.section{padding-left:12px!important;padding-right:12px!important}}";
+    document.head.appendChild(style);
+  }
+  function createWhatsAppFloat(){
+    if(document.getElementById("SokoYetu MtaaniWhatsAppFloat")) return;
+    var a=document.createElement("a");
+    a.id="SokoYetu MtaaniWhatsAppFloat";
+    a.className="sokoyetu-wa-float";
+    a.href=waUrl("Hello SokoYetu Mtaani, I need help.");
+    a.target="_blank";
+    a.rel="noopener";
+    a.textContent="WhatsApp SokoYetu Mtaani";
+    document.body.appendChild(a);
+  }
+  function createOfferRail(){
+    if(isAdminOrCheckoutPage()){ document.body.classList.add("sokoyetu-no-rail"); return; }
+    if(document.getElementById("SokoYetu MtaaniOfferRail")) return;
+    var offers=[
+      {title:"Self-pickup now available",text:"Collect your order yourself and pay no delivery fee.",pill:"KES 0 delivery fee",link:"/checkout.html"},
+      {title:"Manual M-PESA available",text:"If automatic prompt is unavailable, use Buy Goods Till " + MPESA_TILL + " and send receipt on WhatsApp.",pill:"Till " + MPESA_TILL,link:"/checkout.html"},
+      {title:"Sellers welcome",text:"Want to Sell on SokoYetu Mtaani? Message us on WhatsApp and we will guide you.",pill:"Seller onboarding",link:"/seller-center.html"},
+      {title:"Promoted products",text:"New offers and promoted products will appear here for buyers.",pill:"Hot offers",link:"/categories.html"}
+    ];
+    var rail=document.createElement("aside");
+    rail.id="SokoYetu MtaaniOfferRail";
+    rail.className="sokoyetu-offer-rail";
+    rail.innerHTML='<div class="sokoyetu-offer-head">SokoYetu Mtaani Offers</div><div class="sokoyetu-offer-body"><span class="sokoyetu-offer-pill" id="SokoYetu MtaaniOfferPill"></span><div class="sokoyetu-offer-title" id="SokoYetu MtaaniOfferTitle"></div><div class="sokoyetu-offer-text" id="SokoYetu MtaaniOfferText"></div><div class="sokoyetu-offer-actions"><a class="sokoyetu-offer-whatsapp" id="SokoYetu MtaaniOfferWhatsApp" target="_blank" rel="noopener">WhatsApp</a><a class="sokoyetu-offer-shop" id="SokoYetu MtaaniOfferLink">Open</a></div></div>';
+    document.body.appendChild(rail);
+    var index=0;
+    function render(){
+      var offer=offers[index % offers.length];
+      document.getElementById("SokoYetu MtaaniOfferPill").textContent=offer.pill;
+      document.getElementById("SokoYetu MtaaniOfferTitle").textContent=offer.title;
+      document.getElementById("SokoYetu MtaaniOfferText").textContent=offer.text;
+      document.getElementById("SokoYetu MtaaniOfferWhatsApp").href=waUrl("Hello SokoYetu Mtaani, I am interested in: " + offer.title);
+      document.getElementById("SokoYetu MtaaniOfferLink").href=offer.link;
+      index++;
+    }
+    render();
+    setInterval(render,4500);
+  }
+  function routeOldCheckoutClicks(){
+    document.addEventListener("click",function(event){
+      var el=event.target && event.target.closest ? event.target.closest("button,a,[onclick],.quick-card,.btn") : null;
+      if(!el) return;
+      var text=String(el.textContent || "").toLowerCase().replace(/\s+/g," ").trim();
+      var onclick=String(el.getAttribute && el.getAttribute("onclick") || "").toLowerCase();
+      if(onclick.includes("mpesamodal") || text.includes("m-pesa checkout") || text.includes("checkout with m-pesa") || text === "checkout"){
+        event.preventDefault();
+        event.stopPropagation();
+        window.location.href="/checkout.html";
+      }
+    },true);
+  }
+  function init(){ injectStyle(); createWhatsAppFloat(); createOfferRail(); routeOldCheckoutClicks(); }
+  if(document.readyState === "loading") document.addEventListener("DOMContentLoaded",init); else init();
+})();
+
+
+// SokoYetu Mtaani Stage 37B: marketplace redesign, WhatsApp, offers rail and live-block cleanup
+(function(){
+  const WHATSAPP="254714565555";
+  const TILL="6923522";
+  function wa(t){return "https://wa.me/"+WHATSAPP+"?text="+encodeURIComponent(t||"Hello SokoYetu Mtaani, I need help.")}
+  function isAdminOrCheckout(){return /admin|checkout/i.test(location.pathname)}
+  function addStyle(){if(document.getElementById("soko37bStyle"))return;const s=document.createElement("style");s.id="soko37bStyle";s.textContent='body{background:#f4f6f9!important;color:#111827!important}main,.main,.container,.content{max-width:1180px;margin-left:auto;margin-right:auto}.catalogue-grid,.product-grid,.tool-grid{gap:18px!important}.card,.product-card,.tool-card,.info-card,article{border-radius:18px!important}.hero,.section{padding-top:22px!important;padding-bottom:22px!important}.top-promo{background:#064e3b!important;color:#fff!important}.soko37b-whatsapp{position:fixed;right:18px;bottom:22px;z-index:25000;background:#128c7e;color:#fff;text-decoration:none;border-radius:999px;padding:13px 16px;font-weight:900;box-shadow:0 18px 45px rgba(15,23,42,.28);display:flex;align-items:center}.soko37b-offer-rail{position:fixed;right:18px;top:112px;width:282px;z-index:15000;background:#fff;border:1px solid #bbf7d0;border-radius:24px;box-shadow:0 18px 48px rgba(15,23,42,.18);overflow:hidden}.soko37b-offer-head{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:13px 15px;font-weight:900}.soko37b-offer-body{padding:14px;display:grid;gap:9px}.soko37b-offer-title{font-weight:900;color:#064e3b;font-size:18px}.soko37b-offer-text{color:#475569;line-height:1.4}.soko37b-offer-pill{display:inline-flex;width:fit-content;border-radius:999px;background:#dcfce7;color:#166534;padding:5px 9px;font-size:12px;font-weight:900}.soko37b-offer-actions{display:flex;gap:8px;flex-wrap:wrap}.soko37b-offer-actions a{border-radius:12px;padding:9px 10px;text-decoration:none;font-weight:900}.soko37b-offer-whatsapp{background:#128c7e;color:#fff}.soko37b-offer-shop{background:#111827;color:#fff}@media(min-width:1280px){body:not(.soko37b-no-rail){padding-right:310px}}@media(max-width:1279px){.soko37b-offer-rail{display:none}}@media(max-width:720px){.soko37b-whatsapp{right:10px;bottom:12px;padding:11px 13px;font-size:13px}.top-promo{font-size:12px;line-height:1.35}.hero,.section{padding-left:12px!important;padding-right:12px!important}}';document.head.appendChild(s)}
+  function removeDullLiveBlocks(){const keys=["watch sellers demonstrate","join live rooms","streaming live","live rooms"];document.querySelectorAll("section,article,.quick-card,.tool-card,.info-card,.card,div").forEach(el=>{if(!el||el.closest("#soko37bOfferRail"))return;const text=String(el.textContent||"").toLowerCase();if(keys.some(k=>text.includes(k))&&text.length<900)el.remove()})}
+  function addWhatsApp(){if(document.getElementById("soko37bWhatsApp"))return;const a=document.createElement("a");a.id="soko37bWhatsApp";a.className="soko37b-whatsapp";a.href=wa("Hello SokoYetu Mtaani, I need help.");a.target="_blank";a.rel="noopener";a.textContent="WhatsApp SokoYetu Mtaani";document.body.appendChild(a)}
+  function addRail(){if(isAdminOrCheckout()){document.body.classList.add("soko37b-no-rail");return}if(document.getElementById("soko37bOfferRail"))return;const offers=[{title:"Self-pickup now available",text:"Collect your order yourself and pay no delivery fee.",pill:"KES 0 delivery fee",link:"/checkout.html"},{title:"Manual M-PESA available",text:"Use Buy Goods Till "+TILL+" and send receipt on WhatsApp if automatic prompt is unavailable.",pill:"Till "+TILL,link:"/checkout.html"},{title:"Sellers welcome",text:"Want to Sell on SokoYetu Mtaani? Message us on WhatsApp.",pill:"Seller onboarding",link:"/seller-center.html"},{title:"Promoted products",text:"New offers and promoted products will appear here.",pill:"Hot offers",link:"/categories.html"}];const rail=document.createElement("aside");rail.id="soko37bOfferRail";rail.className="soko37b-offer-rail";rail.innerHTML='<div class="soko37b-offer-head">SokoYetu Mtaani Offers</div><div class="soko37b-offer-body"><span class="soko37b-offer-pill" id="soko37bOfferPill"></span><div class="soko37b-offer-title" id="soko37bOfferTitle"></div><div class="soko37b-offer-text" id="soko37bOfferText"></div><div class="soko37b-offer-actions"><a class="soko37b-offer-whatsapp" id="soko37bOfferWhatsApp" target="_blank" rel="noopener">WhatsApp</a><a class="soko37b-offer-shop" id="soko37bOfferLink">Open</a></div></div>';document.body.appendChild(rail);let i=0;function render(){const o=offers[i%offers.length];document.getElementById("soko37bOfferPill").textContent=o.pill;document.getElementById("soko37bOfferTitle").textContent=o.title;document.getElementById("soko37bOfferText").textContent=o.text;document.getElementById("soko37bOfferWhatsApp").href=wa("Hello SokoYetu Mtaani, I am interested in: "+o.title);document.getElementById("soko37bOfferLink").href=o.link;i++}render();setInterval(render,4500)}
+  function routeCheckout(){document.addEventListener("click",e=>{const el=e.target&&e.target.closest?e.target.closest("button,a,[onclick],.quick-card,.btn"):null;if(!el)return;const text=String(el.textContent||"").toLowerCase().replace(/\s+/g," ").trim();const onclick=String(el.getAttribute&&el.getAttribute("onclick")||"").toLowerCase();if(onclick.includes("mpesamodal")||text.includes("m-pesa checkout")||text.includes("checkout with m-pesa")||text==="checkout"){e.preventDefault();e.stopPropagation();window.location.href="/checkout.html"}},true)}
+  function init(){addStyle();removeDullLiveBlocks();addWhatsApp();addRail();routeCheckout();setTimeout(removeDullLiveBlocks,800)}
+  if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
+})();
+
+

@@ -1,0 +1,266 @@
+﻿/* FINAL PLAIN SokoYetu Mtaani wordmark
+   No underline. No dot. No quote-like marks. No decorative artwork. */
+
+:root {
+  --sy-plain-black: #111827;
+  --sy-plain-green: #057a55;
+  --sy-plain-orange: #f97316;
+}
+
+/* Kill all previous decorative pseudo-elements from older packs */
+.sy-refined-wordmark::before,
+.sy-refined-wordmark::after,
+.sy-final-wordmark::before,
+.sy-final-wordmark::after,
+.sy-simple-wordmark::before,
+.sy-simple-wordmark::after,
+.sy-plain-wordmark::before,
+.sy-plain-wordmark::after,
+.sy-brand-logo::before,
+.sy-brand-logo::after,
+.sy-wordmark::before,
+.sy-wordmark::after,
+.logo-text::before,
+.logo-text::after,
+.brand-logo::before,
+.brand-logo::after {
+  content: "" !important;
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  max-width: 0 !important;
+  max-height: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: none !important;
+  background-image: none !important;
+  box-shadow: none !important;
+}
+
+/* Clean, plain brand text only */
+.sy-plain-wordmark,
+.sy-simple-wordmark,
+.sy-refined-wordmark,
+.sy-final-wordmark,
+.sy-wordmark,
+.sy-brand-logo {
+  display: inline-flex !important;
+  align-items: baseline !important;
+  gap: 0 !important;
+  white-space: nowrap !important;
+  font-family: Inter, "Segoe UI", Arial, sans-serif !important;
+  font-size: clamp(1rem, 1.22vw, 1.18rem) !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.025em !important;
+  line-height: 1 !important;
+  text-decoration: none !important;
+  text-transform: none !important;
+  text-shadow: none !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  outline: 0 !important;
+  box-shadow: none !important;
+  background: none !important;
+  background-image: none !important;
+  padding: 0 !important;
+  margin: 0 !important;
+}
+
+/* Three colors only, no decorations */
+.sy-plain-soko,
+.sy-simple-soko,
+.sy-refined-soko,
+.sy-final-soko,
+.sy-brand-black {
+  color: var(--sy-plain-black) !important;
+}
+
+.sy-plain-yetu,
+.sy-simple-yetu,
+.sy-refined-yetu,
+.sy-final-yetu {
+  color: var(--sy-plain-green) !important;
+}
+
+.sy-plain-mtaani,
+.sy-simple-mtaani,
+.sy-refined-mtaani,
+.sy-final-mtaani,
+.sy-brand-orange {
+  color: var(--sy-plain-orange) !important;
+  margin-left: 0.08em !important;
+}
+
+/* Keep the logo/cart icon visible and make enough space for the full name */
+.sy-plain-brand-anchor,
+.sy-simple-brand-anchor,
+.sy-refined-brand-anchor,
+.sy-final-brand-anchor,
+a:has(.sy-plain-wordmark),
+a:has(.sy-simple-wordmark),
+a:has(.sy-refined-wordmark),
+a:has(.sy-final-wordmark),
+a:has(.sy-wordmark),
+a:has(.sy-brand-logo),
+.logo:has(.sy-plain-wordmark),
+.logo:has(.sy-simple-wordmark),
+.logo:has(.sy-refined-wordmark),
+.logo:has(.sy-final-wordmark),
+.brand:has(.sy-plain-wordmark),
+.brand:has(.sy-simple-wordmark),
+.brand:has(.sy-refined-wordmark),
+.brand:has(.sy-final-wordmark),
+[class*="logo"]:has(.sy-plain-wordmark),
+[class*="logo"]:has(.sy-simple-wordmark),
+[class*="logo"]:has(.sy-refined-wordmark),
+[class*="logo"]:has(.sy-final-wordmark),
+[class*="brand"]:has(.sy-plain-wordmark),
+[class*="brand"]:has(.sy-simple-wordmark),
+[class*="brand"]:has(.sy-refined-wordmark),
+[class*="brand"]:has(.sy-final-wordmark) {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.45rem !important;
+  flex: 0 0 238px !important;
+  width: 238px !important;
+  min-width: 238px !important;
+  max-width: 238px !important;
+  overflow: visible !important;
+  white-space: nowrap !important;
+  position: relative !important;
+  z-index: 80 !important;
+  text-decoration: none !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+  background-image: none !important;
+  padding-right: 0.55rem !important;
+}
+
+.sy-plain-brand-anchor *,
+.sy-simple-brand-anchor *,
+.sy-refined-brand-anchor *,
+.sy-final-brand-anchor *,
+a:has(.sy-plain-wordmark) *,
+a:has(.sy-simple-wordmark) *,
+a:has(.sy-refined-wordmark) *,
+a:has(.sy-final-wordmark) * {
+  text-decoration: none !important;
+  border-bottom: 0 !important;
+  box-shadow: none !important;
+}
+
+/* Icon remains visible */
+.sy-plain-brand-anchor img,
+.sy-plain-brand-anchor svg,
+.sy-simple-brand-anchor img,
+.sy-simple-brand-anchor svg,
+.sy-refined-brand-anchor img,
+.sy-refined-brand-anchor svg,
+.sy-final-brand-anchor img,
+.sy-final-brand-anchor svg,
+.sy-plain-brand-anchor [class*="icon"],
+.sy-simple-brand-anchor [class*="icon"],
+.sy-refined-brand-anchor [class*="icon"],
+.sy-final-brand-anchor [class*="icon"] {
+  flex: 0 0 auto !important;
+  display: inline-flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  max-width: 44px !important;
+  max-height: 44px !important;
+}
+
+/* Keep search bar shorter and to the right */
+header:has(.sy-plain-wordmark),
+header:has(.sy-simple-wordmark),
+header:has(.sy-refined-wordmark),
+header:has(.sy-final-wordmark),
+.site-header:has(.sy-plain-wordmark),
+.site-header:has(.sy-simple-wordmark),
+.site-header:has(.sy-refined-wordmark),
+.site-header:has(.sy-final-wordmark),
+.main-header:has(.sy-plain-wordmark),
+.main-header:has(.sy-simple-wordmark),
+.main-header:has(.sy-refined-wordmark),
+.main-header:has(.sy-final-wordmark),
+.header-main:has(.sy-plain-wordmark),
+.header-main:has(.sy-simple-wordmark),
+.header-main:has(.sy-refined-wordmark),
+.header-main:has(.sy-final-wordmark),
+.navbar:has(.sy-plain-wordmark),
+.navbar:has(.sy-simple-wordmark),
+.navbar:has(.sy-refined-wordmark),
+.navbar:has(.sy-final-wordmark) {
+  display: flex !important;
+  align-items: center !important;
+  gap: 1rem !important;
+  overflow: visible !important;
+}
+
+header:has(.sy-plain-wordmark) form,
+header:has(.sy-simple-wordmark) form,
+header:has(.sy-refined-wordmark) form,
+header:has(.sy-final-wordmark) form,
+header:has(.sy-plain-wordmark) .search-bar,
+header:has(.sy-simple-wordmark) .search-bar,
+header:has(.sy-refined-wordmark) .search-bar,
+header:has(.sy-final-wordmark) .search-bar,
+header:has(.sy-plain-wordmark) .search-box,
+header:has(.sy-simple-wordmark) .search-box,
+header:has(.sy-refined-wordmark) .search-box,
+header:has(.sy-final-wordmark) .search-box,
+header:has(.sy-plain-wordmark) .search-form,
+header:has(.sy-simple-wordmark) .search-form,
+header:has(.sy-refined-wordmark) .search-form,
+header:has(.sy-final-wordmark) .search-form {
+  flex: 0 1 600px !important;
+  width: min(46vw, 600px) !important;
+  max-width: 600px !important;
+  min-width: 300px !important;
+  margin-left: 1.5rem !important;
+  margin-right: 0.6rem !important;
+  position: relative !important;
+  z-index: 1 !important;
+}
+
+@media (max-width: 900px) {
+  .sy-plain-brand-anchor,
+  .sy-simple-brand-anchor,
+  .sy-refined-brand-anchor,
+  .sy-final-brand-anchor,
+  a:has(.sy-plain-wordmark),
+  a:has(.sy-simple-wordmark),
+  a:has(.sy-refined-wordmark),
+  a:has(.sy-final-wordmark) {
+    flex-basis: 220px !important;
+    width: 220px !important;
+    min-width: 220px !important;
+    max-width: 220px !important;
+  }
+
+  .sy-plain-wordmark,
+  .sy-simple-wordmark,
+  .sy-refined-wordmark,
+  .sy-final-wordmark {
+    font-size: 1rem !important;
+  }
+
+  header:has(.sy-plain-wordmark) form,
+  header:has(.sy-simple-wordmark) form,
+  header:has(.sy-refined-wordmark) form,
+  header:has(.sy-final-wordmark) form,
+  header:has(.sy-plain-wordmark) .search-bar,
+  header:has(.sy-simple-wordmark) .search-bar,
+  header:has(.sy-refined-wordmark) .search-bar,
+  header:has(.sy-final-wordmark) .search-bar {
+    width: min(42vw, 520px) !important;
+    max-width: 520px !important;
+    min-width: 250px !important;
+    margin-left: 0.8rem !important;
+  }
+}

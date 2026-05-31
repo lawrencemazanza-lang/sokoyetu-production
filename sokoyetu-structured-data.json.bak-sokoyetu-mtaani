@@ -1,0 +1,13 @@
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "SokoYetu",
+  "url": "https://www.mysokoyetu.co.ke",
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "email": "mysokoyetu@gmail.com",
+    "contactType": "customer support",
+    "areaServed": "KE"
+  },
+  "sameAs": []
+}

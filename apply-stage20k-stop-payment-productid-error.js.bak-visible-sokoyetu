@@ -1,0 +1,209 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20K: Stop Payment Button Product ID Error")) {
+  console.log("No change needed. Stage 20K is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20k-stop-payment-productid-error-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+let changes = 0;
+
+// The old cart-product-id fixes treated any class containing "cart-btn" as an Add to Cart button.
+// The checkout panel uses class "sy-cart-btn" for the M-PESA payment button, so the old handler blocks payment.
+// Remove broad cart-btn detection from Add to Cart detection.
+const riskyPatterns = [
+  'className.includes("cart-btn")',
+  "className.includes('cart-btn')"
+];
+
+for (const pattern of riskyPatterns) {
+  while (code.includes(pattern)) {
+    code = code.replace(pattern, 'false /* Stage 20K: sy-cart-btn is checkout/payment, not Add to Cart */');
+    changes += 1;
+  }
+}
+
+// Reduce another risky broad match where a plain "cart" button is treated as add-to-cart.
+const riskyTextPatterns = [
+  'text === "cart" ||',
+  "text === 'cart' ||"
+];
+
+for (const pattern of riskyTextPatterns) {
+  while (code.includes(pattern)) {
+    code = code.replace(pattern, 'false /* Stage 20K: Cart is navigation, not Add to Cart */ ||');
+    changes += 1;
+  }
+}
+
+// Make the old alert less likely to confuse if any old branch still fires.
+// This also helps verify that any remaining error came from a different part of the app.
+const oldAlert = "Product ID is required. Refresh the page and try again.";
+const newAlert = "This button is not linked to a product. Please click the product's Add to Cart button first.";
+while (code.includes(oldAlert)) {
+  code = code.replace(oldAlert, newAlert);
+  changes += 1;
+}
+
+// Add a final capture guard for the stable M-PESA checkout form.
+// It directly handles the submit button and prevents older add-to-cart listeners from treating it as a product button.
+const patch = `
+
+// ================================
+// SokoYetu Stage 20K: Stop Payment Button Product ID Error
+// The payment button should submit checkout, not trigger old Add-to-Cart productId detection.
+// ================================
+(function initStage20KStopPaymentProductIdError() {
+  if (window.__sokoyetuStage20KInstalled) return;
+  window.__sokoyetuStage20KInstalled = true;
+
+  function isPaymentButton(element) {
+    if (!element) return false;
+
+    var text = String(element.textContent || "").toLowerCase();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    return (
+      element.closest && element.closest("#syCustomerCheckoutForm") ||
+      text.includes("m-pesa") ||
+      text.includes("stk push") ||
+      text.includes("send payment") ||
+      text.includes("pay now") ||
+      id.includes("checkout") ||
+      id.includes("payment") ||
+      className.includes("sy-cart-btn")
+    );
+  }
+
+  async function postJson(url, payload) {
+    var response = await fetch(url, {
+      method: "POST",
+      credentials: "include",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload || {})
+    });
+
+    var data = await response.json().catch(function () { return {}; });
+
+    if (!response.ok) {
+      throw new Error(data.message || "Request failed.");
+    }
+
+    return data;
+  }
+
+  async function handleStablePayment(form) {
+    var message = document.getElementById("syCheckoutMessage");
+    var phoneInput = document.getElementById("syCheckoutPhone");
+    var addressInput = document.getElementById("syCheckoutAddress");
+
+    var phone = phoneInput ? phoneInput.value.trim() : "";
+    var deliveryAddress = addressInput ? addressInput.value.trim() : "";
+
+    if (!message) return;
+
+    if (!phone) {
+      message.innerHTML = "<div class='sy-cart-msg err'>M-PESA phone number is required.</div>";
+      return;
+    }
+
+    if (!deliveryAddress) {
+      message.innerHTML = "<div class='sy-cart-msg err'>Delivery address is required.</div>";
+      return;
+    }
+
+    try {
+      message.innerHTML = "<div class='sy-cart-msg ok'>Creating order and sending M-PESA STK Push...</div>";
+
+      var orderData = await postJson("/api/orders", {
+        phone: phone,
+        deliveryAddress: deliveryAddress
+      });
+
+      var order = orderData.order || orderData;
+      var orderId = order.id;
+
+      if (!orderId) {
+        throw new Error("Order was created but no order ID was returned.");
+      }
+
+      var stkData = await postJson("/api/payments/mpesa/stk-push", {
+        orderId: orderId,
+        phone: phone
+      });
+
+      message.innerHTML =
+        "<div class='sy-cart-msg ok'>" +
+        "<b>M-PESA STK Push sent.</b><br>" +
+        "Check the customer phone, enter the M-PESA PIN, then wait for payment confirmation." +
+        (stkData.checkoutRequestId ? "<br><small>Checkout Request ID: " + String(stkData.checkoutRequestId) + "</small>" : "") +
+        "</div>";
+    } catch (error) {
+      message.innerHTML =
+        "<div class='sy-cart-msg err'><b>Checkout could not continue.</b><br>" +
+        String(error.message || "Please check Daraja settings and try again.") +
+        "</div>";
+    }
+  }
+
+  document.addEventListener("click", function (event) {
+    var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+
+    if (!clicked || !isPaymentButton(clicked)) return;
+
+    var form = clicked.closest && clicked.closest("#syCustomerCheckoutForm");
+    if (!form) return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    handleStablePayment(form);
+  }, true);
+
+  document.addEventListener("submit", function (event) {
+    var form = event.target;
+    if (!form || form.id !== "syCustomerCheckoutForm") return;
+
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+
+    handleStablePayment(form);
+  }, true);
+})();
+`;
+
+code += patch;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20K payment/product ID conflict fix installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("Risky Add-to-Cart matches removed/replaced:", changes);
+console.log("");
+console.log("Verify:");
+console.log('findstr /n /i /c:"cart-btn" app.js');
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally: add to cart, open green checkout, click Send M-PESA STK Push.");
+console.log("");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Stop checkout payment button triggering product id error\"");
+console.log("git push");

@@ -1,4 +1,4 @@
-# SokoYetu Step 14: SQLite to PostgreSQL Migration
+﻿# SokoYetu Mtaani Step 14: SQLite to PostgreSQL Migration
 
 This step moves the project from local SQLite to PostgreSQL.
 
@@ -29,13 +29,13 @@ You need PostgreSQL installed locally, or you need a cloud PostgreSQL database.
 If you installed PostgreSQL and know your password, create the database using pgAdmin or Command Prompt:
 
 ```cmd
-psql -U postgres -c "CREATE DATABASE sokoyetu;"
+psql -U postgres -c "CREATE DATABASE SokoYetu Mtaani;"
 ```
 
 If `psql` is not recognized, PostgreSQL is not in your Windows PATH. Use pgAdmin to create a database called:
 
 ```text
-sokoyetu
+SokoYetu Mtaani
 ```
 
 ## Step B: Update .env
@@ -49,7 +49,7 @@ notepad .env
 Change the database line from SQLite to PostgreSQL:
 
 ```env
-DATABASE_URL="postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/sokoyetu?schema=public"
+DATABASE_URL="postgresql://postgres:YOUR_POSTGRES_PASSWORD@localhost:5432/SokoYetu Mtaani?schema=public"
 ```
 
 Replace `YOUR_POSTGRES_PASSWORD` with your real PostgreSQL password.
@@ -67,7 +67,7 @@ apply-step14-postgresql-migration.js
 Then run:
 
 ```cmd
-cd "C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed"
+cd "C:\Users\PC\Desktop\SokoYetu Mtaani-fullstack\SokoYetu Mtaani-elite-checked-fixed"
 node apply-step14-postgresql-migration.js
 ```
 
@@ -99,9 +99,9 @@ node seed-postgres-data.js
 This recreates the important test data in PostgreSQL:
 
 ```text
-Admin: admin@sokoyetu.co.ke / Admin12345
-Seller: demoseller@sokoyetu.co.ke / Seller12345
-Buyer: testbuyer3@sokoyetu.co.ke / Test12345
+Admin: admin@SokoYetu Mtaani.co.ke / Admin12345
+Seller: demoseller@SokoYetu Mtaani.co.ke / Seller12345
+Buyer: testbuyer3@SokoYetu Mtaani.co.ke / Test12345
 ```
 
 It also seeds products and wholesalers.
@@ -138,7 +138,7 @@ Tracking
 Most failures are caused by one of these:
 
 1. PostgreSQL is not running.
-2. The database `sokoyetu` does not exist.
+2. The database `SokoYetu Mtaani` does not exist.
 3. The PostgreSQL password in `.env` is wrong.
 4. `DATABASE_URL` still says `file:./dev.db`.
 5. `pg` and `@prisma/adapter-pg` are not installed.
@@ -161,3 +161,4 @@ DATABASE_URL="file:./dev.db"
 ```
 
 and use the SQLite server adapter again.
+

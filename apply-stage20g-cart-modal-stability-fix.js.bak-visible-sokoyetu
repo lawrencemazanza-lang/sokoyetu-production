@@ -1,0 +1,299 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20G: Cart Modal Stability Fix")) {
+  console.log("No change needed. Stage 20G cart modal stability fix is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20g-cart-modal-stability-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+// Disable Stage 20F's full renderApp calls because they can close the modal immediately after it opens.
+let changes = 0;
+
+const patterns = [
+  `      if (typeof renderApp === "function") {
+        try { renderApp(); } catch {}
+      }`,
+  `    if (typeof renderApp === "function") {
+      try { renderApp(); } catch {}
+    }`
+];
+
+for (const pattern of patterns) {
+  while (code.includes(pattern)) {
+    code = code.replace(pattern, `      // Stage 20G: do not call renderApp during cart sync because it can close the active cart/checkout modal.`);
+    changes += 1;
+  }
+}
+
+// Add a safer cart modal stability layer that updates cart state but does not close modals.
+const patch = `
+
+// ================================
+// SokoYetu Stage 20G: Cart Modal Stability Fix
+// Fixes blinking cart/checkout modals caused by full UI re-render during cart sync.
+// Keeps cart state fresh without closing the currently open modal.
+// ================================
+(function initStage20GCartModalStabilityFix() {
+  if (window.__sokoyetuStage20GCartModalStabilityInstalled) return;
+  window.__sokoyetuStage20GCartModalStabilityInstalled = true;
+
+  var syncingCart = false;
+  var lastCartItems = [];
+
+  function getItemQuantity(item) {
+    return Number(item.quantity || item.qty || item.count || 1) || 1;
+  }
+
+  function getItemProduct(item) {
+    return item.product || item.Product || item;
+  }
+
+  function normalizeCartItems(data) {
+    var raw =
+      (Array.isArray(data) && data) ||
+      data.cart ||
+      data.items ||
+      data.cartItems ||
+      data.data ||
+      [];
+
+    if (!Array.isArray(raw)) return [];
+
+    return raw.map(function (item) {
+      var product = getItemProduct(item);
+      var productId = Number(item.productId || product.id || item.id);
+      var quantity = getItemQuantity(item);
+      var price = Number(product.price || item.price || 0);
+
+      return {
+        id: productId,
+        productId: productId,
+        cartItemId: item.id,
+        name: product.name || item.name || "Product",
+        price: price,
+        oldPrice: product.oldPrice || item.oldPrice || null,
+        imageUrl: product.imageUrl || item.imageUrl || "",
+        category: product.category || item.category || "",
+        quantity: quantity,
+        qty: quantity,
+        stock: product.stock || item.stock || 0,
+        product: product
+      };
+    }).filter(function (item) {
+      return item.productId && item.productId > 0;
+    });
+  }
+
+  function money(value) {
+    if (typeof formatMoney === "function") {
+      try { return formatMoney(value); } catch {}
+    }
+    return "KES " + Number(value || 0).toLocaleString("en-KE");
+  }
+
+  async function syncCartQuietly() {
+    if (syncingCart) return lastCartItems;
+    syncingCart = true;
+
+    try {
+      var response = await fetch("/api/cart", {
+        credentials: "include",
+        headers: { "Accept": "application/json" }
+      });
+
+      var data = await response.json().catch(function () { return {}; });
+
+      if (!response.ok) {
+        throw new Error(data.message || "Could not load cart.");
+      }
+
+      var items = normalizeCartItems(data);
+      lastCartItems = items;
+      window.__sokoyetuLatestServerCart = items;
+
+      if (window.state) window.state.cart = items;
+
+      try {
+        if (typeof state !== "undefined" && state) {
+          state.cart = items;
+        }
+      } catch {}
+
+      if (typeof save === "function") {
+        try { save(); } catch {}
+      }
+
+      updateCartBadge(items);
+      updateOpenCartSummary(items);
+
+      return items;
+    } catch (error) {
+      console.warn("Stage 20G could not sync cart quietly:", error);
+      return lastCartItems;
+    } finally {
+      syncingCart = false;
+    }
+  }
+
+  function updateCartBadge(items) {
+    var count = items.reduce(function (sum, item) {
+      return sum + Number(item.quantity || item.qty || 1);
+    }, 0);
+
+    var selectors = [
+      "#cartCount",
+      ".cart-count",
+      "[data-cart-count]",
+      "#cartBadge",
+      ".cart-badge"
+    ];
+
+    selectors.forEach(function (selector) {
+      document.querySelectorAll(selector).forEach(function (node) {
+        node.textContent = String(count);
+        node.style.display = count > 0 ? "" : node.style.display;
+      });
+    });
+  }
+
+  function updateOpenCartSummary(items) {
+    // Only patch obvious empty-cart text, without rebuilding the whole application.
+    var bodyText = document.body ? document.body.innerText.toLowerCase() : "";
+    if (!bodyText.includes("cart is empty") && !bodyText.includes("subtotal")) return;
+
+    var total = items.reduce(function (sum, item) {
+      return sum + Number(item.price || 0) * Number(item.quantity || item.qty || 1);
+    }, 0);
+
+    if (!items.length) return;
+
+    var emptyNodes = Array.from(document.querySelectorAll("p, div, span, section")).filter(function (node) {
+      var text = String(node.textContent || "").toLowerCase().trim();
+      return text === "cart is empty" || text === "your cart is empty" || text.includes("cart is empty");
+    });
+
+    emptyNodes.forEach(function (node) {
+      node.innerHTML =
+        "<div style='border:1px solid #fee2e2;border-radius:14px;padding:12px;background:#fff7ed;'>" +
+        "<b>Cart loaded.</b><br>" +
+        items.length + " item(s) in cart. Subtotal: " + money(total) +
+        "<br><span style='font-size:12px;color:#64748b;'>If the checkout screen did not refresh, close and reopen Cart once.</span>" +
+        "</div>";
+    });
+  }
+
+  function isAddToCartClick(element) {
+    if (!element) return false;
+    var text = String(element.textContent || "").toLowerCase();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    return (
+      text.includes("add to cart") ||
+      id.includes("add-to-cart") ||
+      id.includes("addtocart") ||
+      className.includes("add-to-cart") ||
+      className.includes("cart-btn")
+    );
+  }
+
+  function isCartOrCheckoutClick(element) {
+    if (!element) return false;
+    var text = String(element.textContent || "").toLowerCase();
+    var id = String(element.id || "").toLowerCase();
+    var className = String(element.className || "").toLowerCase();
+
+    return (
+      text === "cart" ||
+      text.includes("view cart") ||
+      text.includes("checkout") ||
+      id.includes("cart") ||
+      id.includes("checkout") ||
+      className.includes("cart") ||
+      className.includes("checkout")
+    );
+  }
+
+  // On Add to Cart, wait briefly and sync quietly. Do not call renderApp here.
+  document.addEventListener("click", function (event) {
+    var clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+    if (!clicked) return;
+
+    if (isAddToCartClick(clicked)) {
+      setTimeout(syncCartQuietly, 500);
+      setTimeout(syncCartQuietly, 1400);
+    }
+
+    if (isCartOrCheckoutClick(clicked)) {
+      setTimeout(syncCartQuietly, 100);
+      setTimeout(syncCartQuietly, 800);
+    }
+  }, true);
+
+  // Wrap openModal but do not re-render the app. This prevents blink-close behavior.
+  var attempts = 0;
+  var timer = setInterval(function () {
+    attempts += 1;
+
+    if (typeof window.openModal === "function" && !window.openModal.__stage20GWrapped) {
+      var originalOpenModal = window.openModal;
+
+      window.openModal = function stage20GOpenModal(id) {
+        var result = originalOpenModal.apply(this, arguments);
+
+        var modalName = String(id || "").toLowerCase();
+        if (modalName.includes("cart") || modalName.includes("checkout") || modalName.includes("mpesa") || modalName.includes("payment")) {
+          setTimeout(syncCartQuietly, 150);
+          setTimeout(syncCartQuietly, 900);
+        }
+
+        return result;
+      };
+
+      window.openModal.__stage20GWrapped = true;
+      clearInterval(timer);
+    }
+
+    if (attempts > 40) clearInterval(timer);
+  }, 250);
+
+  window.sokoyetuSyncCartQuietly = syncCartQuietly;
+
+  document.addEventListener("DOMContentLoaded", function () {
+    setTimeout(syncCartQuietly, 1000);
+  });
+
+  window.addEventListener("focus", function () {
+    setTimeout(syncCartQuietly, 250);
+  });
+})();
+`;
+
+code += patch;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20G cart modal stability fix installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("Stage 20F renderApp calls disabled:", changes);
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally: add to cart, open cart, checkout should stay open and not blink away.");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Stabilize cart modal after database cart sync\"");
+console.log("git push");

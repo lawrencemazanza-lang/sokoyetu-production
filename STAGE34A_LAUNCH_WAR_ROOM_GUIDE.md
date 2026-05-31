@@ -1,4 +1,4 @@
-# SokoYetu Stage 34A: Launch War Room and Production Monitoring Checklist
+﻿# SokoYetu Mtaani Stage 34A: Launch War Room and Production Monitoring Checklist
 
 Stage 34A adds a central launch-day operations page.
 
@@ -96,3 +96,4 @@ Then:
 4. Add one launch log.
 5. Export CSV.
 6. Export JSON.
+

@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 31F Buyer Journey Polish Check");
+console.log("SokoYetu Mtaani Stage 31F Buyer Journey Polish Check");
 console.log("--------------------------------------------");
 
 let warnings = 0;
@@ -64,10 +64,10 @@ const indexPath = path.join(root, "index.html");
 if (fs.existsSync(indexPath)) {
   const index = fs.readFileSync(indexPath, "utf8");
   const oldMarkers = [
-    "SokoYetu Stage 30E: Public customer service shortcuts",
-    "SokoYetu Stage 31C: Public category directory link",
-    "SokoYetu Stage 31D: Product detail page note",
-    "SokoYetu Stage 31E: Seller stores link"
+    "SokoYetu Mtaani Stage 30E: Public customer service shortcuts",
+    "SokoYetu Mtaani Stage 31C: Public category directory link",
+    "SokoYetu Mtaani Stage 31D: Product detail page note",
+    "SokoYetu Mtaani Stage 31E: Seller stores link"
   ];
 
   for (const marker of oldMarkers) {
@@ -83,3 +83,4 @@ if (fs.existsSync(indexPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 31F buyer journey polish check passed.");
+

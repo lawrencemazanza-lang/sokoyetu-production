@@ -1,0 +1,113 @@
+# SokoYetu Mtaani Update Pack
+
+This ZIP is made for your project:
+
+`C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed`
+
+It helps you change the visible website name to **SokoYetu Mtaani** while keeping the domain **mysokoyetu.co.ke**.
+
+## What this pack does
+
+It adds/updates:
+
+- Website name: `SokoYetu Mtaani`
+- SEO title: `SokoYetu Mtaani | Online Shopping & Marketplace in Kenya`
+- Meta description
+- Open Graph social sharing tags
+- Twitter card tags
+- `robots.txt`
+- `sitemap.xml`
+- `site.webmanifest`
+- A reusable brand config file
+
+It also searches your project files and replaces common old names such as:
+
+- `SokoYetu Marketplace Kenya`
+- `SokoYetu Marketplace`
+- `SokoYetu Kenya`
+- `My SokoYetu`
+- `Soko Yetu`
+- `mysokoyetu`
+
+## How to use in CMD
+
+1. Unzip this ZIP.
+2. Copy all extracted files into this folder:
+
+   `C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed`
+
+3. Open CMD.
+4. Run:
+
+   ```bat
+   cd C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed
+   apply-sokoyetu-mtaani-branding.cmd
+   ```
+
+5. Test your project locally using your usual command, for example:
+
+   ```bat
+   npm install
+   npm run dev
+   ```
+
+6. If it looks good, deploy to Render:
+
+   ```bat
+   git add .
+   git commit -m "Update branding to SokoYetu Mtaani"
+   git push
+   ```
+
+Render should redeploy automatically if your GitHub repository is connected.
+
+## Important
+
+This pack does not delete your existing project files.
+
+The script creates backup copies before editing files. Backup files end with:
+
+`.bak-sokoyetu-mtaani`
+
+If anything looks wrong, you can restore those backup files manually.
+
+## Best homepage wording
+
+Use this on your homepage if you want to manually improve the text:
+
+### H1
+
+SokoYetu Mtaani
+
+### Subtitle
+
+Shop trusted products from local sellers across Kenya.
+
+### Short intro
+
+SokoYetu Mtaani is a local online marketplace connecting Kenyan buyers with trusted sellers. Shop everyday products, pay securely, and enjoy reliable delivery.
+
+### Buttons
+
+Shop Now  
+Become a Seller
+
+## Recommended SEO
+
+### Title
+
+SokoYetu Mtaani | Online Shopping & Marketplace in Kenya
+
+### Description
+
+Shop online at SokoYetu Mtaani, a local Kenyan marketplace for trusted sellers, secure payment, quality products, and reliable delivery.
+
+## After deployment
+
+Visit:
+
+`https://www.mysokoyetu.co.ke`
+
+Then check that the browser tab title and homepage name show:
+
+`SokoYetu Mtaani`

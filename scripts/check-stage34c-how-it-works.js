@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 34C How It Works and Delivery Check");
+console.log("SokoYetu Mtaani Stage 34C How It Works and Delivery Check");
 console.log("-------------------------------------------------");
 
 let warnings = 0;
@@ -26,7 +26,7 @@ for (const file of requiredFiles) {
 }
 
 const pageChecks = {
-  "how-it-works.html": ["How SokoYetu Works", "Checkout with M-PESA", "/track-order.html", "/support-request.html", "/trust-center.html", "/public-nav.js", "/public-a11y.js"],
+  "how-it-works.html": ["How SokoYetu Mtaani Works", "Checkout with M-PESA", "/track-order.html", "/support-request.html", "/trust-center.html", "/public-nav.js", "/public-a11y.js"],
   "delivery-info.html": ["Delivery Information", "Before accepting delivery", "/track-order.html", "/support-request.html", "/returns-policy.html", "/public-nav.js", "/public-a11y.js"]
 };
 
@@ -73,3 +73,4 @@ if (fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 34C How It Works and Delivery check passed.");
+

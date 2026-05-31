@@ -1,6 +1,6 @@
-# SokoYetu Stage 21: Domain, Business Email and Go-Live Guide
+﻿# SokoYetu Mtaani Stage 21: Domain, Business Email and Go-Live Guide
 
-Stage 21 prepares the live SokoYetu deployment for public use.
+Stage 21 prepares the live SokoYetu Mtaani deployment for public use.
 
 This stage does not change cart, checkout, M-PESA, database, Cloudinary or LiveKit logic.
 
@@ -9,25 +9,25 @@ This stage does not change cart, checkout, M-PESA, database, Cloudinary or LiveK
 Recommended options:
 
 ```text
-sokoyetu.co.ke
-www.sokoyetu.co.ke
-shop.sokoyetu.co.ke
+SokoYetu Mtaani.co.ke
+www.SokoYetu Mtaani.co.ke
+shop.SokoYetu Mtaani.co.ke
 ```
 
-For launch, using `www.sokoyetu.co.ke` or `shop.sokoyetu.co.ke` is usually simpler because subdomains use CNAME records cleanly.
+For launch, using `www.SokoYetu Mtaani.co.ke` or `shop.SokoYetu Mtaani.co.ke` is usually simpler because subdomains use CNAME records cleanly.
 
 ## 2. Add the custom domain in Render
 
 Go to:
 
 ```text
-Render Dashboard → sokoyetu-production-1 → Settings → Custom Domains
+Render Dashboard → SokoYetu Mtaani-production-1 → Settings → Custom Domains
 ```
 
 Add the domain, for example:
 
 ```text
-www.sokoyetu.co.ke
+www.SokoYetu Mtaani.co.ke
 ```
 
 Render will show DNS records to add at your domain provider.
@@ -41,10 +41,10 @@ For a subdomain such as `www`:
 ```text
 Type: CNAME
 Name/Host: www
-Value/Target: sokoyetu-production-1.onrender.com
+Value/Target: SokoYetu Mtaani-production-1.onrender.com
 ```
 
-For root/apex domain `sokoyetu.co.ke`, follow the exact records Render gives you. If your DNS provider supports CNAME flattening, ALIAS or ANAME, use the option recommended by your provider and Render.
+For root/apex domain `SokoYetu Mtaani.co.ke`, follow the exact records Render gives you. If your DNS provider supports CNAME flattening, ALIAS or ANAME, use the option recommended by your provider and Render.
 
 Remove conflicting old A, AAAA or CNAME records for the same host before verifying.
 
@@ -63,10 +63,10 @@ DNS can take minutes or longer to propagate. Once verified, Render provisions TL
 In Render environment variables, add or update:
 
 ```env
-PUBLIC_SITE_URL=https://www.sokoyetu.co.ke
-SUPPORT_EMAIL=support@sokoyetu.co.ke
-BUSINESS_NAME=SokoYetu
-MPESA_CALLBACK_URL=https://www.sokoyetu.co.ke/api/payments/mpesa/callback
+PUBLIC_SITE_URL=https://www.SokoYetu Mtaani.co.ke
+SUPPORT_EMAIL=support@SokoYetu Mtaani.co.ke
+BUSINESS_NAME=SokoYetu Mtaani
+MPESA_CALLBACK_URL=https://www.SokoYetu Mtaani.co.ke/api/payments/mpesa/callback
 ```
 
 Then redeploy.
@@ -76,9 +76,9 @@ Then redeploy.
 Create at least:
 
 ```text
-support@sokoyetu.co.ke
-orders@sokoyetu.co.ke
-admin@sokoyetu.co.ke
+support@SokoYetu Mtaani.co.ke
+orders@SokoYetu Mtaani.co.ke
+admin@SokoYetu Mtaani.co.ke
 ```
 
 Possible providers:
@@ -146,3 +146,4 @@ npm run stage21:check
 ```
 
 Warnings are acceptable while preparing. Blocking issues must be fixed before public launch.
+

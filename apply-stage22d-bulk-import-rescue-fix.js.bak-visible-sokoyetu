@@ -1,0 +1,219 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const bulkPath = path.join(root, "bulk-import.html");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(bulkPath)) {
+  console.error("ERROR: server.js or bulk-import.html was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage22d-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(bulkPath, "bulk-import");
+
+let server = fs.readFileSync(serverPath, "utf8");
+let bulk = fs.readFileSync(bulkPath, "utf8");
+
+// Safely replace only the old endpoint, but do NOT keep replacing inside bulk-import-v2.
+bulk = bulk.replace(/\/api\/admin\/products\/bulk-import(?!-v2)/g, "/api/admin/products/bulk-import-v2");
+
+// Add a visible marker.
+if (!bulk.includes("SokoYetu Stage 22D Bulk Import Rescue Fix")) {
+  bulk = bulk.replace("</body>", "\n<!-- SokoYetu Stage 22D Bulk Import Rescue Fix -->\n</body>");
+}
+
+fs.writeFileSync(bulkPath, bulk, "utf8");
+console.log("Updated bulk-import.html to call /api/admin/products/bulk-import-v2.");
+
+// Add the clean v2 endpoint if missing.
+if (!server.includes("SokoYetu Stage 22D: Bulk Product Import V2 API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 22D: Bulk Product Import V2 API
+// Clean import endpoint with reliable received/created/updated/skipped counts.
+// ================================
+app.post("/api/admin/products/bulk-import-v2", async (req, res) => {
+  try {
+    const configuredToken = process.env.BULK_IMPORT_TOKEN;
+    const providedToken = req.headers["x-import-token"];
+
+    if (!configuredToken) {
+      return res.status(500).json({
+        message: "BULK_IMPORT_TOKEN is not configured on the server.",
+        received: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+      });
+    }
+
+    if (!providedToken || providedToken !== configuredToken) {
+      return res.status(403).json({
+        message: "Invalid bulk import token.",
+        received: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+      });
+    }
+
+    const products = Array.isArray(req.body && req.body.products) ? req.body.products : [];
+    const received = products.length;
+
+    if (!received) {
+      return res.status(400).json({
+        message: "No products were provided for import.",
+        received: 0,
+        created: 0,
+        updated: 0,
+        skipped: 0,
+      });
+    }
+
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    const results = [];
+
+    for (const raw of products) {
+      const name = String(raw.name || "").trim();
+      const description = String(raw.description || "").trim();
+      const category = String(raw.category || "General").trim();
+      const price = Number(raw.price || 0);
+      const oldPriceInput = raw.oldPrice === "" || raw.oldPrice === null || raw.oldPrice === undefined ? null : Number(raw.oldPrice);
+      const stock = Number(raw.stock || 0);
+      const imageUrl = String(raw.imageUrl || "").trim();
+
+      if (!name || !category || !Number.isFinite(price) || price <= 0 || !Number.isFinite(stock) || stock < 0) {
+        skipped += 1;
+        results.push({
+          name,
+          status: "skipped",
+          reason: "Missing name/category or invalid price/stock.",
+        });
+        continue;
+      }
+
+      const existing = await prisma.product.findFirst({
+        where: { name },
+      });
+
+      const data = {
+        name,
+        description: description || (existing && existing.description ? existing.description : \`\${name} listed under \${category}. Product details should be verified by admin before public promotion.\`),
+        category,
+        price,
+        oldPrice: Number.isFinite(oldPriceInput) ? oldPriceInput : (existing ? existing.oldPrice : null),
+        stock,
+        imageUrl: imageUrl || (existing && existing.imageUrl ? existing.imageUrl : ""),
+        importedByAdmin: true,
+      };
+
+      if (existing) {
+        const product = await prisma.product.update({
+          where: { id: existing.id },
+          data,
+        });
+
+        updated += 1;
+        results.push({
+          name: product.name,
+          id: product.id,
+          status: "updated",
+        });
+      } else {
+        const product = await prisma.product.create({
+          data,
+        });
+
+        created += 1;
+        results.push({
+          name: product.name,
+          id: product.id,
+          status: "created",
+        });
+      }
+    }
+
+    return res.json({
+      message: "Bulk product import completed.",
+      received,
+      created,
+      updated,
+      skipped,
+      total: received,
+      results,
+    });
+  } catch (error) {
+    console.error("Bulk product import v2 error:", error);
+    return res.status(500).json({
+      message: "Bulk product import failed.",
+      details: error.message,
+      received: 0,
+      created: 0,
+      updated: 0,
+      skipped: 0,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added /api/admin/products/bulk-import-v2 to server.js.");
+} else {
+  console.log("Stage 22D v2 endpoint already exists in server.js.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE22D_BULK_IMPORT_RESCUE_FIX.md"), `# SokoYetu Stage 22D: Bulk Import Rescue Fix
+
+This fixes the Stage 22C patch that could hang during endpoint replacement.
+
+## What changed
+
+- \`bulk-import.html\` now calls:
+
+\`\`\`text
+/api/admin/products/bulk-import-v2
+\`\`\`
+
+- \`server.js\` now has a reliable v2 import endpoint returning:
+
+\`\`\`json
+{
+  "received": 2,
+  "created": 0,
+  "updated": 2,
+  "skipped": 0
+}
+\`\`\`
+
+If a product already exists by name, it is updated instead of duplicated.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 22D bulk import rescue fix installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/bulk-import.html and test import again.");
+console.log("");
+console.log("If it works:");
+console.log("git add server.js bulk-import.html STAGE22D_BULK_IMPORT_RESCUE_FIX.md");
+console.log('git commit -m "Fix bulk import endpoint and counts"');
+console.log("git push");

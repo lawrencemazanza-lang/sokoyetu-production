@@ -1,6 +1,6 @@
-# SokoYetu Stage 17: Real Livestreaming Provider
+﻿# SokoYetu Mtaani Stage 17: Real Livestreaming Provider
 
-This stage connects SokoYetu live shopping to LiveKit.
+This stage connects SokoYetu Mtaani live shopping to LiveKit.
 
 ## Added routes
 
@@ -35,3 +35,4 @@ npm run dev
 
 Sign in as seller, click Live Studio, create a session, allow camera and microphone.
 Then sign in as buyer in another browser or incognito window, click Live Sellers, and join.
+

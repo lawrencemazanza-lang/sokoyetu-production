@@ -1,0 +1,298 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const scriptsDir = path.join(root, "scripts");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json not found. Run this inside your SokoYetu Mtaani project folder.");
+  process.exit(1);
+}
+
+if (!fs.existsSync(scriptsDir)) {
+  fs.mkdirSync(scriptsDir);
+}
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["seed:production"] = "node scripts/seed-production-data.js";
+pkg.scripts["products:count"] = "node scripts/count-products.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+fs.writeFileSync(path.join(scriptsDir, "seed-production-data.js"), `const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
+require("dotenv").config();
+
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is missing.");
+  process.exit(1);
+}
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
+
+const products = [
+  {
+    name: "HP Pavilion 15 Laptop",
+    description: "Powerful laptop for work, study, business, and entertainment with strong performance and reliable storage.",
+    category: "Computing",
+    price: 65000,
+    oldPrice: 75000,
+    stock: 18,
+    imageUrl: "https://res.cloudinary.com/dx4ae8taf/image/upload/v1778838539/SokoYetu Mtaani/products/whm0j4tk1ayunwmbmtlo.jpg",
+    importedByAdmin: true,
+  },
+  {
+    name: "Samsung Galaxy A54 5G",
+    description: "Modern 5G smartphone with clear display, strong battery life, and excellent camera quality.",
+    category: "Phones & Tablets",
+    price: 42000,
+    oldPrice: 49000,
+    stock: 25,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "Nike Air Force 1 '07",
+    description: "Classic casual sneakers for everyday fashion, comfort, and streetwear styling.",
+    category: "Fashion",
+    price: 12500,
+    oldPrice: 15000,
+    stock: 40,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "Kenyan Coffee Blend - 500g",
+    description: "Premium Kenyan coffee blend with rich aroma, smooth taste, and fresh roast quality.",
+    category: "Groceries",
+    price: 1200,
+    oldPrice: 1500,
+    stock: 120,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "African Print Ankara Dress",
+    description: "Elegant African print dress made for modern fashion, cultural events, and everyday confidence.",
+    category: "Fashion",
+    price: 3500,
+    oldPrice: 4500,
+    stock: 35,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "Avocado Organic Skincare Set",
+    description: "Natural skincare set made with avocado extracts for soft, healthy, and glowing skin.",
+    category: "Beauty & Health",
+    price: 2800,
+    oldPrice: 3500,
+    stock: 60,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "JBL Tune 510BT Headphones",
+    description: "Wireless Bluetooth headphones with clear sound, comfortable fit, and long battery life.",
+    category: "Electronics",
+    price: 5500,
+    oldPrice: 7000,
+    stock: 50,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "Jiko Ceramic Cooking Pot - 5L",
+    description: "Durable 5 litre ceramic cooking pot for modern Kenyan kitchens and family meals.",
+    category: "Home & Garden",
+    price: 1800,
+    oldPrice: 2200,
+    stock: 75,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "Yoga Mat Premium Non-Slip",
+    description: "Comfortable non-slip yoga mat for home workouts, gym sessions, stretching, and fitness routines.",
+    category: "Sports",
+    price: 2200,
+    oldPrice: 3000,
+    stock: 42,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+  {
+    name: "Kenyan Honey - Pure Raw 1kg",
+    description: "Pure raw Kenyan honey from trusted local suppliers, ideal for tea, cooking, and healthy living.",
+    category: "Groceries",
+    price: 950,
+    oldPrice: 1200,
+    stock: 100,
+    imageUrl: "",
+    importedByAdmin: true,
+  },
+];
+
+async function main() {
+  console.log("Starting SokoYetu Mtaani production seed...");
+  console.log("Database:", process.env.DATABASE_URL.replace(/:[^:@/]+@/, ":****@"));
+
+  let created = 0;
+  let updated = 0;
+
+  for (const product of products) {
+    const existing = await prisma.product.findFirst({
+      where: { name: product.name },
+    });
+
+    if (existing) {
+      await prisma.product.update({
+        where: { id: existing.id },
+        data: {
+          description: product.description,
+          category: product.category,
+          price: product.price,
+          oldPrice: product.oldPrice,
+          stock: product.stock,
+          imageUrl: existing.imageUrl || product.imageUrl,
+          importedByAdmin: true,
+        },
+      });
+      updated += 1;
+    } else {
+      await prisma.product.create({
+        data: product,
+      });
+      created += 1;
+    }
+  }
+
+  const count = await prisma.product.count();
+
+  console.log("Production seed completed.");
+  console.log("Products created:", created);
+  console.log("Products updated:", updated);
+  console.log("Total products:", count);
+}
+
+main()
+  .catch((error) => {
+    console.error("Production seed failed:");
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+`, "utf8");
+
+fs.writeFileSync(path.join(scriptsDir, "count-products.js"), `const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
+require("dotenv").config();
+
+if (!process.env.DATABASE_URL) {
+  console.error("DATABASE_URL is missing.");
+  process.exit(1);
+}
+
+const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL });
+const prisma = new PrismaClient({ adapter });
+
+async function main() {
+  const count = await prisma.product.count();
+  const products = await prisma.product.findMany({
+    select: { id: true, name: true, price: true, stock: true },
+    orderBy: { id: "asc" },
+    take: 20,
+  });
+
+  console.log("Total products:", count);
+  console.table(products);
+}
+
+main()
+  .catch((error) => {
+    console.error(error);
+    process.exit(1);
+  })
+  .finally(async () => {
+    await prisma.$disconnect();
+  });
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE20C_PRODUCTION_SEED_GUIDE.md"), `# SokoYetu Mtaani Stage 20C: Production Seed
+
+Your Render app is live, but /api/products returns:
+
+\`\`\`json
+{"products":[]}
+\`\`\`
+
+This means Neon/Render production database has tables but no product data.
+
+## What this patch adds
+
+\`\`\`cmd
+npm run seed:production
+npm run products:count
+\`\`\`
+
+The seed script is safe to rerun. It does not delete existing products.
+
+## Deploy this patch
+
+\`\`\`cmd
+git add package.json package-lock.json scripts/seed-production-data.js scripts/count-products.js STAGE20C_PRODUCTION_SEED_GUIDE.md
+git commit -m "Add production seed script"
+git push
+\`\`\`
+
+## Run seed on Render
+
+Go to:
+
+\`\`\`text
+Render → Web Service → Shell
+\`\`\`
+
+Then run:
+
+\`\`\`cmd
+npm run seed:production
+npm run products:count
+\`\`\`
+
+If Shell is not available on your plan, temporarily change your Render Build Command to:
+
+\`\`\`cmd
+npm install && npx prisma generate && npx prisma migrate deploy && npm run seed:production
+\`\`\`
+
+Deploy once, then change it back to:
+
+\`\`\`cmd
+npm install && npx prisma generate && npx prisma migrate deploy
+\`\`\`
+
+## Verify
+
+Open:
+
+\`\`\`text
+https://SokoYetu Mtaani-production-1.onrender.com/api/products
+\`\`\`
+
+It should show products with IDs.
+
+Then test Add to Cart again.
+`);
+
+console.log("SUCCESS: Stage 20C production seed scripts installed.");
+console.log("");
+console.log("Next:");
+console.log("git add package.json scripts/seed-production-data.js scripts/count-products.js STAGE20C_PRODUCTION_SEED_GUIDE.md");
+console.log("git commit -m \"Add production seed script\"");
+console.log("git push");
+

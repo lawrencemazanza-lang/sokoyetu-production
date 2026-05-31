@@ -1,0 +1,222 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+
+if (!fs.existsSync(appPath)) {
+  console.error("ERROR: app.js was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+let code = fs.readFileSync(appPath, "utf8");
+
+if (code.includes("SokoYetu Stage 20F: Render Cart Sync Fix")) {
+  console.log("No change needed. Stage 20F cart sync fix is already installed.");
+  process.exit(0);
+}
+
+const backupPath = appPath + ".backup-stage20f-cart-sync-" + Date.now();
+fs.copyFileSync(appPath, backupPath);
+
+const patch = `
+
+// ================================
+// SokoYetu Stage 20F: Render Cart Sync Fix
+// Fixes deployed cases where Add to Cart succeeds but cart/checkout still says empty.
+// It reloads the database cart from /api/cart before cart, checkout and M-PESA checkout views open.
+// ================================
+(function initStage20FRenderCartSyncFix() {
+  if (window.__sokoyetuStage20FCartSyncInstalled) return;
+  window.__sokoyetuStage20FCartSyncInstalled = true;
+
+  function getItemQuantity(item) {
+    return Number(item.quantity || item.qty || item.count || 1) || 1;
+  }
+
+  function getItemProduct(item) {
+    return item.product || item.Product || item;
+  }
+
+  function normalizeCartItems(data) {
+    const raw =
+      (Array.isArray(data) && data) ||
+      data.cart ||
+      data.items ||
+      data.cartItems ||
+      data.data ||
+      [];
+
+    if (!Array.isArray(raw)) return [];
+
+    return raw.map((item) => {
+      const product = getItemProduct(item);
+      const productId = Number(item.productId || product.id || item.id);
+      const quantity = getItemQuantity(item);
+      const price = Number(product.price || item.price || 0);
+
+      return {
+        id: productId,
+        productId,
+        cartItemId: item.id,
+        name: product.name || item.name || "Product",
+        price,
+        oldPrice: product.oldPrice || item.oldPrice || null,
+        imageUrl: product.imageUrl || item.imageUrl || "",
+        category: product.category || item.category || "",
+        quantity,
+        qty: quantity,
+        stock: product.stock || item.stock || 0,
+        product,
+      };
+    }).filter((item) => item.productId && item.productId > 0);
+  }
+
+  async function fetchServerCart() {
+    const response = await fetch("/api/cart", {
+      credentials: "include",
+      headers: { "Accept": "application/json" },
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || "Could not load cart.");
+    }
+
+    return normalizeCartItems(data);
+  }
+
+  async function syncCartFromDatabase() {
+    try {
+      const items = await fetchServerCart();
+
+      if (window.state) {
+        window.state.cart = items;
+      }
+
+      if (typeof state !== "undefined" && state) {
+        state.cart = items;
+      }
+
+      if (typeof save === "function") {
+        try { save(); } catch {}
+      }
+
+      if (typeof renderApp === "function") {
+        try { renderApp(); } catch {}
+      }
+
+      window.__sokoyetuLatestServerCart = items;
+      return items;
+    } catch (error) {
+      console.warn("Stage 20F could not sync cart from database:", error);
+      return [];
+    }
+  }
+
+  function isCartOrCheckoutModal(id) {
+    const value = String(id || "").toLowerCase();
+    return value.includes("cart") || value.includes("checkout") || value.includes("mpesa") || value.includes("payment");
+  }
+
+  function isCartOrCheckoutClick(element) {
+    if (!element) return false;
+    const text = String(element.textContent || "").toLowerCase();
+    const id = String(element.id || "").toLowerCase();
+    const className = String(element.className || "").toLowerCase();
+    const aria = String(element.getAttribute && element.getAttribute("aria-label") || "").toLowerCase();
+
+    return (
+      text.includes("cart") ||
+      text.includes("checkout") ||
+      text.includes("view basket") ||
+      id.includes("cart") ||
+      id.includes("checkout") ||
+      className.includes("cart") ||
+      className.includes("checkout") ||
+      aria.includes("cart") ||
+      aria.includes("checkout")
+    );
+  }
+
+  async function refreshVisibleCartIfEmpty() {
+    const items = window.__sokoyetuLatestServerCart || [];
+    if (!items.length) return;
+
+    const bodyText = document.body ? document.body.innerText.toLowerCase() : "";
+
+    if (!bodyText.includes("cart is empty") && !bodyText.includes("subtotal")) return;
+
+    // Let the app's own renderer update first.
+    if (typeof renderApp === "function") {
+      try { renderApp(); } catch {}
+    }
+  }
+
+  // Expose a manual repair command in browser console.
+  window.sokoyetuSyncCartFromDatabase = syncCartFromDatabase;
+
+  // If app.js already has loadCartFromDatabase, override the global copy for click handlers that call window/global.
+  window.loadCartFromDatabase = syncCartFromDatabase;
+
+  const waitForOpenModal = setInterval(() => {
+    if (typeof window.openModal === "function" && !window.openModal.__stage20FWrapped) {
+      const originalOpenModal = window.openModal;
+
+      window.openModal = async function stage20FOpenModal(id) {
+        if (isCartOrCheckoutModal(id)) {
+          await syncCartFromDatabase();
+        }
+
+        const result = originalOpenModal.apply(this, arguments);
+
+        if (isCartOrCheckoutModal(id)) {
+          setTimeout(refreshVisibleCartIfEmpty, 250);
+          setTimeout(refreshVisibleCartIfEmpty, 900);
+        }
+
+        return result;
+      };
+
+      window.openModal.__stage20FWrapped = true;
+      clearInterval(waitForOpenModal);
+    }
+  }, 250);
+
+  setTimeout(() => clearInterval(waitForOpenModal), 10000);
+
+  document.addEventListener("click", async (event) => {
+    const clicked = event.target && event.target.closest ? event.target.closest("button, a, [role='button']") : null;
+    if (!clicked || !isCartOrCheckoutClick(clicked)) return;
+
+    await syncCartFromDatabase();
+    setTimeout(refreshVisibleCartIfEmpty, 350);
+    setTimeout(refreshVisibleCartIfEmpty, 1000);
+  }, true);
+
+  document.addEventListener("DOMContentLoaded", () => {
+    setTimeout(syncCartFromDatabase, 1000);
+    setTimeout(syncCartFromDatabase, 3000);
+  });
+
+  window.addEventListener("focus", () => {
+    syncCartFromDatabase();
+  });
+})();
+`;
+
+code += patch;
+
+fs.writeFileSync(appPath, code, "utf8");
+
+console.log("SUCCESS: Stage 20F cart sync fix installed.");
+console.log("Backup created:", path.basename(backupPath));
+console.log("");
+console.log("Next:");
+console.log("npm run dev");
+console.log("Test locally: add to cart, then open cart/checkout.");
+console.log("If it works:");
+console.log("git add app.js");
+console.log("git commit -m \"Sync deployed cart from database before checkout\"");
+console.log("git push");

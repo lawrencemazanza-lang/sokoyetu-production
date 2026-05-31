@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
 const BASE_URL = process.env.TEST_BASE_URL || "http://localhost:5173";
 
@@ -14,13 +14,13 @@ function cookieFrom(response) {
 }
 
 async function main() {
-  const email = process.argv[2] || "testbuyer3@sokoyetu.co.ke";
+  const email = process.argv[2] || "testbuyer3@SokoYetu Mtaani.co.ke";
   const password = process.argv[3] || "Test12345";
   const productId = Number(process.argv[4] || 2);
   const phone = process.argv[5] || "254708374149";
   const deliveryAddress = process.argv[6] || "Nairobi CBD, Kenya";
 
-  console.log("Testing SokoYetu STK flow with:");
+  console.log("Testing SokoYetu Mtaani STK flow with:");
   console.log({ email, productId, phone, deliveryAddress });
 
   const loginResponse = await fetch(BASE_URL + "/api/auth/login", {
@@ -71,3 +71,4 @@ async function main() {
 }
 
 main().catch((error) => { console.error(error); process.exit(1); });
+

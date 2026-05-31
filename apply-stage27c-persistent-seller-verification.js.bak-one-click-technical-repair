@@ -1,0 +1,588 @@
+﻿const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const schemaPath = path.join(root, "prisma", "schema.prisma");
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(schemaPath) || !fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: prisma/schema.prisma, server.js, or package.json was not found. Run this inside your SokoYetu Mtaani project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage27c-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(schemaPath, "schema");
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage27c:check"] = "node scripts/check-stage27c-seller-verification.js";
+pkg.scripts["stage27c:prisma"] = "npx prisma generate && npx prisma db push";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage27c-seller-verification.js"), `require("dotenv").config();
+
+console.log("SokoYetu Mtaani Stage 27C Persistent Seller Verification Check");
+console.log("-----------------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.SELLER_VERIFICATION_TOKEN) {
+  console.log("WARN: SELLER_VERIFICATION_TOKEN is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: SELLER_VERIFICATION_TOKEN =", process.env.SELLER_VERIFICATION_TOKEN.slice(0, 4) + "...hidden");
+}
+
+if (!process.env.DATABASE_URL) {
+  console.log("WARN: DATABASE_URL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: DATABASE_URL =", process.env.DATABASE_URL.slice(0, 4) + "...hidden");
+}
+
+console.log("");
+console.log("Required after applying this stage:");
+console.log("1. npm run stage27c:prisma");
+console.log("2. npm run dev");
+console.log("3. Open /seller-verification-persistent.html");
+console.log("");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+// 1. Patch Prisma schema.
+let schema = fs.readFileSync(schemaPath, "utf8");
+
+if (!schema.includes("model SellerVerification")) {
+  const model = `
+
+model SellerVerification {
+  id         Int      @id @default(autoincrement())
+  sellerId   Int      @unique
+  status     String   @default("UNDER_REVIEW")
+  riskLevel  String   @default("LOW")
+  decision   String?
+  notes      String?
+  reviewedBy String?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  seller     User     @relation(fields: [sellerId], references: [id])
+}
+`;
+  schema = schema.trimEnd() + model + "\n";
+  console.log("Added SellerVerification model to prisma/schema.prisma.");
+} else {
+  console.log("SellerVerification model already exists.");
+}
+
+if (schema.includes("model User {") && !schema.includes("sellerVerification SellerVerification?")) {
+  const start = schema.indexOf("model User {");
+  const end = schema.indexOf("\n}", start);
+  if (end !== -1) {
+    schema = schema.slice(0, end) + "\n  sellerVerification SellerVerification?" + schema.slice(end);
+    console.log("Added User.sellerVerification relation.");
+  } else {
+    console.log("WARNING: Could not find end of User model. Add sellerVerification SellerVerification? manually if needed.");
+  }
+}
+
+fs.writeFileSync(schemaPath, schema, "utf8");
+
+// 2. Create persistent dashboard.
+fs.writeFileSync(path.join(root, "seller-verification-persistent.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani Persistent Seller Verification</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:white;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:white;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:80px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:white;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .sellers{display:grid;gap:14px}
+    .seller{border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;background:#fff}
+    .sellerTop{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .sellerBody{padding:14px;display:grid;gap:12px}
+    .title{font-weight:900}
+    .muted{color:#64748b;font-size:13px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:800px){.sellerTop{grid-template-columns:1fr}table{font-size:12px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Persistent Seller Verification</h1>
+    <p>Approve, hold, reject or suspend sellers with records saved in the database.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Admin access and filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Seller verification token</label>
+          <input id="token" type="password" placeholder="Paste SELLER_VERIFICATION_TOKEN">
+        </div>
+        <div>
+          <label>Verification status</label>
+          <select id="statusFilter">
+            <option value="">All statuses</option>
+            <option value="UNDER_REVIEW">Under Review</option>
+            <option value="APPROVED">Approved</option>
+            <option value="MORE_INFO">More Information Needed</option>
+            <option value="HOLD">Hold</option>
+            <option value="SUSPENDED">Suspended</option>
+            <option value="REJECTED">Rejected</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Name, email, phone">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load sellers</button>
+        <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+      </div>
+      <div class="note">This version stores verification records in the database through the SellerVerification model.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller verification records</div>
+    <div class="body">
+      <div id="summary" class="note">No sellers loaded yet.</div>
+      <div id="sellers" class="sellers"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let sellerList = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pillClass(value){
+  const v = String(value || "").toUpperCase();
+  if (v.includes("REJECT") || v.includes("SUSPEND") || v === "HIGH") return "pill bad";
+  if (v.includes("HOLD") || v.includes("MORE") || v.includes("REVIEW") || v === "MEDIUM") return "pill warn";
+  return "pill";
+}
+async function api(url, options={}){
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {"Content-Type":"application/json","x-seller-verification-token":token(),...(options.headers||{})},
+    ...options
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || "Request failed.");
+  return data;
+}
+function buildUrl(){
+  const params = new URLSearchParams();
+  const status = document.getElementById("statusFilter").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (status) params.set("status", status);
+  if (q) params.set("q", q);
+  return "/api/admin/sellers/persistent-verification" + (params.toString() ? "?" + params.toString() : "");
+}
+async function loadSellers(){
+  if (!token()) { msg('<div class="err">Seller verification token is required.</div>'); return; }
+  msg('<div class="note">Loading sellers...</div>');
+  try {
+    const data = await api(buildUrl());
+    sellerList = data.sellers || [];
+    renderSellers();
+    msg('<div class="ok">Sellers loaded successfully.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load sellers.") + '</div>');
+  }
+}
+function renderSellers(){
+  const wrap = document.getElementById("sellers");
+  const summary = document.getElementById("summary");
+  if (!sellerList.length) {
+    summary.textContent = "No sellers found.";
+    wrap.innerHTML = "";
+    return;
+  }
+  const approved = sellerList.filter(s => s.verification?.status === "APPROVED").length;
+  summary.innerHTML = '<b>' + sellerList.length + '</b> sellers loaded. <b>' + approved + '</b> approved.';
+
+  wrap.innerHTML = sellerList.map(s => {
+    const verification = s.verification || {};
+    const issues = (s.issues || []).map(i => '<span class="pill warn">' + esc(i) + '</span>').join("") || '<span class="pill">No immediate risk flags</span>';
+    const products = (s.products || []).map(p => '<tr><td>' + esc(p.name) + '</td><td>' + esc(p.category || "-") + '</td><td>KES ' + Number(p.price || 0).toLocaleString("en-KE") + '</td><td>' + esc(p.stock ?? "-") + '</td><td>' + (p.imageUrl ? "Yes" : "No") + '</td></tr>').join("") || '<tr><td colspan="5">No products found.</td></tr>';
+    return '<article class="seller">' +
+      '<div class="sellerTop"><div><div class="title">' + esc(s.name || "Unnamed seller") + ' · Seller #' + s.id + '</div><div class="muted">' + esc(s.email || "-") + ' · ' + esc(s.phone || "-") + '</div></div><div><span class="' + pillClass(verification.status) + '">' + esc(verification.status || "UNDER_REVIEW") + '</span><span class="' + pillClass(s.riskLevel) + '">' + esc(s.riskLevel) + ' RISK</span></div></div>' +
+      '<div class="sellerBody">' +
+        '<div><b>Risk flags</b><br>' + issues + '</div>' +
+        '<div><b>Current verification notes</b><br><span class="muted">' + esc(verification.notes || "-") + '</span></div>' +
+        '<div><b>Products</b><table><thead><tr><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th>Image</th></tr></thead><tbody>' + products + '</tbody></table></div>' +
+        '<div class="grid">' +
+          '<div><label>Status</label><select id="status-' + s.id + '"><option value="UNDER_REVIEW">Under Review</option><option value="APPROVED">Approved</option><option value="MORE_INFO">More Information Needed</option><option value="HOLD">Hold</option><option value="SUSPENDED">Suspended</option><option value="REJECTED">Rejected</option></select></div>' +
+          '<div><label>Decision</label><select id="decision-' + s.id + '"><option value="APPROVE">Approve</option><option value="REQUEST_MORE_INFO">Request More Information</option><option value="HOLD">Hold</option><option value="SUSPEND">Suspend</option><option value="REJECT">Reject</option></select></div>' +
+          '<div><label>Reviewed by</label><input id="reviewed-' + s.id + '" placeholder="Admin name or email"></div>' +
+          '<div><label>Risk level</label><select id="risk-' + s.id + '"><option value="LOW">Low</option><option value="MEDIUM">Medium</option><option value="HIGH">High</option></select></div>' +
+        '</div>' +
+        '<div><label>Admin notes</label><textarea id="notes-' + s.id + '" placeholder="Record verification details, seller requirements and next action.">' + esc(verification.notes || "") + '</textarea></div>' +
+        '<div class="actions"><button type="button" onclick="saveVerification(' + s.id + ')">Save verification</button></div>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+
+  sellerList.forEach(s => {
+    const v = s.verification || {};
+    const statusEl = document.getElementById("status-" + s.id);
+    const decisionEl = document.getElementById("decision-" + s.id);
+    const riskEl = document.getElementById("risk-" + s.id);
+    const reviewedEl = document.getElementById("reviewed-" + s.id);
+    if (statusEl) statusEl.value = v.status || "UNDER_REVIEW";
+    if (decisionEl) decisionEl.value = v.decision || "REQUEST_MORE_INFO";
+    if (riskEl) riskEl.value = v.riskLevel || s.riskLevel || "LOW";
+    if (reviewedEl) reviewedEl.value = v.reviewedBy || "";
+  });
+}
+async function saveVerification(sellerId){
+  const body = {
+    status: document.getElementById("status-" + sellerId).value,
+    decision: document.getElementById("decision-" + sellerId).value,
+    riskLevel: document.getElementById("risk-" + sellerId).value,
+    reviewedBy: document.getElementById("reviewed-" + sellerId).value.trim(),
+    notes: document.getElementById("notes-" + sellerId).value.trim()
+  };
+  try {
+    msg('<div class="note">Saving seller verification...</div>');
+    await api("/api/admin/sellers/" + sellerId + "/persistent-verification", { method:"POST", body: JSON.stringify(body) });
+    msg('<div class="ok">Seller verification saved.</div>');
+    await loadSellers();
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not save verification.") + '</div>');
+  }
+}
+document.getElementById("loadBtn").onclick = loadSellers;
+document.getElementById("refreshBtn").onclick = loadSellers;
+window.saveVerification = saveVerification;
+</script>
+</body>
+</html>`, "utf8");
+
+// 3. Patch server.js.
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Mtaani Stage 27C: Persistent Seller Verification API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Mtaani Stage 27C: Persistent Seller Verification API
+// Requires SellerVerification Prisma model and SELLER_VERIFICATION_TOKEN.
+// ================================
+function requirePersistentSellerVerificationToken(req, res) {
+  const configuredToken = process.env.SELLER_VERIFICATION_TOKEN;
+  const providedToken = req.headers["x-seller-verification-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "SELLER_VERIFICATION_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid seller verification token." });
+    return false;
+  }
+
+  return true;
+}
+
+function assessPersistentSellerRisk(seller, products) {
+  const issues = [];
+
+  if (!seller.phone) issues.push("Missing phone");
+  if (!seller.email) issues.push("Missing email");
+  if (!seller.name) issues.push("Missing name");
+  if (!products.length) issues.push("No products listed");
+
+  const missingImages = products.filter((p) => !p.imageUrl).length;
+  if (missingImages > 0) issues.push(\`\${missingImages} product(s) missing image\`);
+
+  const lowStock = products.filter((p) => Number(p.stock || 0) <= 0).length;
+  if (lowStock > 0) issues.push(\`\${lowStock} product(s) out of stock\`);
+
+  const suspicious = products.filter((p) => /fake|replica|copy|counterfeit/i.test(String(p.name || "") + " " + String(p.description || ""))).length;
+  if (suspicious > 0) issues.push(\`\${suspicious} product(s) need counterfeit wording review\`);
+
+  let riskLevel = "LOW";
+  if (issues.some((issue) => /counterfeit|fake|replica|copy|Missing phone|Missing email/i.test(issue))) riskLevel = "HIGH";
+  else if (issues.length) riskLevel = "MEDIUM";
+
+  return { riskLevel, issues };
+}
+
+app.get("/api/admin/sellers/persistent-verification", async (req, res) => {
+  try {
+    if (!requirePersistentSellerVerificationToken(req, res)) return;
+
+    const status = String(req.query.status || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const where = { role: "seller" };
+
+    if (q) {
+      where.OR = [
+        { name: { contains: q, mode: "insensitive" } },
+        { email: { contains: q, mode: "insensitive" } },
+        { phone: { contains: q, mode: "insensitive" } },
+      ];
+    }
+
+    const sellers = await prisma.user.findMany({
+      where,
+      orderBy: { id: "desc" },
+      take: 100,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phone: true,
+        role: true,
+        sellerVerification: true,
+        products: {
+          orderBy: { id: "desc" },
+          take: 20,
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            category: true,
+            price: true,
+            stock: true,
+            imageUrl: true,
+            createdAt: true,
+          },
+        },
+      },
+    });
+
+    let prepared = sellers.map((seller) => {
+      const products = seller.products || [];
+      const risk = assessPersistentSellerRisk(seller, products);
+      const verification = seller.sellerVerification || {
+        status: "UNDER_REVIEW",
+        riskLevel: risk.riskLevel,
+        decision: null,
+        notes: null,
+        reviewedBy: null,
+      };
+
+      return {
+        id: seller.id,
+        name: seller.name,
+        email: seller.email,
+        phone: seller.phone,
+        role: seller.role,
+        productCount: products.length,
+        products,
+        riskLevel: verification.riskLevel || risk.riskLevel,
+        issues: risk.issues,
+        verification,
+      };
+    });
+
+    if (status) {
+      prepared = prepared.filter((seller) => String(seller.verification?.status || "UNDER_REVIEW") === status);
+    }
+
+    return res.json({
+      message: "Persistent seller verification records loaded.",
+      count: prepared.length,
+      sellers: prepared,
+    });
+  } catch (error) {
+    console.error("Persistent seller verification load error:", error);
+    return res.status(500).json({
+      message: "Could not load persistent seller verification records.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/sellers/:id/persistent-verification", async (req, res) => {
+  try {
+    if (!requirePersistentSellerVerificationToken(req, res)) return;
+
+    const sellerId = Number(req.params.id);
+    const status = String(req.body?.status || "UNDER_REVIEW").trim();
+    const riskLevel = String(req.body?.riskLevel || "LOW").trim();
+    const decision = String(req.body?.decision || "").trim();
+    const notes = String(req.body?.notes || "").trim();
+    const reviewedBy = String(req.body?.reviewedBy || "").trim();
+
+    const allowedStatuses = new Set(["UNDER_REVIEW", "APPROVED", "MORE_INFO", "HOLD", "SUSPENDED", "REJECTED"]);
+    const allowedRisk = new Set(["LOW", "MEDIUM", "HIGH"]);
+    const allowedDecision = new Set(["APPROVE", "REQUEST_MORE_INFO", "HOLD", "SUSPEND", "REJECT", ""]);
+
+    if (!sellerId || sellerId <= 0) return res.status(400).json({ message: "Valid seller ID is required." });
+    if (!allowedStatuses.has(status)) return res.status(400).json({ message: "Invalid seller verification status." });
+    if (!allowedRisk.has(riskLevel)) return res.status(400).json({ message: "Invalid risk level." });
+    if (!allowedDecision.has(decision)) return res.status(400).json({ message: "Invalid seller decision." });
+
+    const seller = await prisma.user.findFirst({
+      where: { id: sellerId, role: "seller" },
+      select: { id: true, name: true, email: true, phone: true, role: true },
+    });
+
+    if (!seller) return res.status(404).json({ message: "Seller was not found." });
+
+    const verification = await prisma.sellerVerification.upsert({
+      where: { sellerId },
+      update: {
+        status,
+        riskLevel,
+        decision: decision || null,
+        notes: notes || null,
+        reviewedBy: reviewedBy || null,
+      },
+      create: {
+        sellerId,
+        status,
+        riskLevel,
+        decision: decision || null,
+        notes: notes || null,
+        reviewedBy: reviewedBy || null,
+      },
+    });
+
+    return res.json({
+      message: "Seller verification saved.",
+      seller,
+      verification,
+    });
+  } catch (error) {
+    console.error("Persistent seller verification save error:", error);
+    return res.status(500).json({
+      message: "Could not save seller verification.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 27C persistent seller verification endpoints to server.js.");
+} else {
+  console.log("Stage 27C endpoints already exist.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE27C_PERSISTENT_SELLER_VERIFICATION_GUIDE.md"), `# SokoYetu Mtaani Stage 27C: Persistent Seller Verification
+
+Stage 27C adds database-backed seller verification.
+
+## New Prisma model
+
+\`\`\`text
+SellerVerification
+\`\`\`
+
+## New page
+
+\`\`\`text
+/seller-verification-persistent.html
+\`\`\`
+
+## New endpoints
+
+\`\`\`text
+GET  /api/admin/sellers/persistent-verification
+POST /api/admin/sellers/:id/persistent-verification
+\`\`\`
+
+## Required environment variable
+
+\`\`\`env
+SELLER_VERIFICATION_TOKEN=SokoYetu Mtaani_seller_verify_2026_change_this_secret
+\`\`\`
+
+## Required Prisma command
+
+After applying the patch, run:
+
+\`\`\`cmd
+npm run stage27c:prisma
+\`\`\`
+
+This runs:
+
+\`\`\`cmd
+npx prisma generate && npx prisma db push
+\`\`\`
+
+## Important
+
+This stage changes \`prisma/schema.prisma\`. Test locally before pushing to Render.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 27C persistent seller verification installed.");
+console.log("");
+console.log("Next:");
+console.log("1. Confirm SELLER_VERIFICATION_TOKEN exists in .env");
+console.log("2. npm run stage27c:check");
+console.log("3. npm run stage27c:prisma");
+console.log("4. npm run dev");
+console.log("5. Open http://localhost:5173/seller-verification-persistent.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json prisma/schema.prisma server.js scripts/check-stage27c-seller-verification.js seller-verification-persistent.html STAGE27C_PERSISTENT_SELLER_VERIFICATION_GUIDE.md");
+console.log('git commit -m "Add persistent seller verification"');
+console.log("git push");
+

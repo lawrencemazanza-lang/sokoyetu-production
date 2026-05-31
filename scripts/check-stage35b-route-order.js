@@ -1,11 +1,11 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 require("dotenv").config();
 
 const root = process.cwd();
 const serverPath = path.join(root, "server.js");
 
-console.log("SokoYetu Stage 35B Route Order Hardening Check");
+console.log("SokoYetu Mtaani Stage 35B Route Order Hardening Check");
 console.log("----------------------------------------------");
 
 let warnings = 0;
@@ -16,7 +16,7 @@ if (!fs.existsSync(serverPath)) {
 }
 
 const server = fs.readFileSync(serverPath, "utf8");
-const fallbackIndex = server.indexOf("SokoYetu Stage 32E: Friendly Error Pages");
+const fallbackIndex = server.indexOf("SokoYetu Mtaani Stage 32E: Friendly Error Pages");
 const routePattern = /app\.(get|post|put|patch|delete|use)\s*\(\s*["']([^"']+)/g;
 const after = [];
 let match;
@@ -49,3 +49,4 @@ if (!process.env.PUBLIC_SITE_URL) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 35B route order hardening check passed.");
+

@@ -1,4 +1,4 @@
-# SokoYetu Stage 33E: M-PESA Live Test Runbook and Manual Test Log
+﻿# SokoYetu Mtaani Stage 33E: M-PESA Live Test Runbook and Manual Test Log
 
 Stage 33E creates a controlled live-test runbook for the first small production M-PESA payment.
 
@@ -72,3 +72,4 @@ Then:
 3. Add one test log.
 4. Export CSV.
 5. Export JSON.
+

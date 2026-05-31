@@ -1,4 +1,4 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
@@ -18,7 +18,7 @@ const pages = [
 
 let warnings = 0;
 
-console.log("SokoYetu Stage 30C Admin Noindex Hardening Check");
+console.log("SokoYetu Mtaani Stage 30C Admin Noindex Hardening Check");
 console.log("-----------------------------------------------");
 
 for (const page of pages) {
@@ -70,3 +70,4 @@ if (!fs.existsSync(robotsPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 30C noindex hardening check passed.");
+

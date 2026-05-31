@@ -1,0 +1,227 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani M-PESA Evidence Export</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani M-PESA Evidence Export</h1>
+    <p>Download read-only payment and order evidence for reconciliation, customer support, refund review, Safaricom follow-up, and production switch audit records.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-reconciliation.html">Open reconciliation</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Access and export filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Filter</label>
+          <select id="filter">
+            <option value="">All recent evidence</option>
+            <option value="issues">Only issue records</option>
+            <option value="paid">Paid/success records</option>
+            <option value="pending">Pending payments</option>
+            <option value="failed">Failed/cancelled payments</option>
+            <option value="missing-receipt">Missing M-PESA receipt</option>
+            <option value="amount-mismatch">Amount mismatch</option>
+          </select>
+        </div>
+        <div>
+          <label>Format</label>
+          <select id="format">
+            <option value="csv">CSV</option>
+            <option value="json">JSON</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Order ID, phone, receipt, checkout ID">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="previewBtn" type="button">Preview evidence</button>
+        <button id="downloadBtn" class="secondary" type="button">Download evidence file</button>
+      </div>
+      <div class="warnBox">Exported files may include customer emails, phone numbers, M-PESA receipts, order IDs, checkout request IDs and payment evidence. Store them safely.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="summaryCard" class="card" style="display:none">
+    <div class="head">Evidence summary</div>
+    <div class="body">
+      <div id="summary" class="grid"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Preview</div>
+    <div class="body">
+      <div id="preview" class="note">No evidence loaded yet.</div>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function buildUrl(){
+  const params = new URLSearchParams();
+  const filter = document.getElementById("filter").value;
+  const format = document.getElementById("format").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (filter) params.set("filter", filter);
+  if (format) params.set("format", format);
+  if (q) params.set("q", q);
+  return "/api/admin/mpesa-evidence/export?" + params.toString();
+}
+async function fetchEvidence(){
+  if (!token()) throw new Error("Admin order token is required.");
+  const response = await fetch(buildUrl(), {
+    headers: {"x-admin-order-token": token()},
+    credentials: "include",
+    cache: "no-store"
+  });
+  if (!response.ok) {
+    const data = await response.json().catch(() => ({}));
+    throw new Error(data.message || "Evidence export failed.");
+  }
+  return response;
+}
+function parseCsv(text){
+  const lines = String(text || "").split(/\r?\n/).filter(Boolean);
+  if (!lines.length) return [];
+  const headers = splitCsvLine(lines[0]);
+  return lines.slice(1, 26).map(line => {
+    const values = splitCsvLine(line);
+    const row = {};
+    headers.forEach((h, i) => row[h] = values[i] || "");
+    return row;
+  });
+}
+function splitCsvLine(line){
+  const out = [];
+  let cur = "";
+  let quote = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    const n = line[i + 1];
+    if (c === '"' && quote && n === '"') { cur += '"'; i++; continue; }
+    if (c === '"') { quote = !quote; continue; }
+    if (c === "," && !quote) { out.push(cur); cur = ""; continue; }
+    cur += c;
+  }
+  out.push(cur);
+  return out;
+}
+async function previewEvidence(){
+  msg('<div class="note">Loading evidence preview...</div>');
+  try {
+    const format = document.getElementById("format").value;
+    const response = await fetchEvidence();
+    const text = await response.text();
+    const rows = format === "json" ? JSON.parse(text).records || JSON.parse(text) : parseCsv(text);
+    renderPreview(rows);
+    msg('<div class="ok">Evidence preview loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not preview evidence.") + '</div>');
+  }
+}
+function renderPreview(rows){
+  const list = Array.isArray(rows) ? rows : [];
+  document.getElementById("summaryCard").style.display = "block";
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Preview rows<b>' + esc(list.length) + '</b></div>' +
+    '<div class="metric">Filter<b>' + esc(document.getElementById("filter").value || "all") + '</b></div>' +
+    '<div class="metric">Format<b>' + esc(document.getElementById("format").value.toUpperCase()) + '</b></div>';
+
+  if (!list.length) {
+    document.getElementById("preview").innerHTML = '<div class="note">No evidence records found for this filter.</div>';
+    return;
+  }
+
+  const keys = Object.keys(list[0]).slice(0, 9);
+  document.getElementById("preview").innerHTML =
+    '<table><thead><tr>' + keys.map(k => '<th>' + esc(k) + '</th>').join("") + '</tr></thead><tbody>' +
+    list.slice(0, 25).map(row => '<tr>' + keys.map(k => '<td>' + esc(row[k]) + '</td>').join("") + '</tr>').join("") +
+    '</tbody></table>';
+}
+async function downloadEvidence(){
+  msg('<div class="note">Preparing evidence download...</div>');
+  try {
+    const response = await fetchEvidence();
+    const blob = await response.blob();
+    const cd = response.headers.get("Content-Disposition") || "";
+    const match = cd.match(/filename="?([^"]+)"?/i);
+    const fallback = "SokoYetu Mtaani-mpesa-evidence." + document.getElementById("format").value;
+    const filename = match ? match[1] : fallback;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    msg('<div class="ok">Download started: ' + esc(filename) + '</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not download evidence.") + '</div>');
+  }
+}
+document.getElementById("previewBtn").onclick = previewEvidence;
+document.getElementById("downloadBtn").onclick = downloadEvidence;
+</script>
+</body>
+</html>

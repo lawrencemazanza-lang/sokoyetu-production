@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 34A Launch War Room Check");
+console.log("SokoYetu Mtaani Stage 34A Launch War Room Check");
 console.log("----------------------------------------");
 
 let warnings = 0;
@@ -75,3 +75,4 @@ if (fs.existsSync(robotsPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 34A launch war room check passed.");
+

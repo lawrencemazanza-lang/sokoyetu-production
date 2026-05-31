@@ -1,4 +1,4 @@
-# SokoYetu Stage 31C: Public Category Directory and Product Discovery
+﻿# SokoYetu Mtaani Stage 31C: Public Category Directory and Product Discovery
 
 Stage 31C adds a public product discovery page.
 
@@ -55,3 +55,4 @@ Open:
 ```text
 http://localhost:5173/categories.html
 ```
+

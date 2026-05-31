@@ -1,4 +1,4 @@
-# SokoYetu Stage 32E: Friendly Error Pages and Public Recovery Flow
+﻿# SokoYetu Mtaani Stage 32E: Friendly Error Pages and Public Recovery Flow
 
 Stage 32E adds friendly recovery pages for broken or unavailable routes.
 
@@ -29,3 +29,4 @@ http://localhost:5173/api/not-a-real-endpoint
 http://localhost:5173/404.html
 http://localhost:5173/500.html
 ```
+

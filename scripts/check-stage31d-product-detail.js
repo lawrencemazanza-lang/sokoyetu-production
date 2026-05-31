@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 31D Product Detail Page Check");
+console.log("SokoYetu Mtaani Stage 31D Product Detail Page Check");
 console.log("-------------------------------------------");
 
 let warnings = 0;
@@ -56,3 +56,4 @@ if (fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 31D product detail page check passed.");
+

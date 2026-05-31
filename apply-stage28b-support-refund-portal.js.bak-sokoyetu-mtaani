@@ -1,0 +1,361 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage28b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage28b:check"] = "node scripts/check-stage28b-support.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage28b-support.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 28B Customer Support and Refund Portal Check");
+console.log("----------------------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.SUPPORT_EMAIL) {
+  console.log("WARN: SUPPORT_EMAIL is not set.");
+  warnings += 1;
+} else {
+  console.log("OK: SUPPORT_EMAIL =", process.env.SUPPORT_EMAIL);
+}
+
+console.log("OK: support-request.html should be available after server restart/deployment.");
+console.log("OK: POST /api/orders/support-request should be available after server restart/deployment.");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "support-request.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Support Request</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(980px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:12px;font:inherit}
+    textarea{min-height:130px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:12px 15px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .muted{color:#64748b;font-size:13px}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>Customer Support Request</h1>
+    <p>Submit delivery, payment, product, cancellation or refund support for an existing order.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Submit a support request</div>
+    <div class="body">
+      <div class="note">For privacy, we verify the order using the order ID and the phone number used at checkout.</div>
+
+      <div class="grid">
+        <div>
+          <label>Order ID</label>
+          <input id="orderId" inputmode="numeric" placeholder="Example: 12">
+        </div>
+        <div>
+          <label>M-PESA phone number used at checkout</label>
+          <input id="phone" inputmode="tel" placeholder="Example: 254714565555 or 0714565555">
+        </div>
+      </div>
+
+      <div class="grid">
+        <div>
+          <label>Request type</label>
+          <select id="requestType">
+            <option value="GENERAL_SUPPORT">General support</option>
+            <option value="DELIVERY_ISSUE">Delivery issue</option>
+            <option value="PAYMENT_ISSUE">Payment issue</option>
+            <option value="PRODUCT_ISSUE">Product issue</option>
+            <option value="CANCELLATION_REQUEST">Cancellation request</option>
+            <option value="REFUND_REQUEST">Refund request</option>
+          </select>
+        </div>
+        <div>
+          <label>Your name</label>
+          <input id="customerName" placeholder="Optional">
+        </div>
+      </div>
+
+      <div>
+        <label>Message</label>
+        <textarea id="messageText" placeholder="Explain the issue clearly. Include delivery details, payment concern, product issue, or refund reason."></textarea>
+      </div>
+
+      <button id="submitBtn" type="button">Submit request</button>
+      <div id="message"></div>
+      <p class="muted">Need help by email? Contact mysokoyetu@gmail.com with your order number.</p>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+
+async function submitRequest(){
+  const orderId = document.getElementById("orderId").value.trim();
+  const phone = document.getElementById("phone").value.trim();
+  const requestType = document.getElementById("requestType").value;
+  const customerName = document.getElementById("customerName").value.trim();
+  const messageText = document.getElementById("messageText").value.trim();
+
+  if (!orderId || !phone || !messageText) {
+    msg('<div class="err">Order ID, phone number and message are required.</div>');
+    return;
+  }
+
+  msg('<div class="note">Submitting request...</div>');
+
+  try {
+    const response = await fetch("/api/orders/support-request", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ orderId, phone, requestType, customerName, message: messageText })
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not submit support request.");
+
+    msg('<div class="ok"><b>Support request received.</b><br>Reference: Order #' + esc(data.orderId) + '<br>Status: ' + esc(data.orderStatus) + '<br>Our team will review and respond through the contact details linked to the order.</div>');
+    document.getElementById("messageText").value = "";
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not submit support request.") + '</div>');
+  }
+}
+
+document.getElementById("submitBtn").onclick = submitRequest;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 28B: Customer Support Request API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 28B: Customer Support Request API
+// Public request protected by order ID + matching checkout/payment phone.
+// Uses DeliveryTracking so no database migration is needed.
+// ================================
+function normalizeKenyanPhoneForSupport(value) {
+  const digits = String(value || "").replace(/\\D/g, "");
+  if (!digits) return "";
+  if (digits.startsWith("254")) return digits;
+  if (digits.startsWith("0") && digits.length === 10) return "254" + digits.slice(1);
+  if (digits.startsWith("7") && digits.length === 9) return "254" + digits;
+  if (digits.startsWith("1") && digits.length === 9) return "254" + digits;
+  return digits;
+}
+
+app.post("/api/orders/support-request", async (req, res) => {
+  try {
+    const orderId = Number(req.body?.orderId);
+    const phone = normalizeKenyanPhoneForSupport(req.body?.phone);
+    const requestType = String(req.body?.requestType || "GENERAL_SUPPORT").trim();
+    const customerName = String(req.body?.customerName || "").trim();
+    const message = String(req.body?.message || "").trim();
+
+    const allowedTypes = new Set([
+      "GENERAL_SUPPORT",
+      "DELIVERY_ISSUE",
+      "PAYMENT_ISSUE",
+      "PRODUCT_ISSUE",
+      "CANCELLATION_REQUEST",
+      "REFUND_REQUEST",
+    ]);
+
+    if (!orderId || orderId <= 0) {
+      return res.status(400).json({ message: "A valid order ID is required." });
+    }
+
+    if (!phone) {
+      return res.status(400).json({ message: "A valid checkout phone number is required." });
+    }
+
+    if (!allowedTypes.has(requestType)) {
+      return res.status(400).json({ message: "Invalid support request type." });
+    }
+
+    if (!message || message.length < 8) {
+      return res.status(400).json({ message: "Please enter a clear support message." });
+    }
+
+    const order = await prisma.order.findUnique({
+      where: { id: orderId },
+      include: { payment: true },
+    });
+
+    if (!order) {
+      return res.status(404).json({ message: "Order was not found." });
+    }
+
+    const orderPhone = normalizeKenyanPhoneForSupport(order.phone);
+    const paymentPhone = normalizeKenyanPhoneForSupport(order.payment?.phone);
+
+    if (phone !== orderPhone && phone !== paymentPhone) {
+      return res.status(403).json({ message: "The phone number does not match this order." });
+    }
+
+    let nextOrderStatus = order.orderStatus;
+    if (requestType === "REFUND_REQUEST") nextOrderStatus = "REFUND_REQUESTED";
+    if (requestType === "CANCELLATION_REQUEST" && order.orderStatus !== "DELIVERED") nextOrderStatus = "CANCELLED";
+
+    if (nextOrderStatus !== order.orderStatus) {
+      await prisma.order.update({
+        where: { id: order.id },
+        data: { orderStatus: nextOrderStatus },
+      });
+    }
+
+    const noteParts = [
+      \`Customer support request: \${requestType}\`,
+      customerName ? \`Customer name: \${customerName}\` : null,
+      \`Message: \${message}\`,
+    ].filter(Boolean);
+
+    await prisma.deliveryTracking.create({
+      data: {
+        orderId: order.id,
+        status: requestType === "REFUND_REQUEST" ? "REFUND_REQUESTED" : "CUSTOMER_SUPPORT_REQUESTED",
+        note: noteParts.join(" | "),
+      },
+    });
+
+    return res.json({
+      message: "Support request received.",
+      orderId: order.id,
+      orderStatus: nextOrderStatus,
+      requestType,
+    });
+  } catch (error) {
+    console.error("Customer support request error:", error);
+    return res.status(500).json({
+      message: "Could not submit support request.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 28B customer support request endpoint to server.js.");
+} else {
+  console.log("Stage 28B endpoint already exists.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE28B_SUPPORT_REFUND_PORTAL_GUIDE.md"), `# SokoYetu Stage 28B: Customer Support and Refund Request Portal
+
+Stage 28B adds a public support request page for existing orders.
+
+## New page
+
+\`\`\`text
+/support-request.html
+\`\`\`
+
+## New endpoint
+
+\`\`\`text
+POST /api/orders/support-request
+\`\`\`
+
+## Privacy protection
+
+The customer must enter:
+
+\`\`\`text
+Order ID
+Phone number used at checkout
+\`\`\`
+
+The API records the request only if the phone number matches the order or payment phone.
+
+## Request types
+
+\`\`\`text
+GENERAL_SUPPORT
+DELIVERY_ISSUE
+PAYMENT_ISSUE
+PRODUCT_ISSUE
+CANCELLATION_REQUEST
+REFUND_REQUEST
+\`\`\`
+
+## Database approach
+
+This stage uses the existing \`DeliveryTracking\` model to record support notes, so no Prisma migration is needed.
+
+## Operational effect
+
+- Refund requests add a \`REFUND_REQUESTED\` tracking note and update the order status to \`REFUND_REQUESTED\`.
+- Cancellation requests update the order to \`CANCELLED\` if the order is not already delivered.
+- Other support requests add a \`CUSTOMER_SUPPORT_REQUESTED\` tracking note.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 28B customer support and refund portal installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage28b:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/support-request.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage28b-support.js support-request.html STAGE28B_SUPPORT_REFUND_PORTAL_GUIDE.md");
+console.log('git commit -m "Add customer support request portal"');
+console.log("git push");

@@ -1,4 +1,4 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 const fs = require("fs");
 const path = require("path");
 
@@ -52,7 +52,7 @@ function findConfigured(keys) {
   return keys.filter((key) => Object.prototype.hasOwnProperty.call(process.env, key));
 }
 
-console.log("SokoYetu M-PESA Environment Variable Map");
+console.log("SokoYetu Mtaani M-PESA Environment Variable Map");
 console.log("----------------------------------------");
 console.log("");
 console.log("M-PESA/Daraja/Safaricom keys referenced in server.js:");
@@ -83,3 +83,4 @@ if (wantsProduction && !confirmed) {
 } else {
   console.log("GUARD: No production-confirmation block detected.");
 }
+

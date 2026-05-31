@@ -1,0 +1,678 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="description" content="Shop online at SokoYetu Mtaani, Kenya's local online marketplace for trusted sellers, M-PESA payments, quality products, pickup, delivery, and customer support.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Mtaani | Online Shopping & Marketplace in Kenya</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    :root{
+      --orange:#f68b1e;
+      --orange-dark:#c76100;
+      --green:#16a34a;
+      --green-dark:#064e3b;
+      --red:#e61601;
+      --bg:#f1f3f6;
+      --card:#ffffff;
+      --ink:#111827;
+      --muted:#64748b;
+      --line:#e5e7eb;
+      --shadow:0 8px 20px rgba(15,23,42,.08);
+      --radius:8px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:var(--bg);color:var(--ink)}
+    a{text-decoration:none;color:inherit}
+    button,input{font:inherit}
+    .soko37e-page{min-height:100vh}
+    .soko37e-wrap{width:min(1240px,96vw);margin:0 auto}
+    .soko37e-top{background:#fff3e5;color:#7c2d12;font-size:13px;border-bottom:1px solid #fed7aa}
+    .soko37e-top-inner{height:32px;display:flex;align-items:center;justify-content:space-between;gap:14px}
+    .soko37e-top a{font-weight:900;color:#9a3412}
+    .soko37e-header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:80}
+    .soko37e-header-row{height:70px;display:grid;grid-template-columns:180px minmax(260px,1fr) auto;gap:14px;align-items:center}
+    .soko37e-logo{display:flex;align-items:center;gap:9px;font-size:25px;font-weight:950;color:var(--green-dark)}
+    .soko37e-logo-mark{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--orange),var(--green));color:#fff;display:grid;place-items:center}
+    .soko37e-search{display:grid;grid-template-columns:1fr auto;border:2px solid var(--orange);border-radius:6px;overflow:hidden;background:#fff}
+    .soko37e-search input{border:0;outline:0;padding:12px 13px}
+    .soko37e-search button{border:0;background:var(--orange);color:#fff;font-weight:950;padding:0 24px;cursor:pointer}
+    .soko37e-actions{display:flex;gap:8px;white-space:nowrap;align-items:center}
+    .soko37e-action{padding:9px 8px;border-radius:6px;font-weight:850;color:#334155}
+    .soko37e-action:hover{background:#f8fafc;color:var(--orange-dark)}
+    .soko37e-page-links{background:#fff;border-bottom:1px solid var(--line)}
+    .soko37e-page-links-inner{height:42px;display:flex;gap:9px;align-items:center;overflow:auto}
+    .soko37e-page-links a{white-space:nowrap;border:1px solid var(--line);background:#f8fafc;border-radius:999px;padding:7px 11px;font-weight:850;font-size:13px;color:#334155}
+    .soko37e-page-links a:hover{background:#fff7ed;color:var(--orange-dark)}
+    .soko37e-main{width:min(1240px,96vw);margin:12px auto 42px;display:grid;grid-template-columns:210px minmax(0,1fr) 270px;gap:12px}
+    .soko37e-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .soko37e-category-rail{padding:7px;height:max-content}
+    .soko37e-cat{display:flex;align-items:center;gap:9px;padding:8px 9px;border-radius:6px;font-size:14px;color:#334155;font-weight:750}
+    .soko37e-cat:hover{background:#fff7ed;color:var(--orange-dark)}
+    .soko37e-cat span{width:22px;text-align:center}
+    .soko37e-center{display:grid;gap:12px;min-width:0}
+    .soko37e-flash-hero{background:#fff;border:2px solid var(--red);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .soko37e-flash-head{background:var(--red);color:#fff;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 14px}
+    .soko37e-flash-head h1{font-size:24px;margin:0;display:flex;align-items:center;gap:8px}
+    .soko37e-timer{background:rgba(255,255,255,.2);border-radius:999px;padding:6px 10px;font-weight:950}
+    .soko37e-flash-body{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(300px,.9fr);gap:12px;padding:12px}
+    .soko37e-live-product{border:1px solid #fecaca;background:linear-gradient(135deg,#fff,#fff7ed);border-radius:10px;padding:14px;display:grid;grid-template-columns:210px minmax(0,1fr);gap:14px;align-items:center;min-height:270px}
+    .soko37e-live-img{height:220px;background:#f8fafc;border-radius:10px;display:grid;place-items:center;overflow:hidden}
+    .soko37e-live-img img{width:100%;height:100%;object-fit:cover}
+    .soko37e-live-img span{font-size:70px}
+    .soko37e-live-details{display:grid;gap:9px}
+    .soko37e-live-label{display:inline-flex;width:fit-content;background:#fee2e2;color:#991b1b;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:950}
+    .soko37e-live-details h2{font-size:28px;margin:0;line-height:1.08;color:#111827}
+    .soko37e-live-details p{margin:0;color:#475569;line-height:1.45}
+    .soko37e-live-price{font-size:28px;font-weight:950;color:var(--red)}
+    .soko37e-live-old{text-decoration:line-through;color:#94a3b8;margin-left:8px;font-size:14px}
+    .soko37e-btn{border:0;border-radius:6px;padding:11px 13px;font-weight:950;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+    .soko37e-btn.orange{background:var(--orange);color:#fff}
+    .soko37e-btn.dark{background:#111827;color:#fff}
+    .soko37e-btn.green{background:#128c7e;color:#fff}
+    .soko37e-mini-flash{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+    .soko37e-product-mini{border:1px solid var(--line);background:#fff;border-radius:8px;padding:9px;display:grid;grid-template-columns:70px 1fr;gap:9px;align-items:center}
+    .soko37e-product-mini-img{height:70px;background:#f8fafc;border-radius:7px;display:grid;place-items:center;overflow:hidden}
+    .soko37e-product-mini-img img{width:100%;height:100%;object-fit:cover}
+    .soko37e-product-mini-img span{font-size:28px}
+    .soko37e-product-mini b{font-size:13px;line-height:1.25;display:block}
+    .soko37e-product-mini strong{color:var(--red);font-size:14px}
+    .soko37e-side-ads{display:grid;gap:12px;height:max-content}
+    .soko37e-side-card{padding:13px;display:grid;gap:8px}
+    .soko37e-side-card h3{margin:0;color:var(--green-dark);font-size:18px}
+    .soko37e-side-card p{margin:0;color:#475569;line-height:1.4;font-size:14px}
+    .soko37e-whatsapp-card{background:linear-gradient(135deg,#128c7e,#075e54);border:0;color:#fff}
+    .soko37e-whatsapp-card h3,.soko37e-whatsapp-card p{color:#fff}
+    .soko37e-ad-card{background:linear-gradient(135deg,#fff7ed,#fff);border-color:#fed7aa}
+    .soko37e-ad-pill{display:inline-flex;width:fit-content;border-radius:999px;background:#ffedd5;color:#9a3412;padding:5px 9px;font-size:12px;font-weight:950}
+    .soko37e-banner-strip{display:grid;grid-template-columns:repeat(4,1fr);gap:9px}
+    .soko37e-banner-strip a{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:11px;display:flex;gap:9px;align-items:center}
+    .soko37e-banner-strip span{font-size:24px}.soko37e-banner-strip b{display:block;font-size:13px}.soko37e-banner-strip small{color:var(--muted)}
+    .soko37e-section{display:grid;gap:9px}
+    .soko37e-section-head{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:11px 13px}
+    .soko37e-section-head h2{font-size:20px;margin:0}
+    .soko37e-section-head a{font-weight:900;color:var(--orange-dark)}
+    .soko37e-live-strip .soko37e-section-head{background:#111827;color:#fff}
+    .soko37e-live-strip .soko37e-section-head a{color:#fff}
+    .soko37e-live-row{display:grid;grid-template-columns:1.2fr repeat(3,1fr);gap:9px}
+    .soko37e-live-main{min-height:190px;background:radial-gradient(circle at 30% 10%,#f97316,#111827 58%);color:#fff;border-radius:8px;padding:18px;display:grid;align-content:center}
+    .soko37e-live-main b{font-size:24px;display:block;margin-bottom:8px}
+    .soko37e-live-tile{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:12px;display:grid;gap:8px}
+    .soko37e-live-dot{display:inline-flex;width:fit-content;background:#fee2e2;color:#991b1b;border-radius:999px;padding:4px 8px;font-size:12px;font-weight:950}
+    .soko37e-category-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:9px}
+    .soko37e-category-tile{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:14px 8px;text-align:center}
+    .soko37e-category-tile span{font-size:29px;display:block;margin-bottom:7px}
+    .soko37e-category-tile b{font-size:13px;color:#334155}
+    .soko37e-product-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+    .soko37e-product{background:#fff;border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);overflow:hidden;display:grid}
+    .soko37e-product:hover{transform:translateY(-2px);transition:.18s ease;box-shadow:0 15px 30px rgba(15,23,42,.13)}
+    .soko37e-img{height:145px;background:#f8fafc;display:grid;place-items:center;overflow:hidden}
+    .soko37e-img img{width:100%;height:100%;object-fit:cover}
+    .soko37e-img span{font-size:44px}
+    .soko37e-prod-body{padding:10px;display:grid;gap:6px}
+    .soko37e-prod-name{font-size:14px;line-height:1.28;min-height:36px}
+    .soko37e-price{font-weight:950;color:#111827;font-size:17px}
+    .soko37e-old{text-decoration:line-through;color:#94a3b8;font-size:12px}
+    .soko37e-disc{display:inline-flex;width:fit-content;border-radius:4px;background:#ffedd5;color:#c2410c;padding:3px 6px;font-size:11px;font-weight:950}
+    .soko37e-cart{background:var(--orange);color:#fff;border:0;border-radius:6px;padding:9px;font-weight:950;cursor:pointer}
+    .soko37e-sponsored .soko37e-section-head{background:#fff7ed}
+    .soko37e-footer{background:#111827;color:#cbd5e1;padding:30px 0;margin-top:42px}
+    .soko37e-footer-grid{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:18px}
+    .soko37e-footer h3{margin:0 0 9px;color:#fff}
+    .soko37e-footer a,.soko37e-footer p{color:#cbd5e1;line-height:1.55;margin:0}
+    .soko37e-whatsapp{position:fixed;right:18px;bottom:22px;z-index:95;background:#128c7e;color:#fff;border-radius:999px;padding:13px 16px;font-weight:950;box-shadow:0 14px 35px rgba(15,23,42,.26)}
+    .soko37e-mobile-nav{display:none}
+    @media(max-width:1180px){
+      .soko37e-main{grid-template-columns:200px minmax(0,1fr)}
+      .soko37e-side-ads{grid-column:1/-1;grid-template-columns:repeat(3,1fr)}
+      .soko37e-product-grid{grid-template-columns:repeat(3,1fr)}
+    }
+    @media(max-width:930px){
+      .soko37e-top-inner{height:auto;padding:7px 0;flex-direction:column;align-items:flex-start}
+      .soko37e-header-row{height:auto;grid-template-columns:1fr;padding:12px 0}
+      .soko37e-actions,.soko37e-page-links-inner{overflow:auto}
+      .soko37e-main{display:block;margin-top:10px}
+      .soko37e-category-rail{display:flex;gap:8px;overflow:auto;margin-bottom:10px}
+      .soko37e-cat{white-space:nowrap;border:1px solid var(--line)}
+      .soko37e-flash-body,.soko37e-live-product,.soko37e-live-row{grid-template-columns:1fr}
+      .soko37e-side-ads{grid-template-columns:1fr;margin:10px 0}
+      .soko37e-banner-strip{grid-template-columns:repeat(2,1fr);margin:10px 0}
+      .soko37e-product-grid{grid-template-columns:repeat(2,1fr)}
+      .soko37e-category-grid{grid-template-columns:repeat(3,1fr)}
+      .soko37e-footer-grid{grid-template-columns:1fr}
+      .soko37e-whatsapp{right:10px;bottom:70px;padding:11px 13px;font-size:13px}
+      .soko37e-mobile-nav{display:grid;grid-template-columns:repeat(4,1fr);position:fixed;bottom:0;left:0;right:0;z-index:85;background:#fff;border-top:1px solid var(--line)}
+      .soko37e-mobile-nav a{text-align:center;font-size:12px;font-weight:850;padding:9px 4px;color:#334155}
+    }
+    @media(max-width:520px){
+      .soko37e-wrap,.soko37e-main{width:min(100% - 14px,1240px)}
+      .soko37e-flash-head{align-items:flex-start;flex-direction:column}
+      .soko37e-flash-head h1{font-size:21px}
+      .soko37e-live-img{height:170px}
+      .soko37e-live-details h2{font-size:23px}
+      .soko37e-mini-flash{grid-template-columns:1fr}
+      .soko37e-banner-strip{grid-template-columns:1fr}
+      .soko37e-product-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+      .soko37e-img{height:116px}
+      .soko37e-prod-name{font-size:13px}
+      .soko37e-price{font-size:15px}
+      .soko37e-category-grid{grid-template-columns:repeat(2,1fr)}
+      .soko37e-section-head{align-items:flex-start;flex-direction:column}
+    }
+  
+    /* SokoYetu Mtaani Stage 37F: themed flash sale and shopping cart logo */
+    .soko37f-cart-logo{
+      width:44px;
+      height:44px;
+      border-radius:14px;
+      background:linear-gradient(135deg,#f68b1e 0%,#16a34a 100%);
+      color:#fff;
+      display:grid;
+      place-items:center;
+      box-shadow:0 12px 28px rgba(15,23,42,.22), inset 0 1px 0 rgba(255,255,255,.28);
+      position:relative;
+      overflow:hidden;
+    }
+    .soko37f-cart-logo::after{
+      content:"";
+      position:absolute;
+      width:58px;
+      height:58px;
+      right:-28px;
+      top:-28px;
+      background:rgba(255,255,255,.20);
+      border-radius:999px;
+    }
+    .soko37f-cart-logo svg{
+      width:28px;
+      height:28px;
+      position:relative;
+      z-index:1;
+      filter:drop-shadow(0 3px 5px rgba(0,0,0,.25));
+    }
+    .soko37f-theme-card{
+      position:relative;
+      overflow:hidden;
+      border:0!important;
+      color:#fff;
+      min-height:88px;
+    }
+    .soko37f-theme-card::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:radial-gradient(circle at top right,rgba(255,255,255,.30),transparent 42%);
+      pointer-events:none;
+    }
+    .soko37f-theme-card .soko37e-product-mini-img{
+      background:rgba(255,255,255,.20);
+      border:1px solid rgba(255,255,255,.20);
+      position:relative;
+      z-index:1;
+    }
+    .soko37f-theme-card b,
+    .soko37f-theme-card strong,
+    .soko37f-theme-card small{
+      color:#fff!important;
+      position:relative;
+      z-index:1;
+    }
+    .soko37f-theme-card strong{
+      font-size:15px!important;
+      text-shadow:0 2px 6px rgba(0,0,0,.18);
+    }
+    .soko37f-theme-live{
+      border:0!important;
+      color:#fff;
+      box-shadow:0 18px 38px rgba(15,23,42,.16);
+      position:relative;
+      overflow:hidden;
+      transition:background .45s ease, transform .25s ease;
+    }
+    .soko37f-theme-live::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background:
+        radial-gradient(circle at 80% 12%,rgba(255,255,255,.30),transparent 25%),
+        radial-gradient(circle at 10% 90%,rgba(255,255,255,.17),transparent 35%);
+      pointer-events:none;
+    }
+    .soko37f-theme-live .soko37e-live-img,
+    .soko37f-theme-live .soko37e-live-details{
+      position:relative;
+      z-index:1;
+    }
+    .soko37f-theme-live .soko37e-live-img{
+      background:rgba(255,255,255,.16)!important;
+      border:1px solid rgba(255,255,255,.22);
+      box-shadow:inset 0 1px 0 rgba(255,255,255,.22);
+    }
+    .soko37f-theme-live .soko37e-live-label{
+      background:rgba(255,255,255,.18)!important;
+      color:#fff!important;
+      border:1px solid rgba(255,255,255,.24);
+    }
+    .soko37f-theme-live .soko37e-live-details h2,
+    .soko37f-theme-live .soko37e-live-details p,
+    .soko37f-theme-live .soko37e-live-price{
+      color:#fff!important;
+      text-shadow:0 2px 8px rgba(0,0,0,.20);
+    }
+    .soko37f-theme-live .soko37e-live-old{
+      color:rgba(255,255,255,.70)!important;
+    }
+    @media(max-width:520px){
+      .soko37f-theme-card{min-height:96px}
+      .soko37f-cart-logo{width:40px;height:40px}
+      .soko37f-cart-logo svg{width:25px;height:25px}
+    }
+
+  </style>
+  <link rel="canonical" href="https://www.mysokoyetu.co.ke/">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="SokoYetu Mtaani | Online Shopping & Marketplace in Kenya">
+  <meta property="og:description" content="Shop online at SokoYetu Mtaani, Kenya's local online marketplace for trusted sellers, M-PESA payments, quality products, pickup, delivery, and customer support.">
+  <meta property="og:url" content="https://www.mysokoyetu.co.ke/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="SokoYetu Mtaani | Online Shopping & Marketplace in Kenya">
+  <meta name="twitter:description" content="Shop online at SokoYetu Mtaani, Kenya's local online marketplace for trusted sellers, M-PESA payments, quality products, pickup, delivery, and customer support.">
+  <link rel="manifest" href="/site.webmanifest">
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+  <meta name="robots" content="index, follow, max-image-preview:large">
+</head>
+<body class="soko37e-page">
+  <div class="soko37e-top">
+    <div class="soko37e-wrap soko37e-top-inner">
+      <span>Shop deals, sell products, advertise and receive orders through SokoYetu Mtaani.</span>
+      <span><a href="/seller-center.html">Sell on SokoYetu Mtaani</a> · <a href="https://wa.me/254714565555" target="_blank" rel="noopener">WhatsApp support</a></span>
+    </div>
+  </div>
+
+  <header class="soko37e-header">
+    <div class="soko37e-wrap soko37e-header-row">
+      <a class="soko37e-logo" href="/"><span class="soko37f-cart-logo" aria-label="SokoYetu Mtaani shopping cart logo">
+          <svg viewBox="0 0 64 64" role="img" aria-hidden="true">
+            <path d="M18 20h34l-4.2 20.5a5 5 0 0 1-4.9 4H26.2a5 5 0 0 1-4.9-4L17 14h-6" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+            <circle cx="28" cy="52" r="4.5" fill="currentColor"/>
+            <circle cx="45" cy="52" r="4.5" fill="currentColor"/>
+            <path d="M25 28h20" stroke="currentColor" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </span><span>SokoYetu Mtaani</span></a>
+      <form class="soko37e-search" id="soko37eSearch">
+        <input id="soko37eSearchInput" placeholder="Search products, brands and categories">
+        <button type="submit">Search</button>
+      </form>
+      <nav class="soko37e-actions">
+        <a class="soko37e-action" href="/login.html">Account</a>
+        <a class="soko37e-action" href="/help-center.html">Help</a>
+        <a class="soko37e-action" href="/checkout.html">Cart</a>
+      </nav>
+    </div>
+  </header>
+
+  <nav class="soko37e-page-links">
+    <div class="soko37e-wrap soko37e-page-links-inner">
+      <a href="/categories.html">Categories</a>
+      <a href="/product-detail.html">Product Page</a>
+      <a href="/checkout.html">Checkout</a>
+      <a href="/track-order.html">Track Order</a>
+      <a href="/seller-center.html">Seller Center</a>
+      <a href="/seller-stores.html">Seller Stores</a>
+      <a href="/help-center.html">Help Center</a>
+      <a href="/contact-support.html">Contact Support</a>
+      <a href="/returns-policy.html">Returns</a>
+      <a href="/delivery-info.html">Delivery Info</a>
+      <a href="/trust-center.html">Trust Center</a>
+    </div>
+  </nav>
+
+  <main class="soko37e-main">
+    <aside class="soko37e-card soko37e-category-rail">
+      <a class="soko37e-cat" href="/categories.html?category=phones"><span>📱</span> Phones & Tablets</a>
+      <a class="soko37e-cat" href="/categories.html?category=computers"><span>💻</span> Computing</a>
+      <a class="soko37e-cat" href="/categories.html?category=fashion"><span>👟</span> Fashion</a>
+      <a class="soko37e-cat" href="/categories.html?category=home"><span>🏠</span> Home & Office</a>
+      <a class="soko37e-cat" href="/categories.html?category=beauty"><span>💄</span> Health & Beauty</a>
+      <a class="soko37e-cat" href="/categories.html?category=appliances"><span>📺</span> Appliances</a>
+      <a class="soko37e-cat" href="/categories.html?category=groceries"><span>🛒</span> Supermarket</a>
+      <a class="soko37e-cat" href="/categories.html?category=gaming"><span>🎮</span> Gaming</a>
+      <a class="soko37e-cat" href="/categories.html"><span>✨</span> All Categories</a>
+    </aside>
+
+    <section class="soko37e-center">
+      <section class="soko37e-flash-hero">
+        <div class="soko37e-flash-head">
+          <h1>⚡ Flash Sale</h1>
+          <span class="soko37e-timer" id="soko37eTimer">Ends soon</span>
+          <a class="soko37e-btn dark" href="/categories.html">See all deals</a>
+        </div>
+        <div class="soko37e-flash-body">
+          <article class="soko37e-live-product" id="soko37eLiveProduct">
+            <div class="soko37e-live-img" id="soko37eLiveImage"><span>🛍️</span></div>
+            <div class="soko37e-live-details">
+              <span class="soko37e-live-label">Live product</span>
+              <h2 id="soko37eLiveName">Loading product...</h2>
+              <p id="soko37eLiveMeta">One flash-sale product appears here at a time.</p>
+              <div><span class="soko37e-live-price" id="soko37eLivePrice">KES 0</span><span class="soko37e-live-old" id="soko37eLiveOld"></span></div>
+              <div style="display:flex;gap:8px;flex-wrap:wrap">
+                <button class="soko37e-btn orange" id="soko37eLiveCart">Add to cart</button>
+                <a class="soko37e-btn green" id="soko37eLiveWhatsApp" target="_blank" rel="noopener">Ask on WhatsApp</a>
+              </div>
+            </div>
+          </article>
+          <div class="soko37e-mini-flash" id="soko37eFlashGrid">
+            <div class="soko37e-card" style="padding:14px">Loading flash deals...</div>
+          </div>
+        </div>
+      </section>
+
+      <nav class="soko37e-banner-strip">
+        <a href="/checkout.html"><span>🚚</span><div><b>Delivery or pickup</b><small>Choose at checkout</small></div></a>
+        <a href="/track-order.html"><span>📦</span><div><b>Track Order</b><small>Order ID + phone</small></div></a>
+        <a href="https://wa.me/254714565555" target="_blank" rel="noopener"><span>💬</span><div><b>WhatsApp</b><small>Buyers and sellers</small></div></a>
+        <a href="/seller-center.html"><span>📣</span><div><b>Advertise</b><small>Promote products</small></div></a>
+      </nav>
+
+      <section class="soko37e-section soko37e-live-strip">
+        <div class="soko37e-section-head">
+          <h2>Live Shopping</h2>
+          <span>Product demos and seller picks</span>
+          <a href="https://wa.me/254714565555" target="_blank" rel="noopener">Join on WhatsApp</a>
+        </div>
+        <div class="soko37e-live-row">
+          <article class="soko37e-live-main"><b>Live Deals Room</b><span>One promoted product after another, seller demos and daily offers.</span></article>
+          <article class="soko37e-live-tile"><span class="soko37e-live-dot">LIVE</span><b>Electronics deals</b><p>Phones, laptops and accessories.</p></article>
+          <article class="soko37e-live-tile"><span class="soko37e-live-dot">LIVE</span><b>Fashion picks</b><p>Shoes, bags and daily outfit offers.</p></article>
+          <article class="soko37e-live-tile"><span class="soko37e-live-dot">LIVE</span><b>Home essentials</b><p>Kitchen, home and office products.</p></article>
+        </div>
+      </section>
+
+      <section class="soko37e-section">
+        <div class="soko37e-section-head">
+          <h2>Shop by Category</h2>
+          <a href="/categories.html">View all</a>
+        </div>
+        <div class="soko37e-category-grid">
+          <a class="soko37e-category-tile" href="/categories.html?category=phones"><span>📱</span><b>Phones</b></a>
+          <a class="soko37e-category-tile" href="/categories.html?category=computers"><span>💻</span><b>Laptops</b></a>
+          <a class="soko37e-category-tile" href="/categories.html?category=fashion"><span>👟</span><b>Fashion</b></a>
+          <a class="soko37e-category-tile" href="/categories.html?category=home"><span>🏠</span><b>Home</b></a>
+          <a class="soko37e-category-tile" href="/categories.html?category=beauty"><span>💄</span><b>Beauty</b></a>
+          <a class="soko37e-category-tile" href="/categories.html?category=groceries"><span>☕</span><b>Groceries</b></a>
+        </div>
+      </section>
+
+      <section class="soko37e-section soko37e-sponsored">
+        <div class="soko37e-section-head">
+          <h2>Sponsored Products</h2>
+          <span>Promoted seller products</span>
+          <a href="/seller-center.html">Advertise</a>
+        </div>
+        <div class="soko37e-product-grid" id="soko37eSponsoredGrid">
+          <div class="soko37e-card" style="padding:14px">Loading sponsored products...</div>
+        </div>
+      </section>
+
+      <section class="soko37e-section">
+        <div class="soko37e-section-head">
+          <h2>Recommended Products</h2>
+          <a href="/categories.html">More products</a>
+        </div>
+        <div class="soko37e-product-grid" id="soko37eRecommendedGrid">
+          <div class="soko37e-card" style="padding:14px">Loading recommendations...</div>
+        </div>
+      </section>
+    </section>
+
+    <aside class="soko37e-side-ads">
+      <section class="soko37e-card soko37e-side-card soko37e-whatsapp-card">
+        <h3>WhatsApp SokoYetu Mtaani</h3>
+        <p>Contact us for orders, payment receipts, seller onboarding, pickup and delivery support.</p>
+        <a class="soko37e-btn orange" href="https://wa.me/254714565555?text=Hello%20SokoYetu Mtaani%2C%20I%20need%20help" target="_blank" rel="noopener">Open WhatsApp</a>
+      </section>
+      <section class="soko37e-card soko37e-side-card soko37e-ad-card">
+        <span class="soko37e-ad-pill" id="soko37eAdPill">Advert</span>
+        <h3 id="soko37eAdTitle">Promote products here</h3>
+        <p id="soko37eAdText">Your product can appear in the right advert panel.</p>
+        <a class="soko37e-btn orange" id="soko37eAdLink" href="/seller-center.html">Open</a>
+      </section>
+      <section class="soko37e-card soko37e-side-card">
+        <h3>M-PESA Payment</h3>
+        <p>Buy Goods Till: <b style="color:#064e3b">6923522</b></p>
+        <p>Send receipt on WhatsApp after payment.</p>
+      </section>
+      <section class="soko37e-card soko37e-side-card">
+        <h3>Self-pickup</h3>
+        <p>Choose self-pickup at checkout and pay no delivery fee.</p>
+      </section>
+    </aside>
+  </main>
+
+  <a class="soko37e-whatsapp" id="soko37eWhatsApp" href="https://wa.me/254714565555?text=Hello%20SokoYetu Mtaani%2C%20I%20need%20help" target="_blank" rel="noopener">WhatsApp SokoYetu Mtaani</a>
+
+  <nav class="soko37e-mobile-nav">
+    <a href="/">Home</a>
+    <a href="/categories.html">Categories</a>
+    <a href="/checkout.html">Cart</a>
+    <a href="/track-order.html">Track</a>
+  </nav>
+
+  <footer class="soko37e-footer">
+    <div class="soko37e-wrap soko37e-footer-grid">
+      <div><h3>SokoYetu Mtaani</h3><p>Kenyan online marketplace for flash sales, live shopping, seller adverts, delivery and self-pickup.</p></div>
+      <div><h3>Main Pages</h3><p><a href="/categories.html">Categories</a><br><a href="/checkout.html">Checkout</a><br><a href="/track-order.html">Track Order</a></p></div>
+      <div><h3>Support</h3><p><a href="/help-center.html">Help Center</a><br><a href="/contact-support.html">Contact Support</a><br><a href="/returns-policy.html">Returns Policy</a></p></div>
+      <div><h3>Contact</h3><p>SokoYetu Mtaani@gmail.com<br>WhatsApp: 0714565555<br>Nairobi, Kenya</p></div>
+    </div>
+  </footer>
+
+<script>
+const WHATSAPP_NUMBER = "254714565555";
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE", { maximumFractionDigits: 0 }); }
+function esc(value){ return String(value ?? "").replace(/[&<>"']/g, m => ({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[m])); }
+function normalizeProducts(data){
+  const raw = Array.isArray(data) ? data : Array.isArray(data.products) ? data.products : Array.isArray(data.items) ? data.items : [];
+  return raw.map((p, index) => ({
+    id: p.id || p.productId || index + 1,
+    name: p.name || p.title || p.productName || "SokoYetu Mtaani Product",
+    price: Number(p.price || p.amount || p.sellingPrice || 0),
+    oldPrice: Number(p.oldPrice || p.compareAtPrice || p.priceBefore || 0),
+    imageUrl: p.imageUrl || p.image || p.photoUrl || p.thumbnail || "",
+    category: p.category || p.categoryName || "Deal",
+    stock: p.stock ?? p.quantity ?? ""
+  }));
+}
+function fallbackProducts(){
+  return [
+    {id:1,name:"HP Pavilion 15 Laptop",price:45000,oldPrice:52000,category:"Computing",imageUrl:"",stock:6},
+    {id:2,name:"Samsung Galaxy Smartphone",price:18500,oldPrice:22000,category:"Phones",imageUrl:"",stock:12},
+    {id:3,name:"Wireless Bluetooth Earbuds",price:1800,oldPrice:2500,category:"Electronics",imageUrl:"",stock:20},
+    {id:4,name:"Kenyan Coffee Blend 500g",price:1200,oldPrice:1500,category:"Groceries",imageUrl:"",stock:50},
+    {id:5,name:"Fashion Sneakers",price:3200,oldPrice:4000,category:"Fashion",imageUrl:"",stock:15},
+    {id:6,name:"Kitchen Blender",price:4200,oldPrice:5200,category:"Home",imageUrl:"",stock:8},
+    {id:7,name:"Smart Watch",price:3500,oldPrice:4500,category:"Electronics",imageUrl:"",stock:10},
+    {id:8,name:"Home Storage Rack",price:2500,oldPrice:3200,category:"Home",imageUrl:"",stock:7},
+    {id:9,name:"Beauty Care Set",price:1500,oldPrice:2200,category:"Beauty",imageUrl:"",stock:22},
+    {id:10,name:"Gaming Headset",price:2800,oldPrice:3500,category:"Gaming",imageUrl:"",stock:11},
+    {id:11,name:"Office Backpack",price:2100,oldPrice:2800,category:"Fashion",imageUrl:"",stock:13},
+    {id:12,name:"Electric Kettle",price:1900,oldPrice:2400,category:"Appliances",imageUrl:"",stock:9}
+  ];
+}
+function discount(p){
+  return p.oldPrice && p.oldPrice > p.price ? Math.round(((p.oldPrice - p.price) / p.oldPrice) * 100) : 0;
+}
+function imageHtml(p, cls){
+  return p.imageUrl ? "<img src='" + esc(p.imageUrl) + "' alt='" + esc(p.name) + "'>" : "<span>🛍️</span>";
+}
+function miniProductCard(p){
+  return "<a class='soko37e-product-mini' href='/product-detail.html?id=" + esc(p.id) + "'><div class='soko37e-product-mini-img'>" + imageHtml(p) + "</div><div><b>" + esc(p.name) + "</b><strong>" + money(p.price) + "</strong></div></a>";
+}
+function productCard(p){
+  const d = discount(p);
+  const old = d ? "<span class='soko37e-old'>" + money(p.oldPrice) + "</span>" : "";
+  const disc = d ? "<span class='soko37e-disc'>-" + d + "%</span>" : "";
+  return "<article class='soko37e-product'><a href='/product-detail.html?id=" + esc(p.id) + "'><div class='soko37e-img'>" + imageHtml(p) + "</div></a><div class='soko37e-prod-body'>" + disc + "<div class='soko37e-prod-name'>" + esc(p.name) + "</div><div><span class='soko37e-price'>" + money(p.price) + "</span> " + old + "</div><button class='soko37e-cart' onclick='addProductToCart(" + JSON.stringify(p.id) + ")'>Add to cart</button></div></article>";
+}
+async function addProductToCart(id){
+  try{
+    const response = await fetch("/api/cart", {method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({productId:id,quantity:1})});
+    if(!response.ok) throw new Error("Cart request failed");
+    location.href = "/checkout.html";
+  }catch(error){
+    location.href = "/product-detail.html?id=" + encodeURIComponent(id);
+  }
+}
+function renderLiveProduct(products){
+  let index = 0;
+  const liveImage = document.getElementById("soko37eLiveImage");
+  const liveName = document.getElementById("soko37eLiveName");
+  const liveMeta = document.getElementById("soko37eLiveMeta");
+  const livePrice = document.getElementById("soko37eLivePrice");
+  const liveOld = document.getElementById("soko37eLiveOld");
+  const liveCart = document.getElementById("soko37eLiveCart");
+  const liveWhatsApp = document.getElementById("soko37eLiveWhatsApp");
+
+  function show(){
+    const p = products[index % products.length];
+    liveImage.innerHTML = imageHtml(p);
+    liveName.textContent = p.name;
+    liveMeta.textContent = (p.category || "Flash Sale") + " · " + (p.stock ? p.stock + " available" : "Limited stock");
+    livePrice.textContent = money(p.price);
+    liveOld.textContent = p.oldPrice && p.oldPrice > p.price ? money(p.oldPrice) : "";
+    liveCart.onclick = function(){ addProductToCart(p.id); };
+    liveWhatsApp.href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent("Hello SokoYetu Mtaani, I am interested in " + p.name);
+    index += 1;
+  }
+  show();
+  setInterval(show, 3200);
+}
+async function loadProducts(){
+  let products = [];
+  try{
+    const response = await fetch("/api/products", {cache:"no-store", credentials:"include"});
+    const data = await response.json();
+    products = normalizeProducts(data);
+  }catch(error){
+    products = fallbackProducts();
+  }
+  if(!products.length) products = fallbackProducts();
+
+  renderLiveProduct(products);
+  document.getElementById("soko37eFlashGrid").innerHTML = products.slice(0,4).map(miniProductCard).join("");
+  document.getElementById("soko37eSponsoredGrid").innerHTML = products.slice(2,6).map(productCard).join("");
+  document.getElementById("soko37eRecommendedGrid").innerHTML = products.slice(4,12).concat(products).slice(0,8).map(productCard).join("");
+}
+function initTimer(){
+  let seconds = 2 * 60 * 60 + 15 * 60;
+  function tick(){
+    const h = String(Math.floor(seconds / 3600)).padStart(2,"0");
+    const m = String(Math.floor((seconds % 3600) / 60)).padStart(2,"0");
+    const s = String(seconds % 60).padStart(2,"0");
+    document.getElementById("soko37eTimer").textContent = "Ends in " + h + ":" + m + ":" + s;
+    seconds = seconds > 0 ? seconds - 1 : 0;
+  }
+  tick();
+  setInterval(tick, 1000);
+}
+function initAds(){
+  const ads = [
+    {pill:"Advert",title:"Promote products here",text:"Your product can appear in the right advert panel.",link:"/seller-center.html"},
+    {pill:"Pickup",title:"Self-pickup available",text:"Buyers can collect and avoid delivery fee.",link:"/checkout.html"},
+    {pill:"Live",title:"Join Live Shopping",text:"Feature your products in live shopping slots.",link:"https://wa.me/" + WHATSAPP_NUMBER},
+    {pill:"Deals",title:"Flash Sale placement",text:"Push your product into the first homepage section.",link:"/categories.html"}
+  ];
+  let index = 0;
+  function show(){
+    const ad = ads[index % ads.length];
+    document.getElementById("soko37eAdPill").textContent = ad.pill;
+    document.getElementById("soko37eAdTitle").textContent = ad.title;
+    document.getElementById("soko37eAdText").textContent = ad.text;
+    document.getElementById("soko37eAdLink").href = ad.link;
+    index += 1;
+  }
+  show();
+  setInterval(show, 3800);
+}
+document.getElementById("soko37eSearch").addEventListener("submit", event => {
+  event.preventDefault();
+  const q = document.getElementById("soko37eSearchInput").value.trim();
+  location.href = "/categories.html" + (q ? "?q=" + encodeURIComponent(q) : "");
+});
+
+/* SokoYetu Mtaani Stage 37F: themed flash sale and shopping cart logo */
+const SOKO37F_THEMES = [
+  {key:"electronics", match:/phone|tablet|electronic|earbud|watch|gadget|charger|audio|smart/i, bg:"linear-gradient(135deg,#0f172a 0%,#2563eb 52%,#22d3ee 100%)"},
+  {key:"computing", match:/laptop|computer|hp|dell|lenovo|macbook|keyboard|mouse|printer/i, bg:"linear-gradient(135deg,#111827 0%,#7c3aed 52%,#f97316 100%)"},
+  {key:"fashion", match:/fashion|shoe|sneaker|bag|dress|shirt|clothing|wear|backpack/i, bg:"linear-gradient(135deg,#831843 0%,#ec4899 50%,#f97316 100%)"},
+  {key:"home", match:/home|kitchen|blender|kettle|rack|furniture|storage|office|appliance/i, bg:"linear-gradient(135deg,#14532d 0%,#16a34a 48%,#facc15 100%)"},
+  {key:"beauty", match:/beauty|care|skin|hair|makeup|cream|cosmetic/i, bg:"linear-gradient(135deg,#7e22ce 0%,#ec4899 50%,#fda4af 100%)"},
+  {key:"groceries", match:/coffee|grocery|groceries|food|drink|supermarket|tea|honey/i, bg:"linear-gradient(135deg,#713f12 0%,#d97706 52%,#facc15 100%)"},
+  {key:"gaming", match:/game|gaming|headset|console|pad/i, bg:"linear-gradient(135deg,#020617 0%,#7c3aed 52%,#ef4444 100%)"},
+  {key:"default", match:/.*/, bg:"linear-gradient(135deg,#064e3b 0%,#16a34a 50%,#f68b1e 100%)"}
+];
+
+function getSoko37FTheme(product, index){
+  const hay = String((product && (product.category + " " + product.name)) || "");
+  const theme = SOKO37F_THEMES.find(t => t.match.test(hay)) || SOKO37F_THEMES[SOKO37F_THEMES.length - 1];
+  const rotate = [
+    theme.bg,
+    "linear-gradient(135deg,#1e293b 0%,#0ea5e9 52%,#22c55e 100%)",
+    "linear-gradient(135deg,#7c2d12 0%,#ea580c 50%,#facc15 100%)",
+    "linear-gradient(135deg,#312e81 0%,#7c3aed 50%,#f97316 100%)"
+  ];
+  return rotate[index % rotate.length];
+}
+
+function miniProductCard(p, index){
+  const bg = getSoko37FTheme(p, index || 0);
+  return "<a class='soko37e-product-mini soko37f-theme-card' style='background:" + bg + "' href='/product-detail.html?id=" + esc(p.id) + "'><div class='soko37e-product-mini-img'>" + imageHtml(p) + "</div><div><b>" + esc(p.name) + "</b><strong>" + money(p.price) + "</strong><small>Flash Sale</small></div></a>";
+}
+
+function productCard(p, index){
+  const d = discount(p);
+  const old = d ? "<span class='soko37e-old'>" + money(p.oldPrice) + "</span>" : "";
+  const disc = d ? "<span class='soko37e-disc'>-" + d + "%</span>" : "";
+  return "<article class='soko37e-product'><a href='/product-detail.html?id=" + esc(p.id) + "'><div class='soko37e-img'>" + imageHtml(p) + "</div></a><div class='soko37e-prod-body'>" + disc + "<div class='soko37e-prod-name'>" + esc(p.name) + "</div><div><span class='soko37e-price'>" + money(p.price) + "</span> " + old + "</div><button class='soko37e-cart' onclick='addProductToCart(" + JSON.stringify(p.id) + ")'>Add to cart</button></div></article>";
+}
+
+function renderLiveProduct(products){
+  let index = 0;
+  const liveCard = document.getElementById("soko37eLiveProduct");
+  const liveImage = document.getElementById("soko37eLiveImage");
+  const liveName = document.getElementById("soko37eLiveName");
+  const liveMeta = document.getElementById("soko37eLiveMeta");
+  const livePrice = document.getElementById("soko37eLivePrice");
+  const liveOld = document.getElementById("soko37eLiveOld");
+  const liveCart = document.getElementById("soko37eLiveCart");
+  const liveWhatsApp = document.getElementById("soko37eLiveWhatsApp");
+
+  function show(){
+    const p = products[index % products.length];
+    liveCard.classList.add("soko37f-theme-live");
+    liveCard.style.background = getSoko37FTheme(p, index);
+    liveImage.innerHTML = imageHtml(p);
+    liveName.textContent = p.name;
+    liveMeta.textContent = (p.category || "Flash Sale") + " · " + (p.stock ? p.stock + " available" : "Limited stock");
+    livePrice.textContent = money(p.price);
+    liveOld.textContent = p.oldPrice && p.oldPrice > p.price ? money(p.oldPrice) : "";
+    liveCart.onclick = function(){ addProductToCart(p.id); };
+    liveWhatsApp.href = "https://wa.me/" + WHATSAPP_NUMBER + "?text=" + encodeURIComponent("Hello SokoYetu Mtaani, I am interested in " + p.name);
+    index += 1;
+  }
+  show();
+  setInterval(show, 3200);
+}
+
+loadProducts();
+initTimer();
+initAds();
+</script>
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+
+
+

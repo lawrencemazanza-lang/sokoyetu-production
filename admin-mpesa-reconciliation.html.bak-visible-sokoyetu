@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu M-PESA Reconciliation</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1260px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:22px;color:#064e3b;margin-top:4px;word-break:break-word}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    code{background:#f1f5f9;border-radius:8px;padding:2px 6px}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu M-PESA Reconciliation</h1>
+    <p>Read-only review of payment records against orders. Use this before and after the production switch to detect missing receipts, pending payments and amount mismatches.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-readiness.html">M-PESA readiness</a>
+    <a class="linkbtn secondary" href="/admin-mpesa-env-guard.html">M-PESA guard</a>
+    <a class="linkbtn secondary" href="/admin-orders.html">Admin orders</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Access and filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Filter</label>
+          <select id="filter">
+            <option value="">All recent payments/orders</option>
+            <option value="issues">Only issues</option>
+            <option value="pending">Pending payments</option>
+            <option value="paid">Paid/success records</option>
+            <option value="missing-receipt">Missing M-PESA receipt</option>
+            <option value="amount-mismatch">Amount mismatch</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Order ID, phone, receipt, checkout ID">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load reconciliation</button>
+        <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+      </div>
+      <div class="warnBox">This page does not update orders or payments. It only reviews evidence already recorded in the database.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section id="summaryCard" class="card" style="display:none">
+    <div class="head">Summary</div>
+    <div class="body">
+      <div id="summary" class="grid"></div>
+    </div>
+  </section>
+
+  <section id="resultCard" class="card" style="display:none">
+    <div class="head">Reconciliation records</div>
+    <div class="body">
+      <table>
+        <thead>
+          <tr>
+            <th>Payment</th>
+            <th>Order</th>
+            <th>Customer / phone</th>
+            <th>Amount</th>
+            <th>Status</th>
+            <th>Receipt / checkout</th>
+            <th>Flags</th>
+            <th>Created</th>
+          </tr>
+        </thead>
+        <tbody id="records"></tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "bad" ? "pill bad" : "pill warn";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+function buildUrl(){
+  const params = new URLSearchParams();
+  const filter = document.getElementById("filter").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (filter) params.set("filter", filter);
+  if (q) params.set("q", q);
+  return "/api/admin/mpesa-reconciliation" + (params.toString() ? "?" + params.toString() : "");
+}
+async function loadReconciliation(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading M-PESA reconciliation...</div>');
+  try {
+    const response = await fetch(buildUrl(), {
+      headers: {"x-admin-order-token": token()},
+      credentials: "include",
+      cache: "no-store"
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.message || "Could not load reconciliation.");
+    render(data);
+    msg('<div class="ok">M-PESA reconciliation loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load reconciliation.") + '</div>');
+  }
+}
+function render(data){
+  const summary = data.summary || {};
+  const records = data.records || [];
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Records loaded<b>' + esc(summary.totalRecords || 0) + '</b></div>' +
+    '<div class="metric">Issue records<b>' + esc(summary.issueRecords || 0) + '</b></div>' +
+    '<div class="metric">Paid/success<b>' + esc(summary.paidRecords || 0) + '</b></div>' +
+    '<div class="metric">Pending<b>' + esc(summary.pendingRecords || 0) + '</b></div>' +
+    '<div class="metric">Missing receipt<b>' + esc(summary.missingReceipt || 0) + '</b></div>' +
+    '<div class="metric">Amount mismatch<b>' + esc(summary.amountMismatch || 0) + '</b></div>';
+
+  document.getElementById("records").innerHTML = records.length ? records.map(r => {
+    const flags = (r.flags || []).length ? (r.flags || []).map(f => pill(f.severity === "bad" ? "bad" : "warn", f.label)).join("") : pill("ok", "No major issue");
+    return '<tr>' +
+      '<td>#' + esc(r.paymentId || "-") + '</td>' +
+      '<td>#' + esc(r.orderId || "-") + '<br><span class="pill">' + esc(r.orderStatus || "-") + '</span></td>' +
+      '<td>' + esc(r.customerEmail || "-") + '<br>' + esc(r.phone || "-") + '</td>' +
+      '<td>Payment: ' + money(r.paymentAmount) + '<br>Order: ' + money(r.orderAmount) + '</td>' +
+      '<td>' + pill(r.paymentStatusCategory === "paid" ? "ok" : r.paymentStatusCategory === "failed" ? "bad" : "warn", r.paymentStatus || "-") + '<br>' + esc(r.orderPaymentStatus || "-") + '</td>' +
+      '<td>Receipt: <code>' + esc(r.mpesaReceipt || "-") + '</code><br>Checkout: <code>' + esc(r.checkoutRequestId || "-") + '</code></td>' +
+      '<td>' + flags + '</td>' +
+      '<td>' + esc(r.createdAt ? new Date(r.createdAt).toLocaleString() : "-") + '</td>' +
+    '</tr>';
+  }).join("") : '<tr><td colspan="8">No reconciliation records found.</td></tr>';
+
+  document.getElementById("summaryCard").style.display = "block";
+  document.getElementById("resultCard").style.display = "block";
+}
+document.getElementById("loadBtn").onclick = loadReconciliation;
+document.getElementById("refreshBtn").onclick = loadReconciliation;
+</script>
+</body>
+</html>

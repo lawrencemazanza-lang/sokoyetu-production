@@ -1,0 +1,524 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const serverPath = path.join(root, "server.js");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(serverPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: server.js or package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage28c-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(serverPath, "server");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage28c:check"] = "node scripts/check-stage28c-support-queue.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage28c-support-queue.js"), `require("dotenv").config();
+
+console.log("SokoYetu Stage 28C Admin Support Queue Check");
+console.log("-------------------------------------------");
+
+let warnings = 0;
+
+if (!process.env.ADMIN_ORDER_TOKEN) {
+  console.log("WARN: ADMIN_ORDER_TOKEN is not set. The admin support queue reuses this token.");
+  warnings += 1;
+} else {
+  console.log("OK: ADMIN_ORDER_TOKEN =", process.env.ADMIN_ORDER_TOKEN.slice(0, 4) + "...hidden");
+}
+
+console.log("OK: admin-support.html should be available after server restart/deployment.");
+console.log("OK: /api/admin/support-queue should be available after server restart/deployment.");
+console.log("Warnings:", warnings);
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "admin-support.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Admin Support Queue</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+    label{font-weight:900;color:#064e3b}
+    input,select,textarea{width:100%;border:1px solid #bbf7d0;border-radius:14px;padding:11px;font:inherit}
+    textarea{min-height:75px;resize:vertical}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    button.secondary{background:#111827}
+    .linkbtn{background:#064e3b}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .requests{display:grid;gap:14px}
+    .request{border:1px solid #e5e7eb;border-radius:18px;overflow:hidden;background:#fff}
+    .requestTop{display:grid;grid-template-columns:1fr auto;gap:12px;padding:14px;background:#f8fafc;border-bottom:1px solid #e5e7eb}
+    .requestBody{padding:14px;display:grid;gap:12px}
+    .title{font-weight:900}
+    .muted{color:#64748b;font-size:13px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .warn{background:#fef3c7;color:#92400e}
+    .bad{background:#fee2e2;color:#991b1b}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:8px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:800px){.requestTop{grid-template-columns:1fr}table{font-size:12px}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Admin Support Queue</h1>
+    <p>Review customer support, delivery, payment, product, cancellation and refund requests.</p>
+  </div>
+</header>
+
+<main>
+  <a class="linkbtn" href="/">← Back to shop</a>
+
+  <section class="card">
+    <div class="head">Admin access and filters</div>
+    <div class="body">
+      <div class="grid">
+        <div>
+          <label>Admin order token</label>
+          <input id="token" type="password" placeholder="Paste ADMIN_ORDER_TOKEN">
+        </div>
+        <div>
+          <label>Request filter</label>
+          <select id="filter">
+            <option value="">All support requests</option>
+            <option value="REFUND_REQUESTED">Refund requests</option>
+            <option value="CUSTOMER_SUPPORT_REQUESTED">General support requests</option>
+            <option value="SUPPORT_RESOLVED">Resolved notes</option>
+            <option value="SUPPORT_CONTACTED_CUSTOMER">Customer contacted</option>
+          </select>
+        </div>
+        <div>
+          <label>Search</label>
+          <input id="searchBox" placeholder="Order ID, phone, email, note">
+        </div>
+      </div>
+      <div class="actions">
+        <button id="loadBtn" type="button">Load support queue</button>
+        <button id="refreshBtn" class="secondary" type="button">Refresh</button>
+      </div>
+      <div class="note">This page reuses your admin order token. Support requests are recorded as delivery-tracking notes, so no database migration is needed.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Support requests</div>
+    <div class="body">
+      <div id="summary" class="note">No support requests loaded yet.</div>
+      <div id="requests" class="requests"></div>
+    </div>
+  </section>
+</main>
+
+<script>
+let requestList = [];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function money(value){ return "KES " + Number(value || 0).toLocaleString("en-KE"); }
+function msg(html){ document.getElementById("message").innerHTML = html; }
+function token(){ return document.getElementById("token").value.trim(); }
+function pillClass(status){
+  const s = String(status || "").toUpperCase();
+  if (s.includes("FAILED") || s.includes("CANCELLED") || s.includes("REJECT")) return "pill bad";
+  if (s.includes("REFUND") || s.includes("REQUEST") || s.includes("PENDING")) return "pill warn";
+  return "pill";
+}
+async function api(url, options={}){
+  const response = await fetch(url, {
+    credentials: "include",
+    headers: {"Content-Type":"application/json","x-admin-order-token": token(), ...(options.headers || {})},
+    ...options
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.message || "Request failed.");
+  return data;
+}
+function buildUrl(){
+  const params = new URLSearchParams();
+  const filter = document.getElementById("filter").value;
+  const q = document.getElementById("searchBox").value.trim();
+  if (filter) params.set("filter", filter);
+  if (q) params.set("q", q);
+  return "/api/admin/support-queue" + (params.toString() ? "?" + params.toString() : "");
+}
+async function loadQueue(){
+  if (!token()) {
+    msg('<div class="err">Admin order token is required.</div>');
+    return;
+  }
+  msg('<div class="note">Loading support queue...</div>');
+  try {
+    const data = await api(buildUrl());
+    requestList = data.requests || [];
+    renderRequests();
+    msg('<div class="ok">Support queue loaded.</div>');
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not load support queue.") + '</div>');
+  }
+}
+function renderRequests(){
+  const wrap = document.getElementById("requests");
+  const summary = document.getElementById("summary");
+
+  if (!requestList.length) {
+    summary.textContent = "No support requests found.";
+    wrap.innerHTML = "";
+    return;
+  }
+
+  const refunds = requestList.filter(r => String(r.status || "").includes("REFUND")).length;
+  summary.innerHTML = '<b>' + requestList.length + '</b> support entries loaded. <b>' + refunds + '</b> refund-related.';
+
+  wrap.innerHTML = requestList.map(req => {
+    const order = req.order || {};
+    const payment = order.payment || {};
+    const user = order.user || {};
+    const items = (order.items || []).map(item => {
+      const product = item.product || {};
+      return '<tr><td>' + esc(product.name || ("Product #" + item.productId)) + '</td><td>' + esc(item.quantity) + '</td><td>' + money(item.price) + '</td></tr>';
+    }).join("") || '<tr><td colspan="3">No items found.</td></tr>';
+
+    return '<article class="request">' +
+      '<div class="requestTop">' +
+        '<div>' +
+          '<div class="title">Support Entry #' + req.id + ' · Order #' + esc(order.id || "-") + '</div>' +
+          '<div class="muted">' + esc(user.email || "Customer") + ' · Phone: ' + esc(order.phone || payment.phone || "-") + ' · ' + esc(req.createdAt ? new Date(req.createdAt).toLocaleString() : "-") + '</div>' +
+        '</div>' +
+        '<div><span class="' + pillClass(req.status) + '">' + esc(req.status) + '</span><span class="' + pillClass(order.orderStatus) + '">' + esc(order.orderStatus || "-") + '</span></div>' +
+      '</div>' +
+      '<div class="requestBody">' +
+        '<div><b>Customer message / admin note</b><br><span class="muted">' + esc(req.note || "-") + '</span></div>' +
+        '<div class="grid">' +
+          '<div><b>Order total</b><br>' + money(order.totalAmount) + '</div>' +
+          '<div><b>Payment status</b><br>' + esc(order.paymentStatus || payment.status || "-") + '</div>' +
+          '<div><b>M-PESA receipt</b><br>' + esc(payment.mpesaReceipt || "-") + '</div>' +
+          '<div><b>Delivery address</b><br>' + esc(order.deliveryAddress || "-") + '</div>' +
+        '</div>' +
+        '<div><b>Items</b><table><thead><tr><th>Product</th><th>Qty</th><th>Price</th></tr></thead><tbody>' + items + '</tbody></table></div>' +
+        '<div class="grid">' +
+          '<div><label>Admin action</label><select id="action-' + req.id + '">' +
+            '<option value="CONTACT_CUSTOMER">Contact customer</option>' +
+            '<option value="CONTACT_SELLER">Contact seller</option>' +
+            '<option value="MARK_RESOLVED">Mark support resolved</option>' +
+            '<option value="KEEP_REFUND_REVIEW">Keep refund under review</option>' +
+            '<option value="MARK_REFUND_REQUESTED">Mark refund requested</option>' +
+            '<option value="CANCEL_ORDER">Cancel order</option>' +
+          '</select></div>' +
+          '<div><label>Admin response note</label><textarea id="note-' + req.id + '" placeholder="Record what admin did or will do next."></textarea></div>' +
+        '</div>' +
+        '<div class="actions"><button type="button" onclick="saveAction(' + req.id + ')">Save support action</button></div>' +
+      '</div>' +
+    '</article>';
+  }).join("");
+}
+async function saveAction(trackingId){
+  const action = document.getElementById("action-" + trackingId).value;
+  const note = document.getElementById("note-" + trackingId).value.trim();
+
+  if (!note) {
+    msg('<div class="err">Enter an admin response note before saving.</div>');
+    return;
+  }
+
+  try {
+    msg('<div class="note">Saving support action...</div>');
+    await api("/api/admin/support-queue/" + trackingId + "/action", {
+      method: "POST",
+      body: JSON.stringify({ action, note })
+    });
+    msg('<div class="ok">Support action saved.</div>');
+    await loadQueue();
+  } catch (error) {
+    msg('<div class="err">' + esc(error.message || "Could not save support action.") + '</div>');
+  }
+}
+document.getElementById("loadBtn").onclick = loadQueue;
+document.getElementById("refreshBtn").onclick = loadQueue;
+window.saveAction = saveAction;
+</script>
+</body>
+</html>`, "utf8");
+
+let server = fs.readFileSync(serverPath, "utf8");
+
+if (!server.includes("SokoYetu Stage 28C: Admin Support Queue API")) {
+  const endpoint = `
+
+// ================================
+// SokoYetu Stage 28C: Admin Support Queue API
+// Protected by ADMIN_ORDER_TOKEN. Uses existing DeliveryTracking model.
+// ================================
+function requireAdminSupportQueueToken(req, res) {
+  const configuredToken = process.env.ADMIN_ORDER_TOKEN;
+  const providedToken = req.headers["x-admin-order-token"];
+
+  if (!configuredToken) {
+    res.status(500).json({ message: "ADMIN_ORDER_TOKEN is not configured on the server." });
+    return false;
+  }
+
+  if (!providedToken || providedToken !== configuredToken) {
+    res.status(403).json({ message: "Invalid admin order token." });
+    return false;
+  }
+
+  return true;
+}
+
+app.get("/api/admin/support-queue", async (req, res) => {
+  try {
+    if (!requireAdminSupportQueueToken(req, res)) return;
+
+    const filter = String(req.query.filter || "").trim();
+    const q = String(req.query.q || "").trim();
+
+    const supportStatuses = [
+      "CUSTOMER_SUPPORT_REQUESTED",
+      "REFUND_REQUESTED",
+      "SUPPORT_CONTACTED_CUSTOMER",
+      "SUPPORT_CONTACTED_SELLER",
+      "SUPPORT_RESOLVED",
+      "REFUND_UNDER_REVIEW",
+      "ORDER_CANCELLED_BY_SUPPORT",
+    ];
+
+    const where = filter
+      ? { status: filter }
+      : { status: { in: supportStatuses } };
+
+    if (q) {
+      const numericId = Number(q);
+      where.OR = [
+        ...(Number.isFinite(numericId) && numericId > 0 ? [{ orderId: numericId }] : []),
+        { note: { contains: q, mode: "insensitive" } },
+        { order: { phone: { contains: q, mode: "insensitive" } } },
+        { order: { deliveryAddress: { contains: q, mode: "insensitive" } } },
+        { order: { user: { email: { contains: q, mode: "insensitive" } } } },
+      ];
+    }
+
+    const requests = await prisma.deliveryTracking.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+      take: 100,
+      include: {
+        order: {
+          include: {
+            user: { select: { id: true, name: true, email: true, phone: true, role: true } },
+            payment: true,
+            items: {
+              include: {
+                product: { select: { id: true, name: true, category: true, price: true, imageUrl: true } },
+              },
+            },
+          },
+        },
+      },
+    });
+
+    return res.json({
+      message: "Admin support queue loaded.",
+      count: requests.length,
+      requests,
+    });
+  } catch (error) {
+    console.error("Admin support queue load error:", error);
+    return res.status(500).json({
+      message: "Could not load support queue.",
+      details: error.message,
+    });
+  }
+});
+
+app.post("/api/admin/support-queue/:trackingId/action", async (req, res) => {
+  try {
+    if (!requireAdminSupportQueueToken(req, res)) return;
+
+    const trackingId = Number(req.params.trackingId);
+    const action = String(req.body?.action || "").trim();
+    const note = String(req.body?.note || "").trim();
+
+    const allowedActions = new Set([
+      "CONTACT_CUSTOMER",
+      "CONTACT_SELLER",
+      "MARK_RESOLVED",
+      "KEEP_REFUND_REVIEW",
+      "MARK_REFUND_REQUESTED",
+      "CANCEL_ORDER",
+    ]);
+
+    if (!trackingId || trackingId <= 0) {
+      return res.status(400).json({ message: "Valid support tracking ID is required." });
+    }
+
+    if (!allowedActions.has(action)) {
+      return res.status(400).json({ message: "Invalid support action." });
+    }
+
+    if (!note || note.length < 5) {
+      return res.status(400).json({ message: "Admin response note is required." });
+    }
+
+    const current = await prisma.deliveryTracking.findUnique({
+      where: { id: trackingId },
+      include: { order: true },
+    });
+
+    if (!current) {
+      return res.status(404).json({ message: "Support entry was not found." });
+    }
+
+    let trackingStatus = "CUSTOMER_SUPPORT_REQUESTED";
+    let orderStatusUpdate = null;
+
+    if (action === "CONTACT_CUSTOMER") trackingStatus = "SUPPORT_CONTACTED_CUSTOMER";
+    if (action === "CONTACT_SELLER") trackingStatus = "SUPPORT_CONTACTED_SELLER";
+    if (action === "MARK_RESOLVED") trackingStatus = "SUPPORT_RESOLVED";
+    if (action === "KEEP_REFUND_REVIEW") trackingStatus = "REFUND_UNDER_REVIEW";
+    if (action === "MARK_REFUND_REQUESTED") {
+      trackingStatus = "REFUND_REQUESTED";
+      orderStatusUpdate = "REFUND_REQUESTED";
+    }
+    if (action === "CANCEL_ORDER") {
+      trackingStatus = "ORDER_CANCELLED_BY_SUPPORT";
+      orderStatusUpdate = "CANCELLED";
+    }
+
+    if (orderStatusUpdate) {
+      await prisma.order.update({
+        where: { id: current.orderId },
+        data: { orderStatus: orderStatusUpdate },
+      });
+    }
+
+    const created = await prisma.deliveryTracking.create({
+      data: {
+        orderId: current.orderId,
+        status: trackingStatus,
+        note: \`Admin action: \${action} | \${note}\`,
+      },
+    });
+
+    return res.json({
+      message: "Support action saved.",
+      action,
+      tracking: created,
+      orderStatus: orderStatusUpdate || current.order.orderStatus,
+    });
+  } catch (error) {
+    console.error("Admin support action error:", error);
+    return res.status(500).json({
+      message: "Could not save support action.",
+      details: error.message,
+    });
+  }
+});
+`;
+
+  const insertIndex = Math.max(server.lastIndexOf("app.listen"), server.lastIndexOf("server.listen"));
+  if (insertIndex !== -1) {
+    server = server.slice(0, insertIndex) + endpoint + "\n" + server.slice(insertIndex);
+  } else {
+    server += endpoint;
+  }
+
+  fs.writeFileSync(serverPath, server, "utf8");
+  console.log("Added Stage 28C admin support queue endpoints to server.js.");
+} else {
+  console.log("Stage 28C endpoints already exist.");
+}
+
+fs.writeFileSync(path.join(root, "STAGE28C_ADMIN_SUPPORT_QUEUE_GUIDE.md"), `# SokoYetu Stage 28C: Admin Support and Refund Queue
+
+Stage 28C gives admin a protected page for reviewing customer support and refund requests.
+
+## New page
+
+\`\`\`text
+/admin-support.html
+\`\`\`
+
+## New endpoints
+
+\`\`\`text
+GET  /api/admin/support-queue
+POST /api/admin/support-queue/:trackingId/action
+\`\`\`
+
+## Token
+
+This page reuses:
+
+\`\`\`env
+ADMIN_ORDER_TOKEN
+\`\`\`
+
+No new token is required.
+
+## What admin can do
+
+- View customer support requests.
+- View refund requests.
+- Search by order ID, phone, customer email or note text.
+- Contact customer.
+- Contact seller.
+- Mark issue resolved.
+- Keep refund under review.
+- Mark refund requested.
+- Cancel order.
+
+## Database approach
+
+This stage uses the existing \`DeliveryTracking\` model, so no Prisma migration is needed.
+
+## Important
+
+This stage records support actions and can update order status to \`REFUND_REQUESTED\` or \`CANCELLED\` when admin chooses those actions.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 28C admin support queue installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage28c:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-support.html");
+console.log("Use the same ADMIN_ORDER_TOKEN used for admin-orders.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json server.js scripts/check-stage28c-support-queue.js admin-support.html STAGE28C_ADMIN_SUPPORT_QUEUE_GUIDE.md");
+console.log('git commit -m "Add admin support queue"');
+console.log("git push");

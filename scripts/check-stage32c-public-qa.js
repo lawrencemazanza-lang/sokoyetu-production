@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 32C Public Site QA Check");
+console.log("SokoYetu Mtaani Stage 32C Public Site QA Check");
 console.log("--------------------------------------");
 
 let warnings = 0;
@@ -64,3 +64,4 @@ if (fs.existsSync(controlPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 32C public QA audit check passed.");
+

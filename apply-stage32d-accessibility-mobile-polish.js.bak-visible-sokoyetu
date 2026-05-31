@@ -1,0 +1,735 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const packagePath = path.join(root, "package.json");
+const robotsPath = path.join(root, "robots.txt");
+const adminControlPath = path.join(root, "admin-control.html");
+
+if (!fs.existsSync(packagePath)) {
+  console.error("ERROR: package.json was not found. Run this inside your SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  if (!fs.existsSync(filePath)) return;
+  const backupPath = `${filePath}.backup-stage32d-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(packagePath, "package");
+backup(robotsPath, "robots");
+backup(adminControlPath, "admin-control");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage32d:check"] = "node scripts/check-stage32d-accessibility.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+// Shared accessibility and mobile polish stylesheet.
+fs.writeFileSync(path.join(root, "public-a11y.css"), `/* SokoYetu Stage 32D: accessibility and mobile usability polish */
+html{
+  scroll-behavior:smooth;
+}
+body{
+  -webkit-text-size-adjust:100%;
+  text-size-adjust:100%;
+}
+.skip-link{
+  position:absolute;
+  left:-999px;
+  top:10px;
+  z-index:10000;
+  background:#064e3b;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  font-weight:900;
+  text-decoration:none;
+  font-family:Arial,Helvetica,sans-serif;
+}
+.skip-link:focus{
+  left:12px;
+  outline:3px solid #fbbf24;
+}
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible{
+  outline:3px solid #fbbf24 !important;
+  outline-offset:3px !important;
+}
+button,
+a,
+input,
+select,
+textarea{
+  touch-action:manipulation;
+}
+button,
+.linkbtn,
+.sy-public-nav a,
+.sy-public-footer a{
+  min-height:42px;
+}
+input,
+select,
+textarea{
+  min-height:42px;
+}
+img{
+  max-width:100%;
+}
+.sr-only{
+  position:absolute;
+  width:1px;
+  height:1px;
+  padding:0;
+  margin:-1px;
+  overflow:hidden;
+  clip:rect(0,0,0,0);
+  white-space:nowrap;
+  border:0;
+}
+.sy-a11y-live{
+  position:fixed;
+  left:12px;
+  bottom:12px;
+  z-index:10000;
+  background:#064e3b;
+  color:#fff;
+  border-radius:14px;
+  padding:10px 12px;
+  font-family:Arial,Helvetica,sans-serif;
+  font-size:13px;
+  font-weight:800;
+  box-shadow:0 14px 34px rgba(15,23,42,.22);
+  opacity:0;
+  transform:translateY(10px);
+  pointer-events:none;
+  transition:opacity .2s ease, transform .2s ease;
+}
+.sy-a11y-live.show{
+  opacity:1;
+  transform:translateY(0);
+}
+@media(max-width:760px){
+  body{
+    font-size:16px;
+  }
+  main{
+    padding-left:0;
+    padding-right:0;
+  }
+  table{
+    display:block;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .card{
+    border-radius:18px;
+  }
+}
+@media(prefers-reduced-motion:reduce){
+  *,
+  *::before,
+  *::after{
+    animation-duration:.001ms !important;
+    animation-iteration-count:1 !important;
+    scroll-behavior:auto !important;
+    transition-duration:.001ms !important;
+  }
+}
+`, "utf8");
+
+// Shared accessibility helper script.
+fs.writeFileSync(path.join(root, "public-a11y.js"), `(function(){
+  if (window.__SOKOYETU_A11Y__) return;
+  window.__SOKOYETU_A11Y__ = true;
+
+  function ready(fn){
+    if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+    else fn();
+  }
+
+  function ensureSkipLink(){
+    if (document.querySelector(".skip-link")) return;
+
+    var link = document.createElement("a");
+    link.className = "skip-link";
+    link.href = "#main-content";
+    link.textContent = "Skip to main content";
+    document.body.insertBefore(link, document.body.firstChild);
+  }
+
+  function ensureMainTarget(){
+    var main = document.querySelector("main");
+    if (!main) return;
+    if (!main.id) main.id = "main-content";
+    if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+  }
+
+  function improveImages(){
+    var images = Array.prototype.slice.call(document.querySelectorAll("img"));
+    images.forEach(function(img, index){
+      if (!img.hasAttribute("loading")) img.setAttribute("loading", "lazy");
+      if (!img.hasAttribute("decoding")) img.setAttribute("decoding", "async");
+      if (!img.getAttribute("alt")) {
+        var nearby = "";
+        var parent = img.closest("article, .product, .tile, .card, section");
+        if (parent) {
+          var title = parent.querySelector("h1,h2,h3,b,.title");
+          if (title) nearby = title.textContent.trim();
+        }
+        img.setAttribute("alt", nearby || "SokoYetu image " + (index + 1));
+      }
+    });
+  }
+
+  function improveButtonsAndLinks(){
+    var buttons = Array.prototype.slice.call(document.querySelectorAll("button"));
+    buttons.forEach(function(button, index){
+      var text = button.textContent.trim();
+      if (!text && !button.getAttribute("aria-label")) {
+        button.setAttribute("aria-label", "Button " + (index + 1));
+      }
+    });
+
+    var links = Array.prototype.slice.call(document.querySelectorAll("a"));
+    links.forEach(function(link, index){
+      var text = link.textContent.trim();
+      if (!text && !link.getAttribute("aria-label")) {
+        link.setAttribute("aria-label", "Link " + (index + 1));
+      }
+    });
+  }
+
+  function addLiveRegion(){
+    if (document.querySelector(".sy-a11y-live")) return;
+
+    var live = document.createElement("div");
+    live.className = "sy-a11y-live";
+    live.setAttribute("aria-live", "polite");
+    live.setAttribute("role", "status");
+    document.body.appendChild(live);
+
+    document.addEventListener("click", function(event){
+      var action = event.target.closest("button,a");
+      if (!action) return;
+      var text = action.textContent.trim();
+      if (!text || text.length > 60) return;
+      live.textContent = text;
+      live.classList.add("show");
+      clearTimeout(window.__SOKOYETU_A11Y_TIMER__);
+      window.__SOKOYETU_A11Y_TIMER__ = setTimeout(function(){
+        live.classList.remove("show");
+      }, 1200);
+    });
+  }
+
+  function labelUnlabelledInputs(){
+    var fields = Array.prototype.slice.call(document.querySelectorAll("input,select,textarea"));
+    fields.forEach(function(field){
+      if (field.id && document.querySelector('label[for="' + field.id.replace(/"/g, '\\"') + '"]')) return;
+      if (field.closest("label")) return;
+      if (field.getAttribute("aria-label")) return;
+      var placeholder = field.getAttribute("placeholder");
+      if (placeholder) field.setAttribute("aria-label", placeholder);
+    });
+  }
+
+  ready(function(){
+    ensureSkipLink();
+    ensureMainTarget();
+    improveImages();
+    improveButtonsAndLinks();
+    labelUnlabelledInputs();
+    addLiveRegion();
+  });
+})();
+`, "utf8");
+
+// Public pages to update.
+const publicPages = [
+  "index.html",
+  "categories.html",
+  "product-detail.html",
+  "seller-stores.html",
+  "seller-store.html",
+  "help-center.html",
+  "track-order.html",
+  "support-request.html",
+  "contact-support.html",
+  "faq.html",
+  "returns-policy.html",
+  "privacy-policy.html",
+  "terms-of-service.html",
+  "data-protection.html",
+  "seller-policy.html",
+  "checkout.html"
+];
+
+function addA11yAssets(fileName) {
+  const filePath = path.join(root, fileName);
+  if (!fs.existsSync(filePath)) {
+    console.log("Skipped missing page:", fileName);
+    return false;
+  }
+
+  backup(filePath, fileName.replace(/[^a-z0-9]/gi, "-"));
+
+  let html = fs.readFileSync(filePath, "utf8");
+  const before = html;
+
+  if (!html.includes('href="/public-a11y.css"')) {
+    if (html.includes("</head>")) {
+      html = html.replace("</head>", '  <link rel="stylesheet" href="/public-a11y.css">\n</head>');
+    } else {
+      html = '<link rel="stylesheet" href="/public-a11y.css">\n' + html;
+    }
+  }
+
+  if (!html.includes('src="/public-a11y.js"')) {
+    if (html.includes("</body>")) {
+      html = html.replace("</body>", '  <script src="/public-a11y.js" defer></script>\n</body>');
+    } else {
+      html += '\n<script src="/public-a11y.js" defer></script>\n';
+    }
+  }
+
+  if (html !== before) {
+    fs.writeFileSync(filePath, html, "utf8");
+    console.log("Accessibility assets added:", fileName);
+    return true;
+  }
+
+  console.log("Accessibility assets already present:", fileName);
+  return false;
+}
+
+let changedPages = 0;
+for (const page of publicPages) {
+  if (addA11yAssets(page)) changedPages += 1;
+}
+
+// Internal accessibility audit page.
+fs.writeFileSync(path.join(root, "admin-accessibility-audit.html"), `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="robots" content="noindex,nofollow,noarchive">
+  <meta name="googlebot" content="noindex,nofollow,noarchive">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SokoYetu Accessibility Audit</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#111827,#16a34a);color:#fff;padding:24px}
+    header .wrap,main{width:min(1220px,94vw);margin:0 auto}
+    h1{margin:0;font-size:28px}
+    header p{margin:7px 0 0;color:#dcfce7;line-height:1.5}
+    main{display:grid;gap:16px;padding:20px 0 36px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:16px;display:grid;gap:12px}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    button,.linkbtn{border:none;border-radius:14px;background:#16a34a;color:#fff;padding:11px 14px;font-weight:900;cursor:pointer;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .linkbtn{background:#064e3b}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .err{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .ok{background:#ecfdf5;border:1px solid #86efac;color:#047857;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .metric{border:1px solid #e5e7eb;border-radius:18px;padding:14px;background:#f8fafc}
+    .metric b{display:block;font-size:24px;color:#064e3b;margin-top:4px}
+    .pill{display:inline-flex;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;margin:2px;background:#dcfce7;color:#166534}
+    .bad{background:#fee2e2;color:#991b1b}
+    .warn{background:#fef3c7;color:#92400e}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{border-bottom:1px solid #e5e7eb;padding:9px;text-align:left;vertical-align:top}
+    th{background:#f1f5f9}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    @media(max-width:760px){table{display:block;overflow-x:auto;white-space:nowrap}.grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Accessibility Audit</h1>
+    <p>Check public pages for basic accessibility and mobile usability signals such as alt text, labels, headings, focus assets and skip links.</p>
+  </div>
+</header>
+
+<main>
+  <div class="actions">
+    <a class="linkbtn" href="/admin-control.html">← Back to admin control</a>
+    <a class="linkbtn secondary" href="/">Open public shop</a>
+  </div>
+
+  <section class="card">
+    <div class="head">Run audit</div>
+    <div class="body">
+      <button id="runBtn" type="button">Run accessibility audit</button>
+      <div class="note">This audit is a practical pre-launch check, not a formal WCAG certification. It checks page markup and shared accessibility assets.</div>
+      <div id="message"></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Summary</div>
+    <div class="body">
+      <div id="summary" class="grid">
+        <div class="metric">Pages checked<b>0</b></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Results</div>
+    <div class="body">
+      <table>
+        <thead><tr><th>Page</th><th>Status</th><th>Issues</th><th>Notes</th></tr></thead>
+        <tbody id="results">
+          <tr><td colspan="4">No audit has been run yet.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</main>
+
+<script>
+const pages = [
+  "/", "/categories.html", "/product-detail.html?id=1", "/seller-stores.html",
+  "/seller-store.html?sellerId=1", "/help-center.html", "/track-order.html",
+  "/support-request.html", "/contact-support.html", "/faq.html",
+  "/returns-policy.html", "/privacy-policy.html", "/terms-of-service.html",
+  "/data-protection.html", "/seller-policy.html", "/checkout.html"
+];
+
+function esc(value){
+  return String(value ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;").replace(/'/g,"&#39;");
+}
+function setMessage(html){ document.getElementById("message").innerHTML = html; }
+function pill(kind, text){
+  const cls = kind === "ok" ? "pill" : kind === "warn" ? "pill warn" : "pill bad";
+  return '<span class="' + cls + '">' + esc(text) + '</span>';
+}
+async function auditPage(url){
+  try {
+    const response = await fetch(url, { cache:"no-store", credentials:"include" });
+    const html = await response.text();
+    const issues = [];
+    const notes = [];
+
+    if (!response.ok) issues.push("HTTP " + response.status);
+    if (!html.includes('/public-a11y.css')) issues.push("Missing public-a11y.css");
+    if (!html.includes('/public-a11y.js')) issues.push("Missing public-a11y.js");
+
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+
+    if (!doc.querySelector("h1")) issues.push("Missing h1");
+    if (!doc.querySelector("main")) issues.push("Missing main element");
+    if (!doc.querySelector("title") || !doc.querySelector("title").textContent.trim()) issues.push("Missing title");
+
+    const images = Array.from(doc.querySelectorAll("img"));
+    const missingAlt = images.filter(img => !img.getAttribute("alt")).length;
+    if (missingAlt) issues.push(missingAlt + " image(s) missing alt");
+
+    const fields = Array.from(doc.querySelectorAll("input,select,textarea"));
+    const unlabelled = fields.filter(field => {
+      if (field.getAttribute("aria-label")) return false;
+      if (field.closest("label")) return false;
+      if (field.id && doc.querySelector('label[for="' + CSS.escape(field.id) + '"]')) return false;
+      return true;
+    }).length;
+    if (unlabelled) issues.push(unlabelled + " form field(s) may lack labels");
+
+    const emptyButtons = Array.from(doc.querySelectorAll("button")).filter(btn => !btn.textContent.trim() && !btn.getAttribute("aria-label")).length;
+    if (emptyButtons) issues.push(emptyButtons + " empty button(s)");
+
+    const emptyLinks = Array.from(doc.querySelectorAll("a")).filter(a => !a.textContent.trim() && !a.getAttribute("aria-label")).length;
+    if (emptyLinks) issues.push(emptyLinks + " empty link(s)");
+
+    notes.push(images.length + " image(s)");
+    notes.push(fields.length + " form field(s)");
+    notes.push(doc.querySelectorAll("a").length + " link(s)");
+
+    return { url, ok: issues.length === 0, issues, notes };
+  } catch (error) {
+    return { url, ok:false, issues:[error.message || "Fetch failed"], notes:[] };
+  }
+}
+async function runAudit(){
+  setMessage('<div class="note">Running accessibility audit...</div>');
+  document.getElementById("results").innerHTML = '<tr><td colspan="4">Checking...</td></tr>';
+
+  const results = [];
+  for (const page of pages) {
+    const result = await auditPage(page);
+    results.push(result);
+    render(results);
+  }
+
+  const passed = results.filter(r => r.ok).length;
+  const failed = results.length - passed;
+
+  document.getElementById("summary").innerHTML =
+    '<div class="metric">Pages checked<b>' + results.length + '</b></div>' +
+    '<div class="metric">Passed<b>' + passed + '</b></div>' +
+    '<div class="metric">Needs review<b>' + failed + '</b></div>';
+
+  if (failed) {
+    setMessage('<div class="warnBox"><b>Audit completed with items to review.</b><br>Fix rows with issues before wider launch testing.</div>');
+  } else {
+    setMessage('<div class="ok"><b>Audit passed.</b><br>Public pages include the shared accessibility assets and basic markup checks passed.</div>');
+  }
+}
+function render(results){
+  document.getElementById("results").innerHTML = results.map(r => {
+    return '<tr>' +
+      '<td><a href="' + esc(r.url) + '" target="_blank">' + esc(r.url) + '</a></td>' +
+      '<td>' + (r.ok ? pill("ok","OK") : pill("warn","REVIEW")) + '</td>' +
+      '<td>' + (r.issues.length ? esc(r.issues.join(" | ")) : "None") + '</td>' +
+      '<td>' + esc(r.notes.join(" | ")) + '</td>' +
+    '</tr>';
+  }).join("");
+}
+document.getElementById("runBtn").onclick = runAudit;
+</script>
+</body>
+</html>`, "utf8");
+
+// Add admin-control link.
+if (fs.existsSync(adminControlPath)) {
+  let control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-accessibility-audit.html")) {
+    const section = `
+  <section class="card">
+    <div class="head">Accessibility and mobile usability</div>
+    <div class="body grid">
+      <a class="tile" href="/admin-accessibility-audit.html">
+        <b>Accessibility Audit</b>
+        <span>Check public pages for basic accessibility signals, labels, image alt text, headings and mobile usability assets.</span>
+        <em class="pill">No secrets exposed</em>
+      </a>
+    </div>
+  </section>
+`;
+    if (control.includes("</main>")) control = control.replace("</main>", section + "\n</main>");
+    else control += section;
+    fs.writeFileSync(adminControlPath, control, "utf8");
+    console.log("Added accessibility audit link to admin-control.html.");
+  } else {
+    console.log("admin-control.html already links to admin-accessibility-audit.html.");
+  }
+}
+
+// Update robots.txt.
+let robots = fs.existsSync(robotsPath) ? fs.readFileSync(robotsPath, "utf8") : "User-agent: *\nAllow: /\n";
+if (!robots.includes("Disallow: /admin-accessibility-audit.html")) {
+  robots += "\nDisallow: /admin-accessibility-audit.html\n";
+  fs.writeFileSync(robotsPath, robots, "utf8");
+  console.log("Updated robots.txt to disallow admin-accessibility-audit.html.");
+}
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage32d-accessibility.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 32D Accessibility and Mobile Polish Check");
+console.log("--------------------------------------------------------");
+
+let warnings = 0;
+
+const requiredFiles = [
+  "public-a11y.css",
+  "public-a11y.js",
+  "admin-accessibility-audit.html"
+];
+
+for (const file of requiredFiles) {
+  if (!fs.existsSync(path.join(root, file))) {
+    console.log("WARN:", file, "is missing.");
+    warnings += 1;
+  } else {
+    console.log("OK:", file, "exists.");
+  }
+}
+
+const publicPages = ${JSON.stringify(publicPages, null, 2)};
+
+for (const page of publicPages) {
+  const filePath = path.join(root, page);
+  if (!fs.existsSync(filePath)) {
+    console.log("WARN:", page, "is missing.");
+    warnings += 1;
+    continue;
+  }
+
+  const html = fs.readFileSync(filePath, "utf8");
+
+  if (!html.includes("/public-a11y.css")) {
+    console.log("WARN:", page, "does not link public-a11y.css.");
+    warnings += 1;
+  } else {
+    console.log("OK:", page, "links public-a11y.css.");
+  }
+
+  if (!html.includes("/public-a11y.js")) {
+    console.log("WARN:", page, "does not load public-a11y.js.");
+    warnings += 1;
+  } else {
+    console.log("OK:", page, "loads public-a11y.js.");
+  }
+}
+
+const robotsPath = path.join(root, "robots.txt");
+if (fs.existsSync(robotsPath)) {
+  const robots = fs.readFileSync(robotsPath, "utf8");
+  if (!robots.includes("Disallow: /admin-accessibility-audit.html")) {
+    console.log("WARN: robots.txt does not disallow admin-accessibility-audit.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: robots.txt disallows admin-accessibility-audit.html.");
+  }
+}
+
+const adminControlPath = path.join(root, "admin-control.html");
+if (fs.existsSync(adminControlPath)) {
+  const control = fs.readFileSync(adminControlPath, "utf8");
+  if (!control.includes("/admin-accessibility-audit.html")) {
+    console.log("WARN: admin-control.html does not link admin-accessibility-audit.html.");
+    warnings += 1;
+  } else {
+    console.log("OK: admin-control.html links admin-accessibility-audit.html.");
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 32D accessibility/mobile polish check passed.");
+`, "utf8");
+
+fs.writeFileSync(path.join(root, "STAGE32D_ACCESSIBILITY_MOBILE_POLISH_GUIDE.md"), `# SokoYetu Stage 32D: Accessibility and Mobile Usability Polish
+
+Stage 32D adds shared accessibility and mobile usability improvements.
+
+## New files
+
+\`\`\`text
+public-a11y.css
+public-a11y.js
+admin-accessibility-audit.html
+scripts/check-stage32d-accessibility.js
+STAGE32D_ACCESSIBILITY_MOBILE_POLISH_GUIDE.md
+\`\`\`
+
+## What the public accessibility layer adds
+
+\`\`\`text
+Skip-to-main-content link
+Visible keyboard focus styles
+Reduced-motion support
+Lazy image loading helper
+Image alt fallback helper
+Form aria-label fallback helper
+Basic touch target improvements
+Small live-region feedback for button/link actions
+Mobile table overflow handling
+\`\`\`
+
+## Updated public pages
+
+\`\`\`text
+index.html
+categories.html
+product-detail.html
+seller-stores.html
+seller-store.html
+help-center.html
+track-order.html
+support-request.html
+contact-support.html
+faq.html
+returns-policy.html
+privacy-policy.html
+terms-of-service.html
+data-protection.html
+seller-policy.html
+checkout.html
+\`\`\`
+
+## Internal audit page
+
+\`\`\`text
+/admin-accessibility-audit.html
+\`\`\`
+
+The audit checks basic signals such as:
+
+\`\`\`text
+shared accessibility assets
+h1 presence
+main element presence
+title presence
+image alt attributes
+form labels
+empty buttons
+empty links
+\`\`\`
+
+## What this stage does not touch
+
+\`\`\`text
+checkout logic
+M-PESA STK Push
+DNS
+email forwarding
+database schema
+admin tokens
+product editor logic
+seller verification logic
+support queue logic
+LiveKit
+payment logic
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage32d:check
+npm run dev
+\`\`\`
+
+Open:
+
+\`\`\`text
+http://localhost:5173/
+http://localhost:5173/admin-accessibility-audit.html
+\`\`\`
+
+Then click **Run accessibility audit**.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 32D accessibility and mobile usability polish installed.");
+console.log("Public pages updated:", changedPages);
+console.log("");
+console.log("Next:");
+console.log("npm run stage32d:check");
+console.log("npm run dev");
+console.log("Open http://localhost:5173/admin-accessibility-audit.html");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json robots.txt admin-control.html public-a11y.css public-a11y.js admin-accessibility-audit.html scripts/check-stage32d-accessibility.js index.html categories.html product-detail.html seller-stores.html seller-store.html help-center.html track-order.html support-request.html contact-support.html faq.html returns-policy.html privacy-policy.html terms-of-service.html data-protection.html seller-policy.html checkout.html STAGE32D_ACCESSIBILITY_MOBILE_POLISH_GUIDE.md");
+console.log('git commit -m "Add accessibility and mobile usability polish"');
+console.log("git push");

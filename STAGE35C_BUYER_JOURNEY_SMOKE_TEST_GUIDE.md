@@ -1,4 +1,4 @@
-# SokoYetu Stage 35C: Controlled Buyer Journey Smoke Test
+﻿# SokoYetu Mtaani Stage 35C: Controlled Buyer Journey Smoke Test
 
 Stage 35C checks the real buyer journey before production launch.
 
@@ -53,3 +53,4 @@ Open:
 ```text
 http://localhost:5173/admin-buyer-smoke-test.html
 ```
+

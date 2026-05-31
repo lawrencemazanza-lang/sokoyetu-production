@@ -1,0 +1,163 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Mtaani Stage 32A SEO start -->
+  <title>SokoYetu Mtaani Trust Center and Buyer Safety</title>
+  <meta name="description" content="Learn how SokoYetu Mtaani supports safer shopping through M-PESA payment guidance, order tracking, customer support, returns guidance and seller standards.">
+  <link rel="canonical" href="https://www.mySokoYetu Mtaani.co.ke/trust-center.html">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="SokoYetu Mtaani Trust Center and Buyer Safety">
+  <meta property="og:description" content="Learn how SokoYetu Mtaani supports safer shopping through M-PESA payment guidance, order tracking, customer support, returns guidance and seller standards.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mySokoYetu Mtaani.co.ke/trust-center.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SokoYetu Mtaani Trust Center and Buyer Safety">
+  <meta name="twitter:description" content="Learn how SokoYetu Mtaani supports safer shopping through M-PESA payment guidance, order tracking, customer support, returns guidance and seller standards.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Mtaani Stage 32A SEO end -->
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- SokoYetu Mtaani Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Mtaani Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-nav.css">
+  <link rel="stylesheet" href="/public-a11y.css">
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,Helvetica,sans-serif;background:#f8fafc;color:#111827}
+    header{background:linear-gradient(135deg,#064e3b,#16a34a);color:#fff;padding:36px 24px}
+    header .wrap,main{width:min(1180px,94vw);margin:0 auto}
+    h1{margin:0;font-size:34px}
+    header p{margin:10px 0 0;color:#dcfce7;line-height:1.6;max-width:860px}
+    main{display:grid;gap:16px;padding:22px 0 42px}
+    .card{background:#fff;border:1px solid #e5e7eb;border-radius:22px;box-shadow:0 18px 42px rgba(15,23,42,.08);overflow:hidden}
+    .head{background:#ecfdf5;color:#064e3b;padding:15px 18px;font-weight:900;border-bottom:1px solid #bbf7d0}
+    .body{padding:18px;display:grid;gap:14px;line-height:1.62}
+    .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .tile{border:1px solid #bbf7d0;background:#f0fdf4;border-radius:18px;padding:14px;display:grid;gap:7px;color:#111827;text-decoration:none}
+    .tile b{color:#064e3b;font-size:18px}
+    .tile span{color:#475569}
+    .tile:hover{outline:3px solid #86efac}
+    .linkbtn{border:none;border-radius:14px;background:#064e3b;color:#fff;padding:11px 14px;font-weight:900;text-decoration:none;display:inline-flex;align-items:center;justify-content:center;width:fit-content}
+    .secondary{background:#111827}
+    .note{background:#f0fdf4;border:1px solid #bbf7d0;color:#166534;border-radius:16px;padding:12px;line-height:1.5}
+    .warnBox{background:#fffbeb;border:1px solid #fde68a;color:#92400e;border-radius:16px;padding:12px;line-height:1.5}
+    .badBox{background:#fef2f2;border:1px solid #fecaca;color:#991b1b;border-radius:16px;padding:12px;line-height:1.5}
+    .steps{display:grid;gap:10px;counter-reset:step}
+    .step{border:1px solid #e5e7eb;border-radius:16px;background:#f8fafc;padding:12px;display:grid;gap:5px}
+    .step b{color:#064e3b}
+    .pill{display:inline-flex;width:fit-content;border-radius:999px;padding:5px 9px;font-weight:900;font-size:12px;background:#dcfce7;color:#166534}
+    .actions{display:flex;gap:10px;flex-wrap:wrap}
+    details{border:1px solid #e5e7eb;border-radius:16px;background:#f8fafc;padding:12px}
+    summary{font-weight:900;color:#064e3b;cursor:pointer}
+    footer{padding:20px;text-align:center;color:#64748b}
+    @media(max-width:760px){.grid{grid-template-columns:1fr}h1{font-size:28px}}
+  </style>
+  <link rel="stylesheet" href="/sokoyetu-clean-brand.css">
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <h1>SokoYetu Mtaani Trust Center</h1>
+    <p>Buyer safety, payment guidance, order tracking, support links and seller standards for safer marketplace shopping.</p>
+  </div>
+</header>
+
+<main id="main-content">
+  <section class="card">
+    <div class="head">Shop with care</div>
+    <div class="body">
+      <div class="note">
+        SokoYetu Mtaani is built to help buyers browse products, use checkout, track orders and contact support through visible customer-service pages. Always use the website checkout and keep your order ID and M-PESA confirmation message for follow-up.
+      </div>
+      <div class="grid">
+        <a class="tile" href="/categories.html"><b>Browse categories</b><span>Compare product listings before ordering.</span><em class="pill">browse</em></a>
+        <a class="tile" href="/seller-stores.html"><b>View seller stores</b><span>Check products listed by the same seller.</span><em class="pill">seller</em></a>
+        <a class="tile" href="/track-order.html"><b>Track your order</b><span>Use your order ID and checkout phone number.</span><em class="pill">tracking</em></a>
+        <a class="tile" href="/support-request.html"><b>Submit support request</b><span>Report payment, delivery, product or refund concerns.</span><em class="pill">support</em></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">M-PESA payment safety</div>
+    <div class="body">
+      <div class="steps">
+        <div class="step"><b>1. Use checkout only</b><span>Start payment from the SokoYetu Mtaani checkout page rather than from random messages or private requests.</span></div>
+        <div class="step"><b>2. Confirm payment amount</b><span>Before entering your M-PESA PIN, check that the prompt amount matches the order total.</span></div>
+        <div class="step"><b>3. Keep the M-PESA receipt</b><span>If payment completes, keep the confirmation message and receipt number until delivery is complete.</span></div>
+        <div class="step"><b>4. Do not pay twice</b><span>If you receive an M-PESA receipt but the order still appears pending, contact support instead of paying again.</span></div>
+      </div>
+      <div class="warnBox">
+        Do not share your M-PESA PIN, one-time passwords, account passwords or personal security codes with any seller, rider or support contact.
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Order and delivery support</div>
+    <div class="body">
+      <div class="grid">
+        <div class="tile"><b>Before delivery</b><span>Confirm the product name, order amount, delivery location and phone number are correct.</span></div>
+        <div class="tile"><b>During delivery</b><span>Check the package and product condition before accepting where practical.</span></div>
+        <div class="tile"><b>After delivery</b><span>Keep records if there is a defect, wrong item, missing item or delivery issue.</span></div>
+        <div class="tile"><b>Need help?</b><span>Use the Help Center, Track Order page or Support Request page for follow-up.</span></div>
+      </div>
+      <div class="actions">
+        <a class="linkbtn" href="/help-center.html">Open Help Center</a>
+        <a class="linkbtn secondary" href="/returns-policy.html">Returns and refunds</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Seller standards</div>
+    <div class="body">
+      <p>Sellers are expected to provide accurate product names, realistic descriptions, clear prices, genuine product images where possible, accurate stock information and reasonable fulfilment support. Listings that appear fake, counterfeit, misleading, unsafe or unsupported may be reviewed or removed.</p>
+      <div class="actions">
+        <a class="linkbtn" href="/seller-policy.html">Read seller policy</a>
+        <a class="linkbtn secondary" href="/contact-support.html">Report a concern</a>
+      </div>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="head">Fraud-prevention reminders</div>
+    <div class="body">
+      <div class="badBox">
+        Be cautious if anyone asks you to pay outside the website, send money to a personal number, share your M-PESA PIN, share one-time passwords, or pay again after you already have a valid M-PESA receipt.
+      </div>
+      <details>
+        <summary>What should I do if I paid but the order is still pending?</summary>
+        <p>Do not pay again immediately. Keep your M-PESA receipt, order ID, checkout phone number and amount paid, then submit a support request for review.</p>
+      </details>
+      <details>
+        <summary>What should I do if a seller contacts me privately?</summary>
+        <p>Keep communication and payment within the normal SokoYetu Mtaani support and checkout flow where possible. Report suspicious requests through the support page.</p>
+      </details>
+      <details>
+        <summary>What information should I include in a support request?</summary>
+        <p>Include your order ID, checkout phone number, M-PESA receipt if available, product name, issue type and a short description of what happened.</p>
+      </details>
+    </div>
+  </section>
+</main>
+
+<footer>SokoYetu Mtaani · Trust Center · SokoYetu Mtaani@gmail.com</footer>
+<script src="/public-nav.js" defer></script>
+<script src="/public-a11y.js" defer></script>
+  <script src="/sokoyetu-clean-seo.js" defer></script>
+</body>
+</html>
+
+
+
+

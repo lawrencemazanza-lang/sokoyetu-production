@@ -1,0 +1,254 @@
+﻿<!doctype html>
+<html lang="en">
+<head>
+  <!-- SokoYetu Mtaani Stage 32A SEO start -->
+  <title>SokoYetu Mtaani Frequently Asked Questions</title>
+  <meta name="description" content="Read common questions and answers about shopping, checkout, delivery, order tracking and support on SokoYetu Mtaani.">
+  <link rel="canonical" href="https://www.mySokoYetu Mtaani.co.ke/faq.html">
+  <meta property="og:site_name" content="SokoYetu Mtaani">
+  <meta property="og:title" content="SokoYetu Mtaani Frequently Asked Questions">
+  <meta property="og:description" content="Read common questions and answers about shopping, checkout, delivery, order tracking and support on SokoYetu Mtaani.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://www.mySokoYetu Mtaani.co.ke/faq.html">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="SokoYetu Mtaani Frequently Asked Questions">
+  <meta name="twitter:description" content="Read common questions and answers about shopping, checkout, delivery, order tracking and support on SokoYetu Mtaani.">
+  <meta name="theme-color" content="#16a34a">
+  <!-- SokoYetu Mtaani Stage 32A SEO end -->
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <style>
+    :root {
+      --orange: #f97316;
+      --green: #16a34a;
+      --dark: #111827;
+      --muted: #64748b;
+      --soft: #fff7ed;
+      --border: #fed7aa;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #fffaf4;
+      color: var(--dark);
+      line-height: 1.65;
+    }
+
+    header {
+      background: linear-gradient(135deg, #111827, #f97316);
+      color: white;
+      padding: 34px 18px;
+    }
+
+    .wrap {
+      max-width: 980px;
+      margin: 0 auto;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+      color: white;
+      font-weight: 900;
+      margin-bottom: 22px;
+    }
+
+    .mark {
+      width: 42px;
+      height: 42px;
+      border-radius: 16px;
+      background: white;
+      color: var(--orange);
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      letter-spacing: -0.08em;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(32px, 5vw, 52px);
+      letter-spacing: -0.04em;
+      line-height: 1.03;
+    }
+
+    .subtitle {
+      margin: 14px 0 0;
+      color: rgba(255,255,255,0.86);
+      max-width: 760px;
+      font-size: 17px;
+    }
+
+    main {
+      padding: 26px 18px 40px;
+    }
+
+    article {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 26px;
+      box-shadow: 0 18px 50px rgba(17, 24, 39, 0.08);
+    }
+
+    h2 {
+      margin-top: 28px;
+      margin-bottom: 8px;
+      font-size: 24px;
+      letter-spacing: -0.02em;
+    }
+
+    h2:first-child {
+      margin-top: 0;
+    }
+
+    p, li {
+      color: #334155;
+    }
+
+    .notice {
+      background: var(--soft);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 14px 16px;
+      color: #7c2d12;
+      font-weight: 700;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+    }
+
+    .card {
+      background: #f8fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 18px;
+      padding: 15px;
+    }
+
+    footer {
+      border-top: 1px solid var(--border);
+      background: white;
+      padding: 24px 18px;
+    }
+
+    footer a {
+      color: var(--orange);
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px;
+      margin-top: 12px;
+    }
+
+    @media (max-width: 760px) {
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      article {
+        padding: 18px;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="/public-nav.css">
+
+  
+
+  <!-- SokoYetu Mtaani Stage 32B Brand start -->
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/site.webmanifest">
+  <meta name="application-name" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-title" content="SokoYetu Mtaani">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="msapplication-TileColor" content="#16a34a">
+  <meta property="og:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <meta name="twitter:image" content="https://www.mySokoYetu Mtaani.co.ke/sokoyetu-share.svg">
+  <!-- SokoYetu Mtaani Stage 32B Brand end -->
+  <link rel="stylesheet" href="/public-a11y.css">
+  <link rel="stylesheet" href="/sokoyetu-final-brand.css">
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <a class="brand" href="/">
+        <span class="mark">SY</span>
+        <span>Soko<span style="color:#fed7aa;">Yetu</span></span>
+      </a>
+      <h1>Frequently Asked Questions</h1>
+      <p class="subtitle">Common questions about shopping, selling, live shopping, M-PESA and order tracking.</p>
+    </div>
+  </header>
+
+  <main>
+    <div class="wrap">
+      <article>
+        <p class="notice">Last updated: 2026-05-18.</p>
+        
+    <h2>How do I place an order?</h2>
+    <p>Search for a product, add it to cart, enter your delivery address and phone number, then complete checkout using M-PESA.</p>
+
+    <h2>When is delivery free?</h2>
+    <p>Free delivery applies to eligible orders above KES 10,000 unless a special seller or location condition applies.</p>
+
+    <h2>How do I track my order?</h2>
+    <p>Sign in as a buyer and click the Track Orders button. The timeline shows order creation, payment, seller preparation, dispatch and delivery updates.</p>
+
+    <h2>Can sellers upload products?</h2>
+    <p>Yes. Signed-in sellers can use Seller Studio to add products, upload images, manage stock and view orders containing their products.</p>
+
+    <h2>Can admins import products from wholesalers?</h2>
+    <p>Yes. Admins can use the Admin Centre to add wholesalers, add wholesaler products and import products to the SokoYetu Mtaani product wall with a profit percentage.</p>
+
+    <h2>Does M-PESA work?</h2>
+    <p>The current development setup supports demo M-PESA flow. Real STK Push requires Safaricom Daraja credentials and a public callback URL.</p>
+
+    <h2>Can sellers go live?</h2>
+    <p>The website includes live-shopping interface features. Full real-time video requires a live streaming provider such as LiveKit, Agora or Twilio Live.</p>
+    
+      </article>
+    </div>
+  </main>
+
+  <footer>
+    <div class="wrap">
+      <strong>SokoYetu Mtaani</strong>
+      <p>Kenya's smart marketplace for trusted products, live shopping, M-PESA checkout, verified sellers and modern digital selling tools.</p>
+      <p>Contact: <a href="mailto:SokoYetu Mtaani@gmail.com">SokoYetu Mtaani@gmail.com</a> · Nairobi, Kenya</p>
+      <div class="links">
+        <a href="/">Home</a>
+        <a href="/privacy-policy.html">Privacy Policy</a>
+        <a href="/terms-of-service.html">Terms</a>
+        <a href="/returns-policy.html">Returns</a>
+        <a href="/seller-policy.html">Seller Policy</a>
+        <a href="/data-protection.html">Data Protection</a>
+        <a href="/contact-support.html">Contact</a>
+        <a href="/faq.html">FAQ</a>
+      </div>
+    </div>
+  </footer>
+  <script src="/public-nav.js" defer></script>
+  <script src="/public-a11y.js" defer></script>
+  <script src="/sokoyetu-final-seo.js" defer></script>
+</body>
+</html>
+
+
+
+
+

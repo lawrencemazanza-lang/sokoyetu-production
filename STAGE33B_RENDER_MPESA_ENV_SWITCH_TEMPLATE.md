@@ -1,4 +1,4 @@
-# Stage 33B: Render M-PESA Production Switch Template
+﻿# Stage 33B: Render M-PESA Production Switch Template
 
 Use this only after Safaricom production credentials are issued and verified.
 
@@ -25,7 +25,7 @@ MPESA_CONSUMER_SECRET=PASTE_PRODUCTION_CONSUMER_SECRET
 MPESA_SHORTCODE=PASTE_LIVE_SHORTCODE
 MPESA_PASSKEY=PASTE_LIVE_PASSKEY
 
-MPESA_CALLBACK_URL=https://www.mysokoyetu.co.ke/api/mpesa/callback
+MPESA_CALLBACK_URL=https://www.mySokoYetu Mtaani.co.ke/api/mpesa/callback
 
 MPESA_PRODUCTION_CONFIRMED=true
 ```
@@ -33,3 +33,4 @@ MPESA_PRODUCTION_CONFIRMED=true
 ## Important
 
 Never commit real M-PESA production credentials to GitHub. Add them only in Render environment variables.
+

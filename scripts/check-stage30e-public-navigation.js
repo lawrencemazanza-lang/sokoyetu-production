@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 30E Public Navigation Integration Check");
+console.log("SokoYetu Mtaani Stage 30E Public Navigation Integration Check");
 console.log("-----------------------------------------------------");
 
 let warnings = 0;
@@ -61,3 +61,4 @@ if (!fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 30E public navigation integration check passed.");
+

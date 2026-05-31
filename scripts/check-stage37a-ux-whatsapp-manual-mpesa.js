@@ -1,0 +1,35 @@
+﻿const fs = require("fs");
+const path = require("path");
+const root = process.cwd();
+let warnings = 0;
+console.log("SokoYetu Mtaani Stage 37A UX WhatsApp Manual M-PESA Check");
+console.log("--------------------------------------------------");
+function checkFile(file, items) {
+  const p = path.join(root, file);
+  if (!fs.existsSync(p)) {
+    console.log("WARN:", file, "missing");
+    warnings++;
+    return;
+  }
+  const s = fs.readFileSync(p, "utf8");
+  for (const item of items) {
+    if (!s.includes(item)) {
+      console.log("WARN:", file, "missing:", item);
+      warnings++;
+    } else {
+      console.log("OK:", file, "includes", item);
+    }
+  }
+}
+checkFile("app.js", ["SokoYetu Mtaani Stage 37A", "sokoyetu-offer-rail", "wa.me", "254714565555"]);
+checkFile("checkout.html", ["Manual M-PESA", "Buy Goods and Services", "6923522", "Self-pickup", "Home delivery", "/api/payments/mpesa/stk-push"]);
+const bad = ["SokoYetu Mtaani Stage 36B: checkout page STK note", "M-PESA STK Push failed."];
+const c = fs.existsSync(path.join(root, "checkout.html")) ? fs.readFileSync(path.join(root, "checkout.html"), "utf8") : "";
+for (const item of bad) {
+  if (c.includes(item)) { console.log("WARN: checkout.html still contains public technical text:", item); warnings++; }
+}
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 37A check passed.");
+
+

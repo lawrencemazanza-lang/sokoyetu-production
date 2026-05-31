@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 36B Checkout Routing and STK Repair Check");
+console.log("SokoYetu Mtaani Stage 36B Checkout Routing and STK Repair Check");
 console.log("-------------------------------------------------------");
 
 let warnings = 0;
@@ -17,8 +17,8 @@ if (!fs.existsSync(appPath)) {
 } else {
   const app = fs.readFileSync(appPath, "utf8");
   const required = [
-    "SokoYetu Stage 36B: Checkout routing repair",
-    "goToSokoYetuCheckout",
+    "SokoYetu Mtaani Stage 36B: Checkout routing repair",
+    "goToSokoYetu MtaaniCheckout",
     "/checkout.html"
   ];
   for (const item of required) {
@@ -63,3 +63,4 @@ if (!fs.existsSync(checkoutPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 36B checkout routing and STK repair check passed.");
+

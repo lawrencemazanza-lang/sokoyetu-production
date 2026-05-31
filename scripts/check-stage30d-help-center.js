@@ -1,9 +1,9 @@
-const fs = require("fs");
+﻿const fs = require("fs");
 const path = require("path");
 
 const root = process.cwd();
 
-console.log("SokoYetu Stage 30D Public Help Center Check");
+console.log("SokoYetu Mtaani Stage 30D Public Help Center Check");
 console.log("------------------------------------------");
 
 let warnings = 0;
@@ -51,3 +51,4 @@ if (fs.existsSync(sitemapPath)) {
 console.log("");
 console.log("Warnings:", warnings);
 if (warnings === 0) console.log("Stage 30D help center check passed.");
+

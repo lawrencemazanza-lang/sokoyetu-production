@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 31A Product Catalogue Quality Audit Check");
+console.log("SokoYetu Mtaani Stage 31A Product Catalogue Quality Audit Check");
 console.log("-------------------------------------------------------");
 
 let warnings = 0;
@@ -22,3 +22,4 @@ if (!process.env.DATABASE_URL) {
 console.log("OK: admin-catalog-audit.html should be available after server restart/deployment.");
 console.log("OK: /api/admin/catalog-audit should be available after server restart/deployment.");
 console.log("Warnings:", warnings);
+

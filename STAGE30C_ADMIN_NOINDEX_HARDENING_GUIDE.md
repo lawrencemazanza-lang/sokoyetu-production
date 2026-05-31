@@ -1,4 +1,4 @@
-# SokoYetu Stage 30C: Admin Page Privacy and Search-Index Hardening
+﻿# SokoYetu Mtaani Stage 30C: Admin Page Privacy and Search-Index Hardening
 
 Stage 30C reduces the chance that internal admin and operations pages are indexed by search engines.
 
@@ -57,3 +57,4 @@ Then open:
 http://localhost:5173/robots.txt
 http://localhost:5173/admin-control.html
 ```
+

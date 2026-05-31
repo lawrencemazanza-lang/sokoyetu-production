@@ -1,0 +1,250 @@
+const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+const appPath = path.join(root, "app.js");
+const checkoutPath = path.join(root, "checkout.html");
+const packagePath = path.join(root, "package.json");
+
+if (!fs.existsSync(appPath) || !fs.existsSync(checkoutPath) || !fs.existsSync(packagePath)) {
+  console.error("ERROR: app.js, checkout.html, or package.json was not found. Run this inside the SokoYetu project folder.");
+  process.exit(1);
+}
+
+function backup(filePath, label) {
+  const backupPath = `${filePath}.backup-stage36b-${label}-${Date.now()}`;
+  fs.copyFileSync(filePath, backupPath);
+  console.log("Backup created:", path.basename(backupPath));
+}
+
+backup(appPath, "app");
+backup(checkoutPath, "checkout");
+backup(packagePath, "package");
+
+const pkg = JSON.parse(fs.readFileSync(packagePath, "utf8"));
+pkg.scripts = pkg.scripts || {};
+pkg.scripts["stage36b:check"] = "node scripts/check-stage36b-checkout-routing.js";
+fs.writeFileSync(packagePath, JSON.stringify(pkg, null, 2), "utf8");
+
+const scriptsDir = path.join(root, "scripts");
+if (!fs.existsSync(scriptsDir)) fs.mkdirSync(scriptsDir);
+
+fs.writeFileSync(path.join(scriptsDir, "check-stage36b-checkout-routing.js"), `const fs = require("fs");
+const path = require("path");
+
+const root = process.cwd();
+
+console.log("SokoYetu Stage 36B Checkout Routing and STK Repair Check");
+console.log("-------------------------------------------------------");
+
+let warnings = 0;
+
+const appPath = path.join(root, "app.js");
+const checkoutPath = path.join(root, "checkout.html");
+
+if (!fs.existsSync(appPath)) {
+  console.log("WARN: app.js is missing.");
+  warnings++;
+} else {
+  const app = fs.readFileSync(appPath, "utf8");
+  const required = [
+    "SokoYetu Stage 36B: Checkout routing repair",
+    "goToSokoYetuCheckout",
+    "/checkout.html"
+  ];
+  for (const item of required) {
+    if (!app.includes(item)) {
+      console.log("WARN: app.js missing:", item);
+      warnings++;
+    } else {
+      console.log("OK: app.js includes", item);
+    }
+  }
+
+  if (app.includes("onclick=\\"openModal('mpesaModal')\\"")) {
+    console.log("WARN: app.js still contains direct openModal('mpesaModal') checkout click.");
+    warnings++;
+  } else {
+    console.log("OK: direct openModal('mpesaModal') checkout clicks removed or guarded.");
+  }
+}
+
+if (!fs.existsSync(checkoutPath)) {
+  console.log("WARN: checkout.html is missing.");
+  warnings++;
+} else {
+  const checkout = fs.readFileSync(checkoutPath, "utf8");
+  const required = [
+    "deliveryMethod",
+    "SELF_PICKUP",
+    "Create order and send M-PESA prompt",
+    "/api/orders",
+    "/api/payments/mpesa/stk-push"
+  ];
+  for (const item of required) {
+    if (!checkout.includes(item)) {
+      console.log("WARN: checkout.html missing:", item);
+      warnings++;
+    } else {
+      console.log("OK: checkout.html includes", item);
+    }
+  }
+}
+
+console.log("");
+console.log("Warnings:", warnings);
+if (warnings === 0) console.log("Stage 36B checkout routing and STK repair check passed.");
+`, "utf8");
+
+let app = fs.readFileSync(appPath, "utf8");
+
+// Convert the main old modal checkout click paths into the full checkout page.
+const replacements = [
+  [`onclick="openModal('mpesaModal')"`, `onclick="window.location.href='/checkout.html'"`],
+  [`onclick='openModal("mpesaModal")'`, `onclick="window.location.href='/checkout.html'"`],
+  [`onclick='openModal(\\'mpesaModal\\')'`, `onclick="window.location.href='/checkout.html'"`],
+];
+
+let replacementCount = 0;
+for (const [from, to] of replacements) {
+  const before = app;
+  app = app.split(from).join(to);
+  if (app !== before) replacementCount++;
+}
+
+// Add a safe click guard so any remaining "M-PESA Checkout" or "Checkout with M-PESA" button routes to checkout.html.
+if (!app.includes("SokoYetu Stage 36B: Checkout routing repair")) {
+  app += `
+
+// SokoYetu Stage 36B: Checkout routing repair
+// Sends cart and M-PESA checkout buttons to checkout.html so buyers can choose Home delivery or Self-pickup.
+(function initStage36BCheckoutRoutingRepair() {
+  function goToSokoYetuCheckout(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+    window.location.href = "/checkout.html";
+  }
+
+  function isCheckoutRouteClick(element) {
+    if (!element) return false;
+
+    const clickable = element.closest ? element.closest("button, a, [onclick], .quick-card, .btn") : null;
+    if (!clickable) return false;
+
+    const text = String(clickable.textContent || "").toLowerCase().replace(/\\s+/g, " ").trim();
+    const onclick = String(clickable.getAttribute && clickable.getAttribute("onclick") || "").toLowerCase();
+    const id = String(clickable.id || "").toLowerCase();
+
+    if (onclick.includes("mpesamodal")) return true;
+    if (id === "systage20pcheckoutbtn") return true;
+    if (text === "checkout") return true;
+    if (text.includes("secure checkout")) return true;
+    if (text.includes("checkout with m-pesa")) return true;
+    if (text.includes("m-pesa checkout")) return true;
+
+    return false;
+  }
+
+  document.addEventListener("click", function(event) {
+    const target = event.target;
+    if (isCheckoutRouteClick(target)) goToSokoYetuCheckout(event);
+  }, true);
+
+  window.goToSokoYetuCheckout = goToSokoYetuCheckout;
+})();
+`;
+}
+
+fs.writeFileSync(appPath, app, "utf8");
+console.log("Updated app.js checkout routing. Replacement groups changed:", replacementCount);
+
+// Strengthen checkout page messaging and make sure the button text is clear.
+let checkout = fs.readFileSync(checkoutPath, "utf8");
+
+if (checkout.includes("Create order and send M-PESA prompt")) {
+  console.log("checkout.html already has STK submit button wording.");
+} else {
+  checkout = checkout.replace(/Create order and send M-PESA STK Push|Create order and send M-PESA prompt|Pay with M-PESA|Checkout with M-PESA/gi, "Create order and send M-PESA prompt");
+}
+
+if (!checkout.includes("SokoYetu Stage 36B: checkout page STK note")) {
+  checkout = checkout.replace(
+    "</form>",
+    `</form>
+      <div class="note" id="stage36bCheckoutNote">
+        <b>SokoYetu Stage 36B: checkout page STK note</b><br>
+        Use this page for all orders so the buyer can choose Home delivery or Self-pickup before the M-PESA prompt is sent.
+      </div>`
+  );
+}
+
+fs.writeFileSync(checkoutPath, checkout, "utf8");
+console.log("Confirmed checkout.html full checkout path.");
+
+fs.writeFileSync(path.join(root, "STAGE36B_CHECKOUT_ROUTING_AND_STK_REPAIR_GUIDE.md"), `# SokoYetu Stage 36B: Checkout Routing and STK Repair
+
+Stage 36B fixes the issue where the cart still opens the old M-PESA modal instead of the full checkout page.
+
+## Problem
+
+The self-pickup option is on:
+
+\`\`\`text
+/checkout.html
+\`\`\`
+
+But some cart buttons still opened the old M-PESA modal from \`app.js\`, which only asked for M-PESA phone and delivery address.
+
+## Fix
+
+\`\`\`text
+Cart checkout buttons now route to /checkout.html.
+M-PESA Checkout buttons now route to /checkout.html.
+The checkout page keeps Home delivery and Self-pickup options.
+The checkout page creates the order first, then sends STK Push.
+\`\`\`
+
+## What this does not change
+
+\`\`\`text
+No M-PESA credential changes
+No callback changes
+No database schema changes
+No payment amount calculation changes
+No product logic changes
+\`\`\`
+
+## Test
+
+\`\`\`cmd
+npm run stage36b:check
+node --check server.js
+npm run dev
+\`\`\`
+
+Manual test:
+
+1. Add product to cart.
+2. Click cart checkout.
+3. Confirm the browser opens \`/checkout.html\`, not the old modal.
+4. Confirm Home delivery and Self-pickup choices appear.
+5. Select Self-pickup.
+6. Confirm delivery fee is KES 0.
+7. Submit controlled order.
+8. Confirm STK Push is sent or the exact Daraja error is displayed.
+`);
+
+console.log("");
+console.log("SUCCESS: Stage 36B checkout routing and STK repair installed.");
+console.log("");
+console.log("Next:");
+console.log("npm run stage36b:check");
+console.log("node --check server.js");
+console.log("npm run dev");
+console.log("");
+console.log("Commit:");
+console.log("git add package.json app.js checkout.html scripts/check-stage36b-checkout-routing.js STAGE36B_CHECKOUT_ROUTING_AND_STK_REPAIR_GUIDE.md");
+console.log('git commit -m "Repair checkout routing for self-pickup"');
+console.log("git push");

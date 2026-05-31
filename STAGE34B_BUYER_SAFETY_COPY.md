@@ -1,10 +1,10 @@
-# Stage 34B: Buyer Safety Copy
+﻿# Stage 34B: Buyer Safety Copy
 
 Use this wording across customer support and public pages where needed.
 
 ## Payment guidance
 
-Use SokoYetu checkout and confirm the M-PESA prompt amount before entering your PIN. Keep your M-PESA receipt until the order is complete.
+Use SokoYetu Mtaani checkout and confirm the M-PESA prompt amount before entering your PIN. Keep your M-PESA receipt until the order is complete.
 
 ## Paid but order pending
 
@@ -27,3 +27,4 @@ product name
 issue type
 short explanation
 ```
+

@@ -1,6 +1,6 @@
-require("dotenv").config();
+﻿require("dotenv").config();
 
-console.log("SokoYetu Stage 27C Persistent Seller Verification Check");
+console.log("SokoYetu Mtaani Stage 27C Persistent Seller Verification Check");
 console.log("-----------------------------------------------------");
 
 let warnings = 0;
@@ -26,3 +26,4 @@ console.log("2. npm run dev");
 console.log("3. Open /seller-verification-persistent.html");
 console.log("");
 console.log("Warnings:", warnings);
+
