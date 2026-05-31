@@ -67,7 +67,7 @@ In Render:
 
 ```text
 New → PostgreSQL
-Name: SokoYetu Mtaani-postgres
+Name: sokoyetu-postgres
 Database: SokoYetu Mtaani
 User: SokoYetu Mtaani
 ```
@@ -132,7 +132,7 @@ MPESA_CALLBACK_URL="https://YOUR-RENDER-DOMAIN/api/payments/mpesa/callback"
 Example:
 
 ```env
-MPESA_CALLBACK_URL="https://SokoYetu Mtaani-web.onrender.com/api/payments/mpesa/callback"
+MPESA_CALLBACK_URL="https://sokoyetu-web.onrender.com/api/payments/mpesa/callback"
 ```
 
 ### 6. Deploy
@@ -173,4 +173,5 @@ Check:
 - Prisma migration logs
 - Whether package-lock.json is committed
 - Whether NODE_ENV=production changed cookies while testing over HTTPS
+
 

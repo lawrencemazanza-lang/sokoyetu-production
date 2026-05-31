@@ -41,7 +41,7 @@ seller-policy.html
 ## Additional file
 
 ```text
-SokoYetu Mtaani-structured-data.json
+sokoyetu-structured-data.json
 ```
 
 ## What this stage does not touch
@@ -74,4 +74,5 @@ http://localhost:5173/
 http://localhost:5173/categories.html
 http://localhost:5173/help-center.html
 ```
+
 

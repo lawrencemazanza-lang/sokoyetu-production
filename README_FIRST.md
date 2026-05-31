@@ -11,13 +11,13 @@ Your previous script ran correctly, but the visible logo/header likely used the 
 1. Unzip this ZIP.
 2. Copy these files into:
 
-   `C:\Users\PC\Desktop\SokoYetu Mtaani-fullstack\SokoYetu Mtaani-elite-checked-fixed`
+   `C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed`
 
 3. Open CMD and run:
 
    ```bat
-   cd C:\Users\PC\Desktop\SokoYetu Mtaani-fullstack\SokoYetu Mtaani-elite-checked-fixed
-   fix-visible-SokoYetu Mtaani-name.cmd
+   cd C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed
+   fix-visible-sokoyetu-name.cmd
    ```
 
 4. Start the site again:
@@ -65,3 +65,4 @@ It skips:
 - `.git`
 - build folders
 - backup files
+

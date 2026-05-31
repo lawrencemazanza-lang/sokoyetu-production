@@ -21,6 +21,7 @@ Then test:
 
 ```cmd
 curl -i http://localhost:5173/api/admin/core-readiness/audit
-curl -i -H "x-admin-order-token: SokoYetu Mtaani_admin_orders_2026_change_this_secret" http://localhost:5173/api/admin/core-readiness/audit
+curl -i -H "x-admin-order-token: sokoyetu_admin_orders_2026_change_this_secret" http://localhost:5173/api/admin/core-readiness/audit
 ```
+
 

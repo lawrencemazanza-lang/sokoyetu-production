@@ -11,10 +11,10 @@ YYYY-MM-DD
 ## Export files saved
 
 ```text
-SokoYetu Mtaani-mpesa-evidence-all-YYYY-MM-DD.csv
-SokoYetu Mtaani-mpesa-evidence-issues-YYYY-MM-DD.csv
-SokoYetu Mtaani-mpesa-evidence-missing-receipt-YYYY-MM-DD.csv
-SokoYetu Mtaani-mpesa-evidence-amount-mismatch-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-all-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-issues-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-missing-receipt-YYYY-MM-DD.csv
+sokoyetu-mpesa-evidence-amount-mismatch-YYYY-MM-DD.csv
 ```
 
 ## Checks performed
@@ -41,4 +41,5 @@ Write findings here.
 ```text
 Write actions here.
 ```
+
 

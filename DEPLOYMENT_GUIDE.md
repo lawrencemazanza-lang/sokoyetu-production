@@ -21,7 +21,7 @@ This project is now a full-stack local development build with:
 ## Local run
 
 ```cmd
-cd "C:\Users\PC\Desktop\SokoYetu Mtaani-fullstack\SokoYetu Mtaani-elite-checked-fixed"
+cd "C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed"
 npm run dev
 ```
 
@@ -91,4 +91,5 @@ npm start
 ```cmd
 npm run health
 ```
+
 

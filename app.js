@@ -4755,8 +4755,8 @@ setInterval(updateCountdown, 1000);
 // Sends checkout/cart navigation to checkout.html without heavy observers or modal sync.
 // ================================
 (function initStage20PHardResetCheckoutJavaScript() {
-  if (window.__SokoYetu MtaaniStage20PInstalled) return;
-  window.__SokoYetu MtaaniStage20PInstalled = true;
+  if (window.__sokoyetuStage20PInstalled) return;
+  window.__sokoyetuStage20PInstalled = true;
 
   function goToCheckout(event) {
     if (event) {
@@ -4972,5 +4972,6 @@ setInterval(updateCountdown, 1000);
   function init(){addStyle();removeDullLiveBlocks();addWhatsApp();addRail();routeCheckout();setTimeout(removeDullLiveBlocks,800)}
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",init);else init();
 })();
+
 
 

@@ -57,10 +57,11 @@ npm install && npx prisma generate && npx prisma migrate deploy
 Open:
 
 ```text
-https://SokoYetu Mtaani-production-1.onrender.com/api/products
+https://sokoyetu-production-1.onrender.com/api/products
 ```
 
 It should show products with IDs.
 
 Then test Add to Cart again.
+
 

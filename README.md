@@ -5,7 +5,7 @@ This is a clean static front-end prototype. It does not need npm install.
 ## Run on Windows Command Prompt
 
 ```cmd
-cd "C:\Users\PC\Desktop\SokoYetu Mtaani\SokoYetu Mtaani-elite-jumia-inspired"
+cd "C:\Users\PC\Desktop\SokoYetu Mtaani\sokoyetu-elite-jumia-inspired"
 npm run dev
 ```
 
@@ -38,5 +38,6 @@ http://localhost:5173/
 Phone: 0714565555
 Email: SokoYetu Mtaani@gmail.com
 Location: Nairobi, Kenya
+
 
 

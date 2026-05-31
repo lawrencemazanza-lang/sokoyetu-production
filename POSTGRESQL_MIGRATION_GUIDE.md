@@ -67,7 +67,7 @@ apply-step14-postgresql-migration.js
 Then run:
 
 ```cmd
-cd "C:\Users\PC\Desktop\SokoYetu Mtaani-fullstack\SokoYetu Mtaani-elite-checked-fixed"
+cd "C:\Users\PC\Desktop\sokoyetu-fullstack\sokoyetu-elite-checked-fixed"
 node apply-step14-postgresql-migration.js
 ```
 
@@ -161,4 +161,5 @@ DATABASE_URL="file:./dev.db"
 ```
 
 and use the SQLite server adapter again.
+
 

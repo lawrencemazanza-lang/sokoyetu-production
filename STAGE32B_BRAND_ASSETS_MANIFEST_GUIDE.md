@@ -6,8 +6,8 @@ Stage 32B gives the public site stronger browser and sharing identity.
 
 ```text
 favicon.svg
-SokoYetu Mtaani-icon.svg
-SokoYetu Mtaani-share.svg
+sokoyetu-icon.svg
+sokoyetu-share.svg
 site.webmanifest
 scripts/check-stage32b-brand-assets.js
 STAGE32B_BRAND_ASSETS_MANIFEST_GUIDE.md
@@ -60,4 +60,5 @@ http://localhost:5173/favicon.svg
 http://localhost:5173/site.webmanifest
 http://localhost:5173/
 ```
+
 

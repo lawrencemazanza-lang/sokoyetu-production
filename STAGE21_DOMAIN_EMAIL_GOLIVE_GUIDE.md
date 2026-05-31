@@ -21,7 +21,7 @@ For launch, using `www.SokoYetu Mtaani.co.ke` or `shop.SokoYetu Mtaani.co.ke` is
 Go to:
 
 ```text
-Render Dashboard → SokoYetu Mtaani-production-1 → Settings → Custom Domains
+Render Dashboard → sokoyetu-production-1 → Settings → Custom Domains
 ```
 
 Add the domain, for example:
@@ -41,7 +41,7 @@ For a subdomain such as `www`:
 ```text
 Type: CNAME
 Name/Host: www
-Value/Target: SokoYetu Mtaani-production-1.onrender.com
+Value/Target: sokoyetu-production-1.onrender.com
 ```
 
 For root/apex domain `SokoYetu Mtaani.co.ke`, follow the exact records Render gives you. If your DNS provider supports CNAME flattening, ALIAS or ANAME, use the option recommended by your provider and Render.
@@ -146,4 +146,5 @@ npm run stage21:check
 ```
 
 Warnings are acceptable while preparing. Blocking issues must be fixed before public launch.
+
 
